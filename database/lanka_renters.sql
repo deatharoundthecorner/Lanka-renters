@@ -1,0 +1,2 @@
+-- Lanka Renters Database Schema
+-- Database: lanka_renters

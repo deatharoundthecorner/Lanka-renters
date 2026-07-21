@@ -1,0 +1,16 @@
+# Uploaded user files
+uploads/*
+
+# Environment files
+.env
+
+# IDE files
+.vscode/
+.idea/
+
+# Operating system files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp

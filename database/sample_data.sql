@@ -1,0 +1,2 @@
+-- Lanka Renters Sample Data
+-- Inserting initial test data into the database
