@@ -30,7 +30,7 @@ function active($name, $page) {
                 <a href="vehicles.php" class="nav-item <?php echo active('vehicles', $page);?>">Vehicles</a>
                 <a href="bookings.php" class="nav-item <?php echo active('bookings', $page);?>">Bookings</a>
                 <a href="payments.php" class="nav-item <?php echo active('payments', $page);?>">Payments</a>
-                <a href="incidents.php" class="nav-item <?php echo active('incidents', $page);?>">Incidents</a>
+                <a href="incident.php" class="nav-item <?php echo active('incident', $page);?>">Incidents</a>
                 <a href="replacement_requests.php" class="nav-item <?php echo active('replacement_requests', $page);?>">Replacement Requests</a>
                 <a href="settlements.php" class="nav-item <?php echo active('settlements', $page);?>">Settlements</a>
                 <a href="reports.php" class="nav-item <?php echo active('reports', $page);?>">Reports</a>
