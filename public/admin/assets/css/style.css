@@ -30,6 +30,8 @@ input[type="reset"] {
 }
 .admin-sidebar {
     width: 280px;
+    min-width: 220px;
+    flex: 0 0 280px;
     background: #ffffff;
     border-right: 1px solid #e5e7eb;
     padding: 24px 20px;

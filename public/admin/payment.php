@@ -5,6 +5,24 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Payments - Admin</title>
     <link rel="stylesheet" href="assets/css/style.css">
+    <style>
+    /* Page-scoped overrides to force pill buttons and visuals when other styles interfere */
+    .admin-content button,
+    .admin-content .btn-primary,
+    .admin-content .btn-outline,
+    .admin-content .btn-secondary {
+        border-radius: 28px !important;
+        padding: 10px 18px !important;
+        line-height: 1.1 !important;
+    }
+    .admin-content .btn-primary {
+        background: linear-gradient(180deg,#1e66f5 0%, #1746d8 100%) !important;
+        color: #ffffff !important;
+        border: none !important;
+        box-shadow: 0 14px 36px rgba(30,64,175,0.18), 0 4px 8px rgba(15,23,42,0.06) inset !important;
+    }
+    button#verifyPayment { padding: 16px 40px !important; border-radius: 28px !important; }
+    </style>
 </head>
 <body>
 <div class="admin-shell">
