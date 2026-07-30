@@ -398,6 +398,35 @@ button {
     display: grid;
     gap: 16px;
 }
+
+/* Payment page specific */
+.btn-primary {
+    background: #1e40af;
+    color: white;
+    border: none;
+    padding: 12px 18px;
+    border-radius: 12px;
+    cursor: pointer;
+    font-weight: 700;
+}
+.btn-primary:disabled{
+    opacity: 0.6;
+    cursor: default;
+}
+.btn-primary:hover{ background:#1d4ed8 }
+.btn-secondary {
+    background: #eef2ff;
+    color: #1e3a8a;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 10px;
+}
+.incident-actions { display:flex; flex-direction:column; gap:12px; }
+
+@media (max-width: 900px) {
+    .dashboard-cards { grid-template-columns: 1fr; }
+    .admin-sidebar { display: none; }
+}
 .list-item {
     display: flex;
     align-items: center;
