@@ -25,33 +25,28 @@ $driverName = $dashboardResult['success'] ? $dashboardResult['profile']['name'] 
 
 $vehiclesResult = $driverController->viewAssignedVehicles();
 $vehicles = $vehiclesResult['success'] ? $vehiclesResult['vehicles'] : [];
+
+// Page config
+$pageTitle = "Assigned Vehicles - Lanka Renters";
+$activePage = "vehicles";
+
+include 'includes/header.php';
+include 'includes/sidebar.php';
+include 'includes/navbar.php';
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Assigned Vehicles - Lanka Renters</title>
-    <link rel="stylesheet" href="../assets/css/driver.css">
-</head>
-<body>
-    <!-- Header -->
-    <header class="dash-header">
-        <h1>Lanka Renters</h1>
-        <div class="nav-links">
-            <span>Assigned Vehicles</span>
-            <a href="dashboard.php">Back to Dashboard</a>
+<main class="main-content">
+    <div class="welcome-container">
+        <div>
+            <h2 class="welcome-title">Assigned Vehicles</h2>
+            <p class="welcome-subtitle">View vehicles linked to your active driver profile.</p>
         </div>
-    </header>
+    </div>
 
-    <div class="container">
-        <div class="welcome-msg">
-            Logged in as: <?php echo htmlspecialchars($driverName); ?>
-        </div>
-
-        <h2>Assigned Vehicles List</h2>
+    <!-- Vehicles List -->
+    <div class="card">
+        <h2 class="card-title">Your Assigned Vehicles</h2>
         <?php if (empty($vehicles)): ?>
-            <p>No vehicles are currently assigned to you.</p>
+            <p style="font-style: italic; color: var(--text-muted);">No vehicles are currently assigned to you.</p>
         <?php else: ?>
             <table>
                 <thead>
@@ -85,5 +80,7 @@ $vehicles = $vehiclesResult['success'] ? $vehiclesResult['vehicles'] : [];
             </table>
         <?php endif; ?>
     </div>
-</body>
-</html>
+</main>
+<?php
+include 'includes/footer.php';
+?>

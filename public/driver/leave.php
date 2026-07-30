@@ -38,97 +38,97 @@ $driverName = $dashboardResult['success'] ? $dashboardResult['profile']['name'] 
 
 $leaveHistoryResult = $driverController->viewLeaveHistory();
 $leaves = $leaveHistoryResult['success'] ? $leaveHistoryResult['leaves'] : [];
+
+// Page config
+$pageTitle = "Request Leave - Lanka Renters";
+$activePage = "leave";
+
+include 'includes/header.php';
+include 'includes/sidebar.php';
+include 'includes/navbar.php';
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Request Leave - Lanka Renters</title>
-    <link rel="stylesheet" href="../assets/css/driver.css">
-</head>
-<body>
-    <!-- Header -->
-    <header class="dash-header">
-        <h1>Lanka Renters</h1>
-        <div class="nav-links">
-            <span>Request Leave</span>
-            <a href="dashboard.php">Back to Dashboard</a>
+<main class="main-content">
+    <div class="welcome-container">
+        <div>
+            <h2 class="welcome-title">Leave Requests</h2>
+            <p class="welcome-subtitle">Submit and monitor your vacation or time-off status.</p>
         </div>
-    </header>
+    </div>
 
-    <div class="container">
-        <div class="welcome-msg">
-            Logged in as: <?php echo htmlspecialchars($driverName); ?>
+    <!-- Alerts -->
+    <?php if (!empty($success)): ?>
+        <div class="alert alert-success">
+            <?php echo htmlspecialchars($success); ?>
         </div>
+    <?php endif; ?>
+    <?php if (!empty($error)): ?>
+        <div class="alert alert-danger">
+            <?php echo htmlspecialchars($error); ?>
+        </div>
+    <?php endif; ?>
 
-        <!-- Alerts -->
-        <?php if (!empty($success)): ?>
-            <div class="alert alert-success">
-                <?php echo htmlspecialchars($success); ?>
-            </div>
-        <?php endif; ?>
-        <?php if (!empty($error)): ?>
-            <div class="alert alert-danger">
-                <?php echo htmlspecialchars($error); ?>
-            </div>
-        <?php endif; ?>
-
+    <div style="display: grid; grid-template-columns: 1.2fr 2fr; gap: 30px; align-items: flex-start;">
         <!-- Leave Request Form -->
-        <h2>Submit Leave Request</h2>
-        <form action="" method="POST" style="max-width: 500px; margin-bottom: 40px; border: 1px solid #ddd; padding: 20px;">
-            <input type="hidden" name="action" value="request_leave">
-            
-            <div class="form-group">
-                <label for="start_date" class="form-label">Start Date</label>
-                <input type="date" name="start_date" id="start_date" class="form-control" required>
-            </div>
+        <div class="card" style="margin: 0;">
+            <h2 class="card-title">Submit Leave Request</h2>
+            <form action="" method="POST">
+                <input type="hidden" name="action" value="request_leave">
+                
+                <div class="form-group">
+                    <label for="start_date" class="form-label">Start Date</label>
+                    <input type="date" name="start_date" id="start_date" class="form-control" required>
+                </div>
 
-            <div class="form-group">
-                <label for="end_date" class="form-label">End Date</label>
-                <input type="date" name="end_date" id="end_date" class="form-control" required>
-            </div>
+                <div class="form-group">
+                    <label for="end_date" class="form-label">End Date</label>
+                    <input type="date" name="end_date" id="end_date" class="form-control" required>
+                </div>
 
-            <div class="form-group">
-                <label for="reason" class="form-label">Reason / Comments</label>
-                <textarea name="reason" id="reason" class="form-control" rows="4" placeholder="Brief explanation for your leave..." required></textarea>
-            </div>
+                <div class="form-group">
+                    <label for="reason" class="form-label">Reason / Comments</label>
+                    <textarea name="reason" id="reason" class="form-control" rows="4" placeholder="Brief explanation for your leave..." required></textarea>
+                </div>
 
-            <button type="submit" class="btn-blue" style="margin-top: 10px;">Submit Request</button>
-        </form>
+                <button type="submit" class="btn-blue" style="width: 100%; margin-top: 10px;">Submit Request</button>
+            </form>
+        </div>
 
         <!-- Leave History -->
-        <h2>Leave History Log</h2>
-        <?php if (empty($leaves)): ?>
-            <p>No leave requests found.</p>
-        <?php else: ?>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Start Date</th>
-                        <th>End Date</th>
-                        <th>Reason</th>
-                        <th>Status</th>
-                        <th>Requested On</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($leaves as $leave): ?>
+        <div class="card" style="margin: 0;">
+            <h2 class="card-title">Leave History Log</h2>
+            <?php if (empty($leaves)): ?>
+                <p style="font-style: italic; color: var(--text-muted);">No leave requests found.</p>
+            <?php else: ?>
+                <table>
+                    <thead>
                         <tr>
-                            <td><?php echo htmlspecialchars($leave['start_date']); ?></td>
-                            <td><?php echo htmlspecialchars($leave['end_date']); ?></td>
-                            <td><?php echo htmlspecialchars($leave['reason']); ?></td>
-                            <td>
-                                <span class="status-pill status-<?php echo htmlspecialchars($leave['status']); ?>">
-                                    <?php echo htmlspecialchars($leave['status']); ?>
-                                </span>
-                            </td>
-                            <td><?php echo date('Y-m-d', strtotime($leave['created_at'])); ?></td>
+                            <th>Start Date</th>
+                            <th>End Date</th>
+                            <th>Reason</th>
+                            <th>Status</th>
+                            <th>Requested On</th>
                         </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
-        <?php endif; ?>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($leaves as $leave): ?>
+                            <tr>
+                                <td><?php echo htmlspecialchars($leave['start_date']); ?></td>
+                                <td><?php echo htmlspecialchars($leave['end_date']); ?></td>
+                                <td><?php echo htmlspecialchars($leave['reason']); ?></td>
+                                <td>
+                                    <span class="status-pill status-<?php echo htmlspecialchars($leave['status']); ?>">
+                                        <?php echo htmlspecialchars($leave['status']); ?>
+                                    </span>
+                                </td>
+                                <td><?php echo date('Y-m-d', strtotime($leave['created_at'])); ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            <?php endif; ?>
+        </div>
     </div>
-</body>
-</html>
+</main>
+<?php
+include 'includes/footer.php';
+?>

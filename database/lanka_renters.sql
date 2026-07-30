@@ -365,3 +365,19 @@ CREATE TABLE `pickup_tracking` (
   CONSTRAINT `fk_pickup_booking` FOREIGN KEY (`booking_id`) REFERENCES `bookings` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_pickup_user` FOREIGN KEY (`updated_by`) REFERENCES `users` (`id`) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 23. Driver Vehicle Safety Checks Table
+CREATE TABLE IF NOT EXISTS `driver_vehicle_checks` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `driver_id` INT NOT NULL,
+  `vehicle_id` INT NOT NULL,
+  `booking_id` INT NULL,
+  `brakes` BOOLEAN NOT NULL DEFAULT FALSE,
+  `lights` BOOLEAN NOT NULL DEFAULT FALSE,
+  `tires` BOOLEAN NOT NULL DEFAULT FALSE,
+  `fuel` BOOLEAN NOT NULL DEFAULT FALSE,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT `fk_vehicle_checks_driver` FOREIGN KEY (`driver_id`) REFERENCES `drivers` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_vehicle_checks_vehicle` FOREIGN KEY (`vehicle_id`) REFERENCES `vehicles` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_vehicle_checks_booking` FOREIGN KEY (`booking_id`) REFERENCES `bookings` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

@@ -107,118 +107,118 @@ $driverName = $dashboardResult['success'] ? $dashboardResult['profile']['name'] 
 
 $docResult = $driverController->viewDocuments();
 $documents = $docResult['success'] ? $docResult['documents'] : [];
+
+// Page config
+$pageTitle = "Manage Documents - Lanka Renters";
+$activePage = "documents";
+
+include 'includes/header.php';
+include 'includes/sidebar.php';
+include 'includes/navbar.php';
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manage Documents - Lanka Renters</title>
-    <link rel="stylesheet" href="../assets/css/driver.css">
-</head>
-<body>
-    <!-- Header -->
-    <header class="dash-header">
-        <h1>Lanka Renters</h1>
-        <div class="nav-links">
-            <span>Manage Documents</span>
-            <a href="dashboard.php">Back to Dashboard</a>
+<main class="main-content">
+    <div class="welcome-container">
+        <div>
+            <h2 class="welcome-title">Manage Documents</h2>
+            <p class="welcome-subtitle">Upload and maintain your identity and licensing verifications.</p>
         </div>
-    </header>
+    </div>
 
-    <div class="container">
-        <div class="welcome-msg">
-            Logged in as: <?php echo htmlspecialchars($driverName); ?>
+    <!-- Success/Error Alerts -->
+    <?php if (!empty($success)): ?>
+        <div class="alert alert-success">
+            <?php echo htmlspecialchars($success); ?>
         </div>
+    <?php endif; ?>
+    <?php if (!empty($error)): ?>
+        <div class="alert alert-danger">
+            <?php echo htmlspecialchars($error); ?>
+        </div>
+    <?php endif; ?>
 
-        <!-- Success/Error Alerts -->
-        <?php if (!empty($success)): ?>
-            <div class="alert alert-success">
-                <?php echo htmlspecialchars($success); ?>
-            </div>
-        <?php endif; ?>
-        <?php if (!empty($error)): ?>
-            <div class="alert alert-danger">
-                <?php echo htmlspecialchars($error); ?>
-            </div>
-        <?php endif; ?>
-
+    <div style="display: grid; grid-template-columns: 1.2fr 2fr; gap: 30px; align-items: flex-start;">
         <!-- Upload Form -->
-        <h2>Upload New Document</h2>
-        <form action="" method="POST" enctype="multipart/form-data" style="max-width: 500px; margin-bottom: 40px; border: 1px solid #ddd; padding: 20px;">
-            <input type="hidden" name="action" value="upload_document">
-            
-            <div class="form-group">
-                <label for="document_type" class="form-label">Document Type</label>
-                <select name="document_type" id="document_type" class="form-control" required>
-                    <option value="nic">National Identity Card (NIC)</option>
-                    <option value="driving_license">Driving License</option>
-                    <option value="police_report">Police Report</option>
-                </select>
-            </div>
+        <div class="card" style="margin: 0;">
+            <h2 class="card-title">Upload New Document</h2>
+            <form action="" method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="action" value="upload_document">
+                
+                <div class="form-group">
+                    <label for="document_type" class="form-label">Document Type</label>
+                    <select name="document_type" id="document_type" class="form-control" required>
+                        <option value="nic">National Identity Card (NIC)</option>
+                        <option value="driving_license">Driving License</option>
+                        <option value="police_report">Police Report</option>
+                    </select>
+                </div>
 
-            <div class="form-group">
-                <label for="document_number" class="form-label">Document Number</label>
-                <input type="text" name="document_number" id="document_number" class="form-control" placeholder="Enter document number" required>
-            </div>
+                <div class="form-group">
+                    <label for="document_number" class="form-label">Document Number</label>
+                    <input type="text" name="document_number" id="document_number" class="form-control" placeholder="Enter document number" required>
+                </div>
 
-            <div class="form-group">
-                <label for="expiry_date" class="form-label">Expiry Date</label>
-                <input type="date" name="expiry_date" id="expiry_date" class="form-control" required>
-            </div>
+                <div class="form-group">
+                    <label for="expiry_date" class="form-label">Expiry Date</label>
+                    <input type="date" name="expiry_date" id="expiry_date" class="form-control" required>
+                </div>
 
-            <div class="form-group">
-                <label for="document_file" class="form-label">Document File (PDF, JPG, PNG)</label>
-                <input type="file" name="document_file" id="document_file" class="form-control" required>
-            </div>
+                <div class="form-group">
+                    <label for="document_file" class="form-label">Document File (PDF, JPG, PNG)</label>
+                    <input type="file" name="document_file" id="document_file" class="form-control" required>
+                </div>
 
-            <button type="submit" class="btn-blue" style="margin-top: 10px;">Upload Document</button>
-        </form>
+                <button type="submit" class="btn-blue" style="width: 100%; margin-top: 10px;">Upload Document</button>
+            </form>
+        </div>
 
         <!-- Current Documents Registry -->
-        <h2>Your Uploaded Documents</h2>
-        <?php if (empty($documents)): ?>
-            <p>No documents uploaded yet.</p>
-        <?php else: ?>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Document Type</th>
-                        <th>Document Number</th>
-                        <th>Expiry Date</th>
-                        <th>Status</th>
-                        <th>Uploaded Date</th>
-                        <th>Notes / Rejection Reason</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($documents as $doc): ?>
+        <div class="card" style="margin: 0;">
+            <h2 class="card-title">Your Uploaded Documents</h2>
+            <?php if (empty($documents)): ?>
+                <p style="font-style: italic; color: var(--text-muted);">No documents uploaded yet.</p>
+            <?php else: ?>
+                <table>
+                    <thead>
                         <tr>
-                            <td style="text-transform: capitalize;">
-                                <?php echo htmlspecialchars(str_replace('_', ' ', $doc['document_type'])); ?>
-                            </td>
-                            <td><?php echo htmlspecialchars($doc['document_number']); ?></td>
-                            <td><?php echo htmlspecialchars($doc['expiry_date']); ?></td>
-                            <td>
-                                <span class="status-pill status-<?php echo htmlspecialchars($doc['verification_status']); ?>">
-                                    <?php echo htmlspecialchars($doc['verification_status']); ?>
-                                </span>
-                            </td>
-                            <td><?php echo date('Y-m-d', strtotime($doc['uploaded_at'])); ?></td>
-                            <td>
-                                <?php 
-                                    if ($doc['verification_status'] === 'rejected' && !empty($doc['rejected_reason'])) {
-                                        echo '<span style="color: #721c24; font-weight: bold;">Rejected: ' . htmlspecialchars($doc['rejected_reason']) . '</span>';
-                                    } else {
-                                        echo '-';
-                                    }
-                                ?>
-                            </td>
+                            <th>Document Type</th>
+                            <th>Document Number</th>
+                            <th>Expiry Date</th>
+                            <th>Status</th>
+                            <th>Uploaded Date</th>
+                            <th>Notes</th>
                         </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
-        <?php endif; ?>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($documents as $doc): ?>
+                            <tr>
+                                <td style="text-transform: capitalize; font-weight: 600;">
+                                    <?php echo htmlspecialchars(str_replace('_', ' ', $doc['document_type'])); ?>
+                                </td>
+                                <td><?php echo htmlspecialchars($doc['document_number']); ?></td>
+                                <td><?php echo htmlspecialchars($doc['expiry_date']); ?></td>
+                                <td>
+                                    <span class="status-pill status-<?php echo htmlspecialchars($doc['verification_status']); ?>">
+                                        <?php echo htmlspecialchars($doc['verification_status']); ?>
+                                    </span>
+                                </td>
+                                <td><?php echo date('Y-m-d', strtotime($doc['uploaded_at'])); ?></td>
+                                <td>
+                                    <?php 
+                                        if ($doc['verification_status'] === 'rejected' && !empty($doc['rejected_reason'])) {
+                                            echo '<span style="color: var(--danger); font-weight: bold;">Rejected: ' . htmlspecialchars($doc['rejected_reason']) . '</span>';
+                                        } else {
+                                            echo '-';
+                                        }
+                                    ?>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            <?php endif; ?>
+        </div>
     </div>
-</body>
-</html>
+</main>
+<?php
+include 'includes/footer.php';
+?>
