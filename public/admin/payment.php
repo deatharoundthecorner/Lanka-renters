@@ -58,15 +58,15 @@
                             </div>
 
                             <div class="incident-detail">
-                                <div style="margin-top:10px; padding:18px; border-radius:12px; background:#f8fafc; border:1px solid #eef2ff;">
+                                <div class="receipt-box">
                                     <strong>Receipt</strong>
-                                    <p style="margin:8px 0 0; color:#64748b;">Bank transfer - ABC Bank. Reference: TRX123456.</p>
+                                    <p class="muted">Bank transfer - ABC Bank. Reference: TRX123456.</p>
+
+                                    <div style="margin-top:18px;">
+                                        <button id="verifyPayment" class="btn-primary large">Verify payment</button>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-
-                        <div class="incident-actions">
-                            <button id="verifyPayment" class="btn-primary">Verify payment</button>
                         </div>
                     </div>
                 </div>
