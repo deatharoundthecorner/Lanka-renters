@@ -626,3 +626,32 @@ button#verifyPayment:focus { outline: none; }
         padding: 18px 20px;
     }
 }
+
+.empty-state {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: 18px;
+    padding: 40px 28px;
+    background: #f8fbff;
+    border: 1px dashed #dbeafe;
+    border-radius: 28px;
+    text-align: left;
+}
+.empty-state-icon {
+    width: 72px;
+    height: 72px;
+    border-radius: 20px;
+    background: #e0ebff;
+    display: grid;
+    place-items: center;
+    font-size: 28px;
+}
+.empty-state h2 {
+    margin: 0 0 8px;
+    font-size: 1.35rem;
+}
+.empty-state p {
+    margin: 0;
+    color: #64748b;
+}
