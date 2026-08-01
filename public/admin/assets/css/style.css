@@ -571,6 +571,32 @@ button#verifyPayment:focus { outline: none; }
     background: #dcfce7;
     color: #166534;
 }
+/* Additional status styles for replacement requests */
+.status-rejected {
+    background: #fee2e2;
+    color: #991b1b;
+}
+.status-completed {
+    background: #e0f2ff;
+    color: #0f172a;
+}
+.priority-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 8px 12px;
+    border-radius: 9999px;
+    font-weight: 700;
+    font-size: 0.82rem;
+    white-space: nowrap;
+}
+.priority-emergency {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+.priority-normal {
+    background: #e6f0ff;
+    color: #1e3a8a;
+}
 .row-actions {
     display: flex;
     gap: 10px;

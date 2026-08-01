@@ -63,4 +63,59 @@ document.addEventListener('DOMContentLoaded', function () {
             showToast('Payment verified and booking will be activated.');
         });
     }
+
+    // Replacement requests: view modal and actions
+    const requestModal = document.getElementById('requestModal');
+    const closeRequestModal = document.getElementById('closeRequestModal');
+    const modalApprove = document.getElementById('modalApprove');
+    const modalReject = document.getElementById('modalReject');
+
+    function openRequestModal() { if (requestModal) requestModal.classList.remove('hidden'); }
+    function closeRequestModalFn() { if (requestModal) requestModal.classList.add('hidden'); }
+
+    // Open modal when clicking any .view-request buttons
+    document.querySelectorAll('.view-request').forEach(btn => {
+        btn.addEventListener('click', function () {
+            const data = btn.dataset; // contains data-requestid, data-booking, etc.
+            if (!requestModal) return;
+            // populate modal fields if present
+            const set = (selector, value) => {
+                const el = requestModal.querySelector(selector);
+                if (el) el.textContent = value || '—';
+            }
+            set('.m-request-id', data.requestid);
+            set('.m-booking-id', data.booking);
+            set('.m-request-date', data.date);
+            set('.m-reason', data.reason);
+            set('.m-customer-name', data.customer);
+            set('.m-customer-phone', data.phone);
+            set('.m-customer-email', data.email);
+            set('.m-driver-name', data.driver);
+            set('.m-driver-rating', data.rating);
+            set('.m-driver-trips', data.trips);
+            set('.m-driver-license', data.license);
+            set('.m-driver-exp', data.experience);
+            set('.m-vehicle', data.vehicle);
+            set('.m-pickup', data.pickup);
+            set('.m-destination', data.destination);
+            set('.m-rental-date', data.rentaldate);
+            set('.m-return-date', data.returndate);
+            openRequestModal();
+        });
+    });
+
+    if (closeRequestModal) closeRequestModal.addEventListener('click', closeRequestModalFn);
+
+    if (modalApprove) {
+        modalApprove.addEventListener('click', function () {
+            closeRequestModalFn();
+            showToast('Replacement request approved.');
+        });
+    }
+    if (modalReject) {
+        modalReject.addEventListener('click', function () {
+            closeRequestModalFn();
+            showToast('Replacement request rejected.');
+        });
+    }
 });
