@@ -5,15 +5,16 @@ if (!isset($page)) { $page = basename($_SERVER['PHP_SELF'], '.php'); }
 $menuItems = [
     ['name' => 'Dashboard', 'href' => 'dashboard.php'],
     ['name' => 'Users', 'href' => 'users.php'],
-    ['name' => 'Owners', 'href' => 'owners.php'],
+    ['name' => 'Vehicle Owners', 'href' => 'owners.php'],
     ['name' => 'Drivers', 'href' => 'drivers.php'],
     ['name' => 'Vehicles', 'href' => 'vehicles.php'],
     ['name' => 'Bookings', 'href' => 'bookings.php'],
-    ['name' => 'Payments', 'href' => 'payments.php'],
+    ['name' => 'Payments', 'href' => 'payment.php'],
     ['name' => 'Incidents', 'href' => 'incident.php'],
     ['name' => 'Replacement Requests', 'href' => 'replacement_requests.php'],
     ['name' => 'Settlements', 'href' => 'settlements.php'],
-    ['name' => 'Settings', 'href' => 'settings.php'],
+    ['name' => 'Reports', 'href' => 'reports.php'],
+    ['name' => 'Email Logs', 'href' => 'email_logs.php'],
 ];
 function isActive($href, $page) {
     $key = basename($href, '.php');
