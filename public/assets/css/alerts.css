@@ -1,0 +1,25 @@
+.alert{
+
+    padding:16px;
+
+    border-radius:var(--radius-md);
+
+}
+
+.alert-success{
+
+    background:#DCFCE7;
+
+}
+
+.alert-warning{
+
+    background:#FEF3C7;
+
+}
+
+.alert-danger{
+
+    background:#FEE2E2;
+
+}

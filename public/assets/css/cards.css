@@ -1,0 +1,53 @@
+.card{
+
+    background:var(--bg-card);
+
+    border:1px solid var(--border);
+
+    border-radius:var(--radius-lg);
+
+    box-shadow:var(--shadow-sm);
+
+    overflow:hidden;
+
+}
+
+.card-header{
+
+    padding:20px;
+
+    border-bottom:1px solid var(--border);
+
+}
+
+.card-body{
+
+    padding:20px;
+
+}
+
+.card-footer{
+
+    padding:20px;
+
+    border-top:1px solid var(--border);
+
+}
+
+.stats-card{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    padding:20px;
+
+    background:white;
+
+    border-radius:var(--radius-lg);
+
+    box-shadow:var(--shadow-sm);
+
+}

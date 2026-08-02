@@ -1,0 +1,31 @@
+.table{
+
+    width:100%;
+
+    border-collapse:collapse;
+
+}
+
+.table th{
+
+    background:var(--bg-table-header);
+
+    text-align:left;
+
+    padding:14px;
+
+}
+
+.table td{
+
+    padding:14px;
+
+    border-top:1px solid var(--border);
+
+}
+
+.table tbody tr:hover{
+
+    background:var(--bg-hover);
+
+}
