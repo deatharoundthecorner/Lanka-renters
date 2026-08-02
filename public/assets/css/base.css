@@ -1,0 +1,48 @@
+/*
+=========================================
+Base
+=========================================
+*/
+
+body{
+
+    font-family:var(--font-family);
+
+    background:var(--bg-body);
+
+    color:var(--text-primary);
+
+    font-size:var(--font-md);
+
+    line-height:1.6;
+
+}
+
+.page{
+
+    padding:var(--space-6);
+
+}
+
+.container{
+
+    width:min(
+        100%,
+        var(--container-width)
+    );
+
+    margin:auto;
+
+}
+
+.section{
+
+    margin-bottom:var(--space-8);
+
+}
+
+.hidden{
+
+    display:none !important;
+
+}
