@@ -300,15 +300,32 @@ input[type="reset"] {
     color: #475569;
     font-weight: 600;
 }
-.filter-group select {
+.filter-group select,
+.filter-group input[type="search"],
+.filter-group input[type="date"] {
     width: 100%;
     padding: 14px 16px;
     border-radius: 16px;
     border: 1px solid #cbd5e1;
-    background: #f8fafc;
+    background: white;
     color: #0f172a;
     appearance: none;
-    height: 48px;
+    min-height: 48px;
+}
+.filter-group input[type="search"]::placeholder {
+    color: #94a3b8;
+}
+
+.section-label {
+    margin: 0 0 4px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #0f172a;
+}
+.section-description {
+    margin: 0;
+    font-size: 0.95rem;
+    color: #64748b;
 }
 
 .filters-card {
@@ -316,6 +333,9 @@ input[type="reset"] {
     border: 1px solid #e5e7eb;
     border-radius: 28px;
     padding: 24px;
+}
+.owners-filters .filter-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
 }
 .filters-card-header {
     display: flex;
@@ -666,6 +686,10 @@ button#verifyPayment:focus { outline: none; }
     background: #fee2e2;
     color: #b91c1c;
 }
+.status-suspended {
+    background: #e2e8f0;
+    color: #334155;
+}
 .payment-pill {
     display: inline-flex;
     align-items: center;
@@ -737,6 +761,7 @@ button#verifyPayment:focus { outline: none; }
 }
 .bookings-table .table-header,
 .bookings-table .table-row {
+    display: grid;
     grid-template-columns:
         minmax(130px, 1.3fr)
         minmax(140px, 1.6fr)
@@ -748,14 +773,29 @@ button#verifyPayment:focus { outline: none; }
         minmax(120px, 0.9fr)
         minmax(120px, 0.9fr)
         minmax(190px, 1.6fr);
-}
     align-items: center;
-    padding: 8px 12px;
-    border-radius: 9999px;
-    font-weight: 700;
-    font-size: 0.82rem;
-    white-space: nowrap;
+    gap: 16px;
+    padding: 16px 20px;
+    min-width: 1200px;
 }
+
+.owners-table .table-header,
+.owners-table .table-row {
+    display: grid;
+    grid-template-columns:
+        minmax(160px, 1.4fr)
+        minmax(120px, 1fr)
+        minmax(130px, 1.2fr)
+        minmax(110px, 1fr)
+        minmax(120px, 1fr)
+        minmax(140px, 1.2fr)
+        minmax(250px, 1.8fr);
+    align-items: center;
+    gap: 16px;
+    padding: 16px 20px;
+    min-width: 1200px;
+}
+
 .priority-emergency {
     background: #fee2e2;
     color: #b91c1c;
