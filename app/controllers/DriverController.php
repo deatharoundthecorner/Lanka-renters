@@ -5,6 +5,9 @@ require_once dirname(__DIR__) . '/models/Driver.php';
 require_once dirname(__DIR__) . '/models/DriverDocument.php';
 require_once dirname(__DIR__) . '/models/DriverLeave.php';
 require_once dirname(__DIR__) . '/models/DriverAvailability.php';
+require_once dirname(__DIR__) . '/models/DriverOwnerLink.php';
+require_once dirname(__DIR__) . '/models/DriverPayment.php';
+require_once dirname(__DIR__) . '/models/Notification.php';
 
 /**
  * Lanka Renters - Driver Controller
@@ -54,6 +57,14 @@ class DriverController {
             $driverModel = new Driver();
             $stats = $driverModel->getDashboardData($driverId);
             $vehicles = $driverModel->getAssignedVehicles($driverId);
+
+            // Fetch hybrid link stats and monthly earnings
+            $linkModel = new DriverOwnerLink();
+            $paymentModel = new DriverPayment();
+
+            $stats['connected_owners'] = $linkModel->getLinkCountByDriver($driverId, 'accepted');
+            $stats['pending_requests'] = $linkModel->getLinkCountByDriver($driverId, 'pending');
+            $stats['monthly_earnings'] = $paymentModel->getMonthlyEarnings($driverId);
 
             return [
                 'success'           => true,
@@ -318,6 +329,44 @@ class DriverController {
             $result = $driverModel->addPickupTracking($bookingId, $userId, $status, $latitude, $longitude);
 
             if ($result) {
+                if ($status === 'dropped_off') {
+                    $db = Database::getInstance()->getConnection();
+                    $sql = "SELECT b.booking_type, b.start_date, b.end_date, b.customer_id,
+                                   v.price_per_day, v.price_with_driver_per_day
+                            FROM `bookings` b
+                            JOIN `vehicles` v ON b.vehicle_id = v.id
+                            WHERE b.id = :booking_id LIMIT 1";
+                    $stmt = $db->prepare($sql);
+                    $stmt->execute(['booking_id' => $bookingId]);
+                    $booking = $stmt->fetch(PDO::FETCH_ASSOC);
+
+                    if ($booking && $booking['booking_type'] === 'with_driver') {
+                        $daily_rental = (float)$booking['price_per_day'];
+                        $daily_with_driver = $booking['price_with_driver_per_day'] !== null ? (float)$booking['price_with_driver_per_day'] : ($daily_rental + 3000.0);
+                        $driver_rate = max(0.0, $daily_with_driver - $daily_rental);
+                        
+                        $days = max(1, (int)ceil((strtotime($booking['end_date']) - strtotime($booking['start_date'])) / 86400));
+                        $paymentAmount = $driver_rate * $days;
+
+                        $paymentModel = new DriverPayment();
+                        $paymentModel->createPayment($driver['id'], $bookingId, $paymentAmount, 'pending');
+
+                        // Notifications
+                        $notificationModel = new Notification();
+                        $msgDriver = "Payment generated: Rs. " . number_format($paymentAmount, 2) . " has been credited to your pending earnings for Booking #" . $bookingId;
+                        $notificationModel->create($user['id'], "Payment Generated", $msgDriver);
+
+                        $sqlCust = "SELECT user_id FROM `customers` WHERE id = :customer_id LIMIT 1";
+                        $stmtCust = $db->prepare($sqlCust);
+                        $stmtCust->execute(['customer_id' => $booking['customer_id']]);
+                        $custUserId = $stmtCust->fetchColumn();
+                        if ($custUserId) {
+                            $msgCust = "Your booking #" . $bookingId . " has been marked as completed. Thank you for using Lanka Renters!";
+                            $notificationModel->create($custUserId, "Trip Completed", $msgCust);
+                        }
+                    }
+                }
+
                 return [
                     'success' => true,
                     'message' => "Pickup tracking status successfully updated to " . $status . "."
@@ -364,6 +413,126 @@ class DriverController {
                 'success'         => true,
                 'active_trips'    => $activeTrips,
                 'completed_trips' => $completedTrips
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'error'   => $e->getMessage()
+            ];
+        }
+    }
+
+    /**
+     * Retrieves all pending owner connection requests for the driver.
+     */
+    public function viewOwnerRequests() {
+        try {
+            $driver = $this->getSecureDriver();
+            $linkModel = new DriverOwnerLink();
+            $requests = $linkModel->getLinksByDriver($driver['id'], 'pending');
+            return [
+                'success'  => true,
+                'requests' => $requests
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'error'   => $e->getMessage()
+            ];
+        }
+    }
+
+    /**
+     * Driver accepts an owner's connection request.
+     */
+    public function acceptOwnerRequest($linkId) {
+        try {
+            $driver = $this->getSecureDriver();
+            $linkModel = new DriverOwnerLink();
+            
+            // Verify link ownership
+            $link = $linkModel->findById($linkId);
+            if (!$link || (int)$link['driver_id'] !== (int)$driver['id']) {
+                return [
+                    'success' => false,
+                    'error'   => "Security Violation: Unauthorized connection request."
+                ];
+            }
+
+            $success = $linkModel->updateStatus($linkId, 'accepted');
+            if ($success) {
+                // Notify Owner
+                $notificationModel = new Notification();
+                $db = Database::getInstance()->getConnection();
+                $sqlOwner = "SELECT vo.user_id FROM `vehicle_owners` vo WHERE vo.id = :owner_id LIMIT 1";
+                $stmt = $db->prepare($sqlOwner);
+                $stmt->execute(['owner_id' => $link['owner_id']]);
+                $ownerUserId = $stmt->fetchColumn();
+                
+                if ($ownerUserId) {
+                    $msg = "Driver " . $driver['name'] . " has accepted your connection request.";
+                    $notificationModel->create($ownerUserId, "Connection Request Accepted", $msg);
+                }
+
+                return [
+                    'success' => true,
+                    'message' => "Connection request accepted successfully."
+                ];
+            }
+
+            return [
+                'success' => false,
+                'error'   => "Failed to accept connection request."
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'error'   => $e->getMessage()
+            ];
+        }
+    }
+
+    /**
+     * Driver rejects an owner's connection request.
+     */
+    public function rejectOwnerRequest($linkId) {
+        try {
+            $driver = $this->getSecureDriver();
+            $linkModel = new DriverOwnerLink();
+            
+            // Verify link ownership
+            $link = $linkModel->findById($linkId);
+            if (!$link || (int)$link['driver_id'] !== (int)$driver['id']) {
+                return [
+                    'success' => false,
+                    'error'   => "Security Violation: Unauthorized connection request."
+                ];
+            }
+
+            $success = $linkModel->updateStatus($linkId, 'rejected');
+            if ($success) {
+                // Notify Owner
+                $notificationModel = new Notification();
+                $db = Database::getInstance()->getConnection();
+                $sqlOwner = "SELECT vo.user_id FROM `vehicle_owners` vo WHERE vo.id = :owner_id LIMIT 1";
+                $stmt = $db->prepare($sqlOwner);
+                $stmt->execute(['owner_id' => $link['owner_id']]);
+                $ownerUserId = $stmt->fetchColumn();
+                
+                if ($ownerUserId) {
+                    $msg = "Driver " . $driver['name'] . " has rejected your connection request.";
+                    $notificationModel->create($ownerUserId, "Connection Request Rejected", $msg);
+                }
+
+                return [
+                    'success' => true,
+                    'message' => "Connection request rejected successfully."
+                ];
+            }
+
+            return [
+                'success' => false,
+                'error'   => "Failed to reject connection request."
             ];
         } catch (Exception $e) {
             return [

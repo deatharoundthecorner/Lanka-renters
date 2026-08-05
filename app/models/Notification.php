@@ -40,4 +40,23 @@ class Notification {
             'user_id' => $userId
         ]);
     }
+
+    /**
+     * Creates a new notification for a user.
+     * 
+     * @param int $userId The users.id value
+     * @param string $title The notification title
+     * @param string $message The notification body text
+     * @return bool True on success, false on failure
+     */
+    public function create($userId, $title, $message) {
+        $sql = "INSERT INTO `notifications` (`user_id`, `title`, `message`, `is_read`) 
+                VALUES (:user_id, :title, :message, FALSE)";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([
+            'user_id' => $userId,
+            'title'   => $title,
+            'message' => $message
+        ]);
+    }
 }
