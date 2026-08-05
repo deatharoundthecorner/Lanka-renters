@@ -26,13 +26,14 @@ class Database {
         $config = require $configPath;
         
         $host = $config['host'] ?? 'localhost';
+        $port = $config['port'] ?? 3306;
         $db   = $config['db'] ?? 'lanka_renters';
         $user = $config['user'] ?? 'root';
         $pass = $config['pass'] ?? '';
         $charset = $config['charset'] ?? 'utf8mb4';
 
         // Prepare Data Source Name (DSN)
-        $dsn = "mysql:host={$host};dbname={$db};charset={$charset}";
+        $dsn = "mysql:host={$host};port={$port};dbname={$db};charset={$charset}";
         
         // Define PDO options
         $options = [

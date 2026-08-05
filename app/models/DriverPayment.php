@@ -19,12 +19,9 @@ class DriverPayment {
      * @return array Associative array containing total_earnings and completed_trips_count
      */
     public function getEarningsSummary($driverId) {
-        $sql = "SELECT SUM(p.amount) as total_earnings, COUNT(b.id) as trips_count 
-                FROM `bookings` b
-                JOIN `payments` p ON b.id = p.booking_id
-                WHERE b.driver_id = :driver_id 
-                  AND b.status = 'completed' 
-                  AND p.payment_status = 'completed'";
+        $sql = "SELECT SUM(dp.amount) as total_earnings, COUNT(dp.id) as trips_count 
+                FROM `driver_payments` dp
+                WHERE dp.driver_id = :driver_id";
         $stmt = $this->db->prepare($sql);
         $stmt->execute(['driver_id' => $driverId]);
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -37,19 +34,20 @@ class DriverPayment {
 
     /**
      * Retrieves detailed payment records for bookings assigned to the driver.
+     * Table columns: Booking ID, Date, Customer, Amount, Status
      * 
      * @param int $driverId The driver's ID
      * @return array Array of payment records
      */
     public function getPaymentHistory($driverId) {
-        $sql = "SELECT b.id as booking_id, b.start_date, b.end_date, 
-                       v.make, v.model, v.license_plate,
-                       p.amount, p.payment_status, p.paid_at
-                FROM `bookings` b
-                JOIN `vehicles` v ON b.vehicle_id = v.id
-                LEFT JOIN `payments` p ON b.id = p.booking_id
-                WHERE b.driver_id = :driver_id AND b.status = 'completed'
-                ORDER BY b.end_date DESC";
+        $sql = "SELECT dp.booking_id, b.start_date as booking_date, u.name as customer_name,
+                       dp.amount, dp.payment_status, dp.created_at
+                FROM `driver_payments` dp
+                JOIN `bookings` b ON dp.booking_id = b.id
+                JOIN `customers` c ON b.customer_id = c.id
+                JOIN `users` u ON c.user_id = u.id
+                WHERE dp.driver_id = :driver_id
+                ORDER BY dp.created_at DESC";
         $stmt = $this->db->prepare($sql);
         $stmt->execute(['driver_id' => $driverId]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -63,12 +61,11 @@ class DriverPayment {
      */
     public function getEarningsSplit($driverId) {
         $sql = "SELECT 
-                    SUM(CASE WHEN p.payment_status = 'completed' THEN p.amount ELSE 0 END) as paid,
-                    SUM(CASE WHEN p.payment_status = 'pending' OR p.payment_status IS NULL THEN p.amount ELSE 0 END) as pending,
-                    SUM(COALESCE(p.amount, 0)) as total
-                FROM `bookings` b
-                LEFT JOIN `payments` p ON b.id = p.booking_id
-                WHERE b.driver_id = :driver_id AND b.status != 'cancelled'";
+                    SUM(CASE WHEN dp.payment_status = 'paid' THEN dp.amount ELSE 0 END) as paid,
+                    SUM(CASE WHEN dp.payment_status = 'pending' THEN dp.amount ELSE 0 END) as pending,
+                    SUM(dp.amount) as total
+                FROM `driver_payments` dp
+                WHERE dp.driver_id = :driver_id";
         $stmt = $this->db->prepare($sql);
         $stmt->execute(['driver_id' => $driverId]);
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -78,5 +75,34 @@ class DriverPayment {
             'pending' => (float)($result['pending'] ?? 0.0),
             'total'   => (float)($result['total'] ?? 0.0)
         ];
+    }
+
+    /**
+     * Creates a new driver payment record.
+     */
+    public function createPayment($driverId, $bookingId, $amount, $status = 'pending') {
+        $sql = "INSERT INTO `driver_payments` (`driver_id`, `booking_id`, `amount`, `payment_status`) 
+                VALUES (:driver_id, :booking_id, :amount, :status)";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([
+            'driver_id'  => $driverId,
+            'booking_id' => $bookingId,
+            'amount'     => $amount,
+            'status'     => $status
+        ]);
+    }
+
+    /**
+     * Retrieves monthly earnings for the driver.
+     */
+    public function getMonthlyEarnings($driverId) {
+        $sql = "SELECT SUM(amount) as monthly_earnings 
+                FROM `driver_payments` 
+                WHERE driver_id = :driver_id 
+                  AND MONTH(created_at) = MONTH(CURRENT_DATE()) 
+                  AND YEAR(created_at) = YEAR(CURRENT_DATE())";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute(['driver_id' => $driverId]);
+        return (float)($stmt->fetchColumn() ?? 0.0);
     }
 }
