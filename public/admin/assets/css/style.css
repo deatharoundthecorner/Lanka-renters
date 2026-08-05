@@ -4,7 +4,7 @@
 html, body {
     margin: 0;
     font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    background: #f2f5fb;
+    background: #F5F7FB;
     color: #1f2937;
 }
 body {
@@ -655,11 +655,100 @@ button#verifyPayment:focus { outline: none; }
     color: #991b1b;
 }
 .status-completed {
-    background: #e0f2ff;
+    background: #d1fae5;
+    color: #14532d;
+}
+.status-confirmed {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+.status-cancelled {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+.payment-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 8px 12px;
+    border-radius: 9999px;
+    font-weight: 700;
+    font-size: 0.82rem;
+    white-space: nowrap;
+}
+.payment-paid {
+    background: #dcfce7;
+    color: #166534;
+}
+.payment-pending {
+    background: #ffedd5;
+    color: #c2410c;
+}
+.payment-refunded {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+.payment-failed {
+    background: #fee2e2;
+    color: #991b1b;
+}
+.stat-card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 18px;
+}
+.stat-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 16px;
+    background: #e0e7ff;
+    color: #1d4ed8;
+    display: grid;
+    place-items: center;
+}
+.modal-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+.modal-grid div {
+    border-radius: 18px;
+    background: #f8fafc;
+    padding: 14px 16px;
+}
+.modal-grid strong {
+    display: block;
+    margin-bottom: 8px;
+    color: #475569;
+}
+.modal-grid p {
+    margin: 0;
     color: #0f172a;
 }
-.priority-pill {
-    display: inline-flex;
+.modal-body textarea {
+    width: 100%;
+    border-radius: 18px;
+    border: 1px solid #cbd5e1;
+    padding: 14px 16px;
+    background: #f8fafc;
+    color: #0f172a;
+    resize: none;
+}
+.bookings-table .table-header,
+.bookings-table .table-row {
+    grid-template-columns:
+        minmax(130px, 1.3fr)
+        minmax(140px, 1.6fr)
+        minmax(130px, 1.4fr)
+        minmax(130px, 1.4fr)
+        minmax(130px, 1.4fr)
+        minmax(110px, 1fr)
+        minmax(110px, 1fr)
+        minmax(120px, 0.9fr)
+        minmax(120px, 0.9fr)
+        minmax(190px, 1.6fr);
+}
     align-items: center;
     padding: 8px 12px;
     border-radius: 9999px;

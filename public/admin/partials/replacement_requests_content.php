@@ -11,7 +11,7 @@
 <div class="dashboard-grid">
     <div class="stat-card">
         <div class="stat-title">Pending Requests</div>
-        <div class="stat-number">12</div>
+        <div class="stat-number">2</div>
         <div class="stat-caption">Requests waiting for review</div>
     </div>
     <div class="stat-card">
@@ -20,13 +20,13 @@
         <div class="stat-caption">Approved by admins today</div>
     </div>
     <div class="stat-card">
-        <div class="stat-title">Emergency Requests</div>
+        <div class="stat-title">Not Approved</div>
         <div class="stat-number">3</div>
-        <div class="stat-caption">High priority cases</div>
+        <div class="stat-caption">Rejected re</div>
     </div>
     <div class="stat-card">
         <div class="stat-title">Completed This Week</div>
-        <div class="stat-number">41</div>
+        <div class="stat-number">11</div>
         <div class="stat-caption">Resolved replacement requests</div>
     </div>
 </div>
@@ -50,14 +50,6 @@
                 </select>
             </div>
             <div class="filter-group">
-                <span>Priority</span>
-                <select name="priority">
-                    <option>All</option>
-                    <option>Emergency</option>
-                    <option>Normal</option>
-                </select>
-            </div>
-            <div class="filter-group">
                 <span>Request Date</span>
                 <input type="date" name="request_date" style="padding:12px 14px;border-radius:16px;border:1px solid #cbd5e1;background:#fff;">
             </div>
@@ -70,24 +62,22 @@
 </div>
 
 <div class="panel-card wide-card" style="margin-top:18px;">
-    <div class="table-header" style="grid-template-columns: 1fr 1fr 1fr 1fr 2fr 0.9fr 0.9fr 1fr;">
-        <span>Request ID</span>
-        <span>Booking</span>
-        <span>Customer</span>
-        <span>Current Driver</span>
-        <span>Reason</span>
-        <span>Priority</span>
-        <span>Status</span>
-        <span>Action</span>
-    </div>
+    <div class="table-header" style="grid-template-columns: 1fr 1fr 1fr 1fr 2fr 1fr 1fr;">
+    <span>Request ID</span>
+    <span>Booking</span>
+    <span>Customer</span>
+    <span>Current Driver</span>
+    <span>Reason</span>
+    <span>Status</span>
+    <span>Action</span>
+</div>
 
-    <div class="table-row" style="grid-template-columns: 1fr 1fr 1fr 1fr 2fr 0.9fr 0.9fr 1fr;">
+    <div class="table-row" style="grid-template-columns: 1fr 1fr 1fr 1fr 2fr 1fr 1fr;">
         <span>RR-1001</span>
         <span>BK-2045</span>
         <span>Kasun Silva</span>
         <span>Nimal Perera</span>
         <span>Driver arrived late</span>
-        <span><span class="priority-pill priority-emergency">Emergency</span></span>
         <span><span class="status-pill status-warning">Pending</span></span>
         <span class="row-actions">
             <button class="btn btn-primary">Approve</button>
@@ -95,13 +85,12 @@
         </span>
     </div>
 
-    <div class="table-row" style="grid-template-columns: 1fr 1fr 1fr 1fr 2fr 0.9fr 0.9fr 1fr;">
+    <div class="table-row" style="grid-template-columns: 1fr 1fr 1fr 1fr 2fr 1fr 1fr;">
         <span>RR-1002</span>
         <span>BK-1988</span>
         <span>Amal Fernando</span>
         <span>Ruwan Bandara</span>
         <span>Driver unavailable</span>
-        <span><span class="priority-pill priority-normal">Normal</span></span>
         <span><span class="status-pill status-warning">Pending</span></span>
         <span class="row-actions">
             <button class="btn btn-primary">Approve</button>
@@ -109,13 +98,12 @@
         </span>
     </div>
 
-    <div class="table-row" style="grid-template-columns: 1fr 1fr 1fr 1fr 2fr 0.9fr 0.9fr 1fr;">
+    <div class="table-row" style="grid-template-columns: 1fr 1fr 1fr 1fr 2fr 1fr 1fr;">
         <span>RR-1003</span>
         <span>BK-1877</span>
         <span>Tharindu Perera</span>
         <span>Dilan Silva</span>
         <span>Safety concern</span>
-        <span><span class="priority-pill priority-emergency">Emergency</span></span>
         <span><span class="status-pill status-success">Approved</span></span>
         <span>
             <button class="btn btn-secondary view-request"
@@ -140,13 +128,12 @@
         </span>
     </div>
 
-    <div class="table-row" style="grid-template-columns: 1fr 1fr 1fr 1fr 2fr 0.9fr 0.9fr 1fr;">
+    <div class="table-row" style="grid-template-columns: 1fr 1fr 1fr 1fr 2fr 1fr 1fr;">
         <span>RR-1004</span>
         <span>BK-1766</span>
         <span>Sahan Jayasuriya</span>
         <span>Lakshan Perera</span>
         <span>Vehicle breakdown</span>
-        <span><span class="priority-pill priority-normal">Normal</span></span>
         <span><span class="status-pill status-completed">Completed</span></span>
         <span>
             <button class="btn btn-secondary view-request"
