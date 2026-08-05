@@ -73,17 +73,18 @@
 <section class="panel-card wide-card" style="margin-top: 24px;">
     <div class="table-header owners-table">
         <span>Owner</span>
-        <span>Contact</span>
-        <span>Vehicle</span>
-        <span>District</span>
-        <span>Status</span>
-        <span>Registered Date</span>
-        <span>Actions</span>
+<span>Vehicle</span>
+<span>District</span>
+<span>Status</span>
+<span>Registered Date</span>
+<span>Actions</span>
     </div>
 
     <div class="table-row owners-table">
-        <span><strong>Kasun Perera</strong></span>
-        <span>077 123 4567</span>
+     <span class="owner-info">
+    <strong>Kasun Perera</strong>
+    <small>| 077 123 4567</small>
+</span>
         <span>Toyota Prius</span>
         <span>Colombo</span>
         <span><span class="status-pill status-warning">Pending Verification</span></span>
@@ -97,8 +98,10 @@
     </div>
 
     <div class="table-row owners-table">
-        <span><strong>Chaminda Fernando</strong></span>
-        <span>071 987 6543</span>
+        <span class="owner-info">
+    <strong>Sadun Jayalal</strong>
+    <small>| 076 788 6242</small>
+</span>
         <span>Honda Vezel</span>
         <span>Kandy</span>
         <span><span class="status-pill status-success">Approved</span></span>
@@ -111,20 +114,24 @@
     </div>
 
     <div class="table-row owners-table">
-        <span><strong>Dilani Silva</strong></span>
-        <span>075 444 4444</span>
+        <span class="owner-info">
+    <strong>Dilini Wathsala</strong>
+    <small>| 075 786 7821</small>
+</span>
         <span>Toyota KDH</span>
         <span>Gampaha</span>
         <span><span class="status-pill status-rejected">Rejected</span></span>
-        <span>22 Jul 2026</span>
+        <span>| 22 Jul 2026</span>
         <span class="row-actions">
             <button class="btn btn-outline">View Details</button>
         </span>
     </div>
 
     <div class="table-row owners-table">
-        <span><strong>Anjali Senanayake</strong></span>
-        <span>070 234 5567</span>
+        <span class="owner-info">
+    <strong>Anjalee Kishor</strong>
+    <small>| 077 367 9001</small>
+</span>
         <span>Suzuki Alto</span>
         <span>Matara</span>
         <span><span class="status-pill status-success">Approved</span></span>
@@ -134,75 +141,9 @@
             <button class="btn btn-outline">View Documents</button>
             <button class="btn btn-outline">Suspend</button>
         </span>
+  
     </div>
 
-    <div class="table-row owners-table">
-        <span><strong>Nimal Fernando</strong></span>
-        <span>076 345 7890</span>
-        <span>Nissan X-Trail</span>
-        <span>Kurunegala</span>
-        <span><span class="status-pill status-suspended">Suspended</span></span>
-        <span>08 Jul 2026</span>
-        <span class="row-actions">
-            <button class="btn btn-outline">View Details</button>
-            <button class="btn btn-primary">Reactivate</button>
-        </span>
-    </div>
-
-    <div class="table-row owners-table">
-        <span><strong>Priyanka Jayawardena</strong></span>
-        <span>072 556 1234</span>
-        <span>Toyota Axio</span>
-        <span>Galle</span>
-        <span><span class="status-pill status-warning">Pending Verification</span></span>
-        <span>04 Jul 2026</span>
-        <span class="row-actions">
-            <button class="btn btn-outline">View Details</button>
-            <button class="btn btn-outline">View Documents</button>
-            <button class="btn btn-primary">Approve</button>
-            <button class="btn btn-outline">Reject</button>
-        </span>
-    </div>
-
-    <div class="table-row owners-table">
-        <span><strong>Ruwan Senarath</strong></span>
-        <span>070 987 2233</span>
-        <span>Perodua Bezza</span>
-        <span>Colombo</span>
-        <span><span class="status-pill status-success">Approved</span></span>
-        <span>29 Jun 2026</span>
-        <span class="row-actions">
-            <button class="btn btn-outline">View Details</button>
-            <button class="btn btn-outline">View Documents</button>
-            <button class="btn btn-outline">Suspend</button>
-        </span>
-    </div>
-
-    <div class="table-row owners-table">
-        <span><strong>Sachira Perera</strong></span>
-        <span>071 444 1122</span>
-        <span>MG ZS EV</span>
-        <span>Colombo</span>
-        <span><span class="status-pill status-warning">Pending Verification</span></span>
-        <span>15 Jun 2026</span>
-        <span class="row-actions">
-            <button class="btn btn-outline">View Details</button>
-            <button class="btn btn-outline">View Documents</button>
-            <button class="btn btn-primary">Approve</button>
-            <button class="btn btn-outline">Reject</button>
-        </span>
-    </div>
-</section>
-
-<section class="panel-card empty-bookings-card" style="display:none; margin-top: 24px;">
-    <div class="empty-state">
-        <div class="empty-state-icon">🚗</div>
-        <div>
-            <h2>No vehicle owners found.</h2>
-            <p>Adjust filters or refresh the page to load the latest owner registrations.</p>
-            <button class="btn btn-primary" type="button">Refresh</button>
-        </div>
-    </div>
 </section>
 
 <div class="modal-backdrop hidden" id="ownerDetailsModal">

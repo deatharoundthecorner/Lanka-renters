@@ -779,21 +779,36 @@ button#verifyPayment:focus { outline: none; }
     min-width: 1200px;
 }
 
-.owners-table .table-header,
-.owners-table .table-row {
+.owners-table {
     display: grid;
     grid-template-columns:
-        minmax(160px, 1.4fr)
+        minmax(220px, 1.8fr)
+        minmax(160px, 1.3fr)
         minmax(120px, 1fr)
-        minmax(130px, 1.2fr)
-        minmax(110px, 1fr)
-        minmax(120px, 1fr)
-        minmax(140px, 1.2fr)
-        minmax(250px, 1.8fr);
+        minmax(140px, 1fr)
+        minmax(150px, 1.2fr)
+        minmax(260px, 2fr);
+
     align-items: center;
     gap: 16px;
     padding: 16px 20px;
-    min-width: 1200px;
+    min-width: 1180px;
+}
+.owner-info{
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+}
+
+.owner-info strong{
+    font-size:0.95rem;
+    color:#0f172a;
+}
+
+.owner-info small{
+    color:#64748b;
+    font-size:0.8rem;
+    font-weight:500;
 }
 
 .priority-emergency {
