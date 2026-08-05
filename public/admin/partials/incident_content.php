@@ -10,23 +10,47 @@
 
 <section class="card filters-card">
     <div class="filters-card-header">
+        <div class="filter-icon" aria-hidden="true">
+            <!-- funnel icon -->
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M3 5h18" stroke="#1d4ed8" stroke-width="2" stroke-linecap="round"/>
+                <path d="M6 12h12" stroke="#1d4ed8" stroke-width="2" stroke-linecap="round"/>
+                <path d="M10 19h4" stroke="#1d4ed8" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+        </div>
         <div>
             <p class="section-label">Filters</p>
             <p class="section-description">Refine incident results by district, vehicle type, or claim status.</p>
         </div>
     </div>
 
-    <div class="filters-grid">
+    <div class="filter-grid">
         <label class="filter-group">
             <span>District</span>
             <select id="incidentDistrict">
-                <option value="">All districts</option>
+                <option value="">All Districts</option>
+                <option>Colombo</option>
+                <option>Gampaha</option>
+                <option>Kalutara</option>
+                <option>Kandy</option>
+                <option>Galle</option>
+                <option>Matara</option>
+                <option>Kurunegala</option>
+                <option>Negombo</option>
+                <option>Jaffna</option>
             </select>
         </label>
         <label class="filter-group">
-            <span>Vehicle type</span>
+            <span>Vehicle Type</span>
             <select id="incidentVehicleType">
-                <option value="">All vehicle types</option>
+                <option value="">All Vehicle Types</option>
+                <option>Car</option>
+                <option>Van</option>
+                <option>SUV</option>
+                <option>Luxury Car</option>
+                <option>Hatchback</option>
+                <option>Pickup</option>
+                <option>Mini Bus</option>
             </select>
         </label>
         <label class="filter-group">

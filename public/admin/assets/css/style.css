@@ -308,10 +308,34 @@ input[type="reset"] {
     background: #f8fafc;
     color: #0f172a;
     appearance: none;
+    height: 48px;
+}
+
+.filters-card {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 28px;
+    padding: 24px;
+}
+.filters-card-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+.filter-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: #e0e7ff;
+    display: grid;
+    place-items: center;
+    color: #1d4ed8;
+    font-weight: 700;
 }
 .incident-list {
     display: grid;
-    gap: 18px;
+    gap: 24px;
     margin-bottom: 24px;
 }
 .incident-card {
@@ -326,7 +350,7 @@ input[type="reset"] {
 }
 .incident-main {
     display: grid;
-    gap: 16px;
+    gap: 12px;
 }
 .incident-header {
     display: flex;
@@ -353,7 +377,7 @@ input[type="reset"] {
 .incident-actions {
     display: flex;
     flex-wrap: wrap;
-    gap: 12px;
+    gap: 16px;
     justify-content: flex-end;
 }
 .btn-outline {
@@ -372,6 +396,7 @@ input[type="reset"] {
     color: #92400e;
     border-radius: 20px;
     padding: 18px 22px;
+    margin: 24px 0;
 }
 .modal-backdrop {
     position: fixed;
@@ -474,7 +499,16 @@ input[type="reset"] {
     padding: 10px 16px;
     border-radius: 9999px !important;
 }
-.incident-actions { display:flex; flex-direction:column; gap:12px; }
+.incident-actions { display:flex; flex-direction:column; gap:16px; }
+
+.type-badge {
+    padding: 6px 10px;
+    border-radius: 12px;
+    background: #eef2ff;
+    color: #1d4ed8;
+    font-weight: 700;
+    font-size: 0.9rem;
+}
 
 .receipt-box {
     margin-top:10px;
@@ -599,7 +633,7 @@ button#verifyPayment:focus { outline: none; }
 }
 .row-actions {
     display: flex;
-    gap: 10px;
+    gap: 16px;
     flex-wrap: wrap;
 }
 .btn {
