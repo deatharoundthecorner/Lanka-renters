@@ -1,7 +1,6 @@
 <?php
 require_once dirname(dirname(__DIR__)) . '/app/helpers/AuthHelper.php';
-require_once dirname(dirname(__DIR__)) . '/app/models/Driver.php';
-require_once dirname(dirname(__DIR__)) . '/app/models/DriverPerformance.php';
+require_once dirname(dirname(__DIR__)) . '/app/controllers/DriverController.php';
 
 AuthHelper::startSession();
 
@@ -18,15 +17,16 @@ if (($user['role'] ?? '') !== 'driver') {
     exit();
 }
 
-$driverModel = new Driver();
-$driver = $driverModel->findByUserId($user['id']);
-if (!$driver) {
-    die("Driver profile record not found.");
+$driverController = new DriverController();
+
+// Fetch performance stats
+$performanceResult = $driverController->viewPerformance();
+if (!$performanceResult['success']) {
+    die("Error retrieving performance data: " . htmlspecialchars($performanceResult['error']));
 }
 
-$performanceModel = new DriverPerformance();
-$stats = $performanceModel->getStatistics($driver['id']);
-$reviews = $performanceModel->getRatingSummary($driver['id']);
+$stats = $performanceResult['stats'];
+$reviews = $performanceResult['reviews'];
 
 // Page config
 $pageTitle = "Performance Stats - Lanka Renters";

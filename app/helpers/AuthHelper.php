@@ -160,4 +160,31 @@ class AuthHelper {
         header("Location: " . $targetUrl);
         exit();
     }
+
+    /**
+     * Retrieves the active CSRF token or generates a new one.
+     * 
+     * @return string CSRF token
+     */
+    public static function getCsrfToken() {
+        self::startSession();
+        if (empty($_SESSION['csrf_token'])) {
+            $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+        }
+        return $_SESSION['csrf_token'];
+    }
+
+    /**
+     * Validates if a submitted CSRF token matches the session token.
+     * 
+     * @param string $token Token from form POST
+     * @return bool True if valid, false otherwise
+     */
+    public static function validateCsrfToken($token) {
+        self::startSession();
+        if (!isset($_SESSION['csrf_token']) || empty($token)) {
+            return false;
+        }
+        return hash_equals($_SESSION['csrf_token'], $token);
+    }
 }
