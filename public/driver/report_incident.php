@@ -1,7 +1,6 @@
 <?php
 require_once dirname(dirname(__DIR__)) . '/app/helpers/AuthHelper.php';
-require_once dirname(dirname(__DIR__)) . '/app/models/Driver.php';
-require_once dirname(dirname(__DIR__)) . '/app/models/DriverIncident.php';
+require_once dirname(dirname(__DIR__)) . '/app/controllers/DriverController.php';
 
 AuthHelper::startSession();
 
@@ -18,72 +17,37 @@ if (($user['role'] ?? '') !== 'driver') {
     exit();
 }
 
-$driverModel = new Driver();
-$driver = $driverModel->findByUserId($user['id']);
-if (!$driver) {
-    die("Driver profile record not found.");
-}
+$driverController = new DriverController();
 
-$incidentModel = new DriverIncident();
+// Resolve secure driver profile context
+$dashboardResult = $driverController->dashboard();
+if (!$dashboardResult['success']) {
+    die("Driver profile record not found: " . htmlspecialchars($dashboardResult['error']));
+}
+$driver = $dashboardResult['profile'];
+
 $error = '';
 $success = '';
 
 // Handle incident submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'report_incident') {
-    $bookingId = (int)($_POST['booking_id'] ?? 0);
-    $description = trim($_POST['description'] ?? '');
-    $severity = $_POST['severity'] ?? 'minor';
-    $incidentDate = $_POST['incident_date'] ?? '';
-
-    // Security validation
-    if (!$incidentModel->isBookingAssignedToDriver($bookingId, $driver['id'])) {
-        $error = "Unauthorized. You can only report incidents for bookings assigned to you.";
-    } elseif (empty($description) || empty($incidentDate)) {
-        $error = "Description and Incident Date are required fields.";
+    // Validate CSRF token
+    if (!AuthHelper::validateCsrfToken($_POST['csrf_token'] ?? '')) {
+        $error = "CSRF security verification failed.";
     } else {
-        // Create incident
-        $incidentId = $incidentModel->create([
-            'booking_id'    => $bookingId,
-            'reported_by'   => $user['id'], // FK to users.id
-            'description'   => $description,
-            'incident_date' => $incidentDate,
-            'severity'      => $severity
-        ]);
-
-        if ($incidentId) {
-            $success = "Incident successfully reported. ID: #" . $incidentId;
-            
-            // Photo Upload
-            if (isset($_FILES['incident_photo']) && $_FILES['incident_photo']['error'] === UPLOAD_ERR_OK) {
-                $fileTmpPath = $_FILES['incident_photo']['tmp_name'];
-                $fileName = $_FILES['incident_photo']['name'];
-                $fileExtension = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
-                
-                $allowedExtensions = ['jpg', 'jpeg', 'png', 'pdf'];
-                if (in_array($fileExtension, $allowedExtensions)) {
-                    $uploadBaseDir = dirname(dirname(__DIR__)) . '/public/uploads/incidents/';
-                    if (!is_dir($uploadBaseDir)) {
-                        mkdir($uploadBaseDir, 0755, true);
-                    }
-                    
-                    $newFileName = 'incident_' . $incidentId . '_' . time() . '.' . $fileExtension;
-                    $destPath = $uploadBaseDir . $newFileName;
-                    
-                    $dbFilePath = 'uploads/incidents/' . $newFileName;
-                    
-                    if (move_uploaded_file($fileTmpPath, $destPath)) {
-                        $incidentModel->addPhoto($incidentId, $dbFilePath);
-                    }
-                }
-            }
+        $incidentPhoto = $_FILES['incident_photo'] ?? null;
+        $reportResult = $driverController->reportIncident($_POST, $incidentPhoto);
+        if ($reportResult['success']) {
+            $success = $reportResult['message'];
         } else {
-            $error = "Failed to submit incident report.";
+            $error = $reportResult['error'];
         }
     }
 }
 
-// Fetch bookings assigned to driver to populate select options
-$assignedBookings = $driverModel->getBookings($driver['id']);
+// Fetch bookings assigned to driver to populate select options via viewTrips
+$tripsResult = $driverController->viewTrips();
+$assignedBookings = $tripsResult['success'] ? array_merge($tripsResult['active_trips'], $tripsResult['completed_trips']) : [];
 
 // Page config
 $pageTitle = "Report Incident - Lanka Renters";
@@ -117,6 +81,7 @@ include 'includes/navbar.php';
     <div class="card" style="max-width: 600px;">
         <h2 class="card-title">New Incident Report</h2>
         <form action="" method="POST" enctype="multipart/form-data">
+            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(AuthHelper::getCsrfToken()); ?>">
             <input type="hidden" name="action" value="report_incident">
 
             <div class="form-group">

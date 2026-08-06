@@ -24,12 +24,17 @@ $success = '';
 
 // Handle availability update submissions
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'update_availability') {
-    $status = $_POST['availability_status'] ?? '';
-    $result = $driverController->updateAvailability($status);
-    if ($result['success']) {
-        $success = $result['message'];
+    // Validate CSRF token
+    if (!AuthHelper::validateCsrfToken($_POST['csrf_token'] ?? '')) {
+        $error = "CSRF security verification failed.";
     } else {
-        $error = $result['error'];
+        $status = $_POST['availability_status'] ?? '';
+        $result = $driverController->updateAvailability($status);
+        if ($result['success']) {
+            $success = $result['message'];
+        } else {
+            $error = $result['error'];
+        }
     }
 }
 
@@ -86,6 +91,7 @@ include 'includes/navbar.php';
             </div>
 
             <form action="" method="POST">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(AuthHelper::getCsrfToken()); ?>">
                 <input type="hidden" name="action" value="update_availability">
                 
                 <div class="form-group">

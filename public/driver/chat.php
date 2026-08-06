@@ -1,6 +1,6 @@
 <?php
-require_once dirname(dirname(__DIR__)) . '/app/helpers/AuthHelper.php';
 require_once dirname(dirname(__DIR__)) . '/app/controllers/ChatController.php';
+require_once dirname(dirname(__DIR__)) . '/app/helpers/AuthHelper.php';
 
 AuthHelper::startSession();
 
@@ -18,52 +18,40 @@ if (($user['role'] ?? '') !== 'driver') {
 }
 
 $chatController = new ChatController();
-$error = '';
-$success = '';
 $roomId = (int)($_GET['room_id'] ?? 0);
 
-if (!$roomId) {
-    die("Error: Room ID parameter is required.");
-}
+$error = '';
+$success = '';
 
-// Handle sending message
+// Send message processing
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'send_message') {
-    $msgText = $_POST['message_text'] ?? '';
-    $sendResult = $chatController->sendChatMessage($roomId, $msgText);
-    if ($sendResult['success']) {
-        // Refresh page to avoid form resubmission
-        header("Location: chat.php?room_id=" . $roomId);
-        exit();
+    // Validate CSRF token
+    if (!AuthHelper::validateCsrfToken($_POST['csrf_token'] ?? '')) {
+        $error = "CSRF security verification failed.";
     } else {
-        $error = $sendResult['error'];
+        $messageText = $_POST['message_text'] ?? '';
+        $res = $chatController->sendChatMessage($roomId, $messageText);
+        if ($res['success']) {
+            header("Location: chat.php?room_id=" . $roomId);
+            exit();
+        } else {
+            $error = $res['error'];
+        }
     }
 }
 
-// Fetch messages & verify participation security
-$messagesResult = $chatController->getRoomMessages($roomId);
-if (!$messagesResult['success']) {
-    die("Access Denied: " . htmlspecialchars($messagesResult['error']));
+// Fetch messages
+$msgResult = $chatController->getRoomMessages($roomId);
+if (!$msgResult['success']) {
+    die("Error loading chat: " . htmlspecialchars($msgResult['error']));
 }
+$messages = $msgResult['messages'];
 
-$messages = $messagesResult['messages'];
+// Fetch other participant through controller
+$partResult = $chatController->getOtherParticipant($roomId);
+$otherParticipant = $partResult['success'] ? $partResult['participant'] : null;
 
-// Fetch other participant info to show in chat header
-$otherParticipant = 'Participant';
-$db = Database::getInstance()->getConnection();
-$sqlParticipants = "SELECT u.name, u.role FROM chat_participants cp 
-                    JOIN users u ON cp.user_id = u.id 
-                    WHERE cp.room_id = :room_id AND cp.user_id != :user_id LIMIT 1";
-$stmt = $db->prepare($sqlParticipants);
-$stmt->execute([
-    'room_id' => $roomId,
-    'user_id' => $user['id']
-]);
-$other = $stmt->fetch(PDO::FETCH_ASSOC);
-if ($other) {
-    $otherParticipant = htmlspecialchars($other['name']) . ' (' . ucfirst($other['role']) . ')';
-}
-
-// Page config
+$roomTitle = $otherParticipant ? htmlspecialchars($otherParticipant['name']) . ' (' . ucfirst($otherParticipant['role']) . ')' : 'Chat Room #' . $roomId;
 $pageTitle = "Chat - Lanka Renters";
 $activePage = "messages";
 
@@ -74,7 +62,7 @@ include 'includes/navbar.php';
 <main class="main-content">
     <div class="welcome-container">
         <div>
-            <h2 class="welcome-title">Chat with <?php echo $otherParticipant; ?></h2>
+            <h2 class="welcome-title">Chat with <?php echo $roomTitle; ?></h2>
             <p class="welcome-subtitle">Direct conversation for booking room #<?php echo $roomId; ?>.</p>
         </div>
     </div>
@@ -107,7 +95,8 @@ include 'includes/navbar.php';
         </div>
 
         <!-- Form for sending message -->
-        <form action="" method="POST" style="border-top: 1px solid var(--border); padding: 15px; background-color: #ffffff; display: flex; gap: 15px; align-items: center; margin: 0;">
+        <form action="" method="POST" style="display: flex; gap: 10px; margin: 0; padding: 15px; background: #fff; border-top: 1px solid var(--border);">
+            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(AuthHelper::getCsrfToken()); ?>">
             <input type="hidden" name="action" value="send_message">
             <div class="form-group" style="flex: 1; margin-bottom: 0;">
                 <label for="message_text" class="form-label" style="display:none;">Message</label>

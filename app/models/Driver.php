@@ -199,14 +199,18 @@ class Driver {
      * @param float|null $longitude GPS longitude
      * @return bool True on success, false on failure
      */
-    public function addPickupTracking($bookingId, $userId, $status, $latitude = null, $longitude = null) {
+    public function addPickupTracking($bookingId, $userId, $status, $driverNote = null) {
+        $startedTransaction = false;
         try {
-            $this->db->beginTransaction();
+            if (!$this->db->inTransaction()) {
+                $this->db->beginTransaction();
+                $startedTransaction = true;
+            }
 
             // 1. Verify the booking is assigned to this driver (checking by user_id linked to driver)
             $sqlCheck = "SELECT b.id FROM `bookings` b 
-                         JOIN `drivers` d ON b.driver_id = d.id 
-                         WHERE b.id = :booking_id AND d.user_id = :user_id";
+                          JOIN `drivers` d ON b.driver_id = d.id 
+                          WHERE b.id = :booking_id AND d.user_id = :user_id";
             $stmtCheck = $this->db->prepare($sqlCheck);
             $stmtCheck->execute([
                 'booking_id' => $bookingId,
@@ -216,8 +220,12 @@ class Driver {
                 throw new Exception("Unauthorized: This booking is not assigned to you.");
             }
 
-            // 2. Update the booking's current pickup status
-            $sqlBooking = "UPDATE `bookings` SET `pickup_status` = :status WHERE `id` = :booking_id";
+            // 2. Update the booking's current pickup status (and mark completed if dropped off)
+            if ($status === 'dropped_off') {
+                $sqlBooking = "UPDATE `bookings` SET `pickup_status` = :status, `status` = 'completed' WHERE `id` = :booking_id";
+            } else {
+                $sqlBooking = "UPDATE `bookings` SET `pickup_status` = :status WHERE `id` = :booking_id";
+            }
             $stmtBooking = $this->db->prepare($sqlBooking);
             $stmtBooking->execute([
                 'status'     => $status,
@@ -225,21 +233,22 @@ class Driver {
             ]);
 
             // 2. Insert record into pickup_tracking history
-            $sqlTracking = "INSERT INTO `pickup_tracking` (`booking_id`, `status`, `updated_by`, `latitude`, `longitude`) 
-                            VALUES (:booking_id, :status, :updated_by, :latitude, :longitude)";
+            $sqlTracking = "INSERT INTO `pickup_tracking` (`booking_id`, `status`, `updated_by`, `driver_note`) 
+                            VALUES (:booking_id, :status, :updated_by, :driver_note)";
             $stmtTracking = $this->db->prepare($sqlTracking);
             $stmtTracking->execute([
-                'booking_id' => $bookingId,
-                'status'     => $status,
-                'updated_by' => $userId,
-                'latitude'   => $latitude,
-                'longitude'  => $longitude
+                'booking_id'  => $bookingId,
+                'status'      => $status,
+                'updated_by'  => $userId,
+                'driver_note' => $driverNote
             ]);
 
-            $this->db->commit();
+            if ($startedTransaction) {
+                $this->db->commit();
+            }
             return true;
         } catch (Exception $e) {
-            if ($this->db->inTransaction()) {
+            if ($startedTransaction && $this->db->inTransaction()) {
                 $this->db->rollBack();
             }
             throw $e;
@@ -264,5 +273,113 @@ class Driver {
         $stmt = $this->db->prepare($sql);
         $stmt->execute(['driver_id' => $driverId]);
         return $stmt->fetchAll();
+    }
+
+    /**
+     * Retrieves all available, verified drivers.
+     * 
+     * @return array List of available verified drivers
+     */
+    public function getAvailableVerifiedDrivers() {
+        $sql = "SELECT d.id, u.name, d.rating_avg as rating, d.availability_status,
+                       (SELECT COUNT(*) FROM `bookings` b WHERE b.driver_id = d.id AND b.status = 'completed') as completed_trips
+                FROM `drivers` d
+                JOIN `users` u ON d.user_id = u.id
+                WHERE u.status = 'active'
+                  AND d.availability_status = 'available'
+                  AND (
+                    SELECT 
+                      CASE 
+                        WHEN COUNT(dd.id) = 0 THEN 'pending'
+                        WHEN SUM(CASE WHEN dd.verification_status = 'rejected' THEN 1 ELSE 0 END) > 0 THEN 'rejected'
+                        WHEN COUNT(DISTINCT dd.document_type) < 3 THEN 'pending'
+                        WHEN SUM(CASE WHEN dd.verification_status = 'pending' THEN 1 ELSE 0 END) > 0 THEN 'pending'
+                        ELSE 'approved'
+                      END
+                    FROM `driver_documents` dd
+                    WHERE dd.driver_id = d.id
+                  ) = 'approved'";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Checks if a driver has a conflicting booking.
+     * Overlap formula: (start1 < end2) AND (end1 > start2)
+     */
+    public function hasBookingConflict($driverId, $startDate, $endDate) {
+        $sql = "SELECT COUNT(*) FROM `bookings` 
+                WHERE `driver_id` = :driver_id 
+                  AND `status` NOT IN ('cancelled', 'completed')
+                  AND :start_date < `end_date` 
+                  AND :end_date > `start_date`";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([
+            'driver_id'  => $driverId,
+            'start_date' => $startDate,
+            'end_date'   => $endDate
+        ]);
+        return (int)$stmt->fetchColumn() > 0;
+    }
+
+    /**
+     * Updates driver profile details.
+     * Updates phone in 'users' table, and address/emergency_contact in 'drivers' table.
+     * Operates within a transaction for database consistency.
+     * 
+     * @param int $driverId The driver primary key ID
+     * @param int $userId The linked user record ID
+     * @param array $data Contains phone, address, emergency_contact
+     * @return bool True on success, false on failure
+     */
+    public function updateProfile($driverId, $userId, $data) {
+        $startedTransaction = false;
+        try {
+            if (!$this->db->inTransaction()) {
+                $this->db->beginTransaction();
+                $startedTransaction = true;
+            }
+
+            // 1. Update phone in users table
+            $sqlUser = "UPDATE `users` SET `phone` = :phone WHERE `id` = :user_id";
+            $stmtUser = $this->db->prepare($sqlUser);
+            $stmtUser->execute([
+                'phone'   => $data['phone'],
+                'user_id' => $userId
+            ]);
+
+            // 2. Update address and emergency_contact in drivers table
+            $sqlDriver = "UPDATE `drivers` SET `address` = :address, `emergency_contact` = :emergency_contact WHERE `id` = :driver_id";
+            $stmtDriver = $this->db->prepare($sqlDriver);
+            $stmtDriver->execute([
+                'address'           => $data['address'] ?? null,
+                'emergency_contact' => $data['emergency_contact'] ?? null,
+                'driver_id'         => $driverId
+            ]);
+
+            if ($startedTransaction) {
+                $this->db->commit();
+            }
+            return true;
+        } catch (Exception $e) {
+            if ($startedTransaction && $this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+            throw $e;
+        }
+    }
+
+    /**
+     * Soft deletes/deactivates the driver user profile.
+     * Sets user status to 'inactive' in 'users' table.
+     * 
+     * @param int $userId The user's primary key ID
+     * @return bool True on success, false on failure
+     */
+    public function deactivate($userId) {
+        $sql = "UPDATE `users` SET `status` = 'inactive' WHERE `id` = :user_id";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute(['user_id' => $userId]);
     }
 }

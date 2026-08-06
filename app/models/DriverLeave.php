@@ -126,4 +126,52 @@ class DriverLeave {
         $result = $stmt->fetch();
         return ($result['leave_count'] ?? 0) > 0;
     }
+
+    /**
+     * Returns a leave request by its primary key ID.
+     * 
+     * @param int $id The leave ID
+     * @return array|false The leave record or false
+     */
+    public function getById($id) {
+        $sql = "SELECT * FROM `driver_leaves` WHERE `id` = :id LIMIT 1";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute(['id' => $id]);
+        return $stmt->fetch();
+    }
+
+    /**
+     * Updates an existing leave request.
+     * Sets verification status back to 'pending'.
+     * 
+     * @param int $id The leave primary key ID
+     * @param array $data Contains start_date, end_date, reason
+     * @return bool True on success, false on failure
+     */
+    public function update($id, $data) {
+        $sql = "UPDATE `driver_leaves` 
+                SET `start_date` = :start_date, `end_date` = :end_date, `reason` = :reason, `status` = 'pending'
+                WHERE `id` = :id AND `status` = 'pending'";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([
+            'start_date' => $data['start_date'],
+            'end_date'   => $data['end_date'],
+            'reason'     => $data['reason'] ?? null,
+            'id'         => $id
+        ]);
+    }
+
+    /**
+     * Deletes/cancels a leave request.
+     * Security Constraint: Only permits deleting requests that are still in a 'pending' state.
+     * 
+     * @param int $id The leave primary key ID
+     * @return bool True if a pending record was deleted, false otherwise
+     */
+    public function delete($id) {
+        $sql = "DELETE FROM `driver_leaves` WHERE `id` = :id AND `status` = 'pending'";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute(['id' => $id]);
+        return $stmt->rowCount() > 0;
+    }
 }

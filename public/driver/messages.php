@@ -23,13 +23,18 @@ $success = '';
 
 // Handle creating room for a booking
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'start_chat') {
-    $bookingId = (int)($_POST['booking_id'] ?? 0);
-    $result = $chatController->createBookingRoom($bookingId);
-    if ($result['success']) {
-        header("Location: chat.php?room_id=" . $result['room_id']);
-        exit();
+    // Validate CSRF token
+    if (!AuthHelper::validateCsrfToken($_POST['csrf_token'] ?? '')) {
+        $error = "CSRF security verification failed.";
     } else {
-        $error = $result['error'];
+        $bookingId = (int)($_POST['booking_id'] ?? 0);
+        $result = $chatController->createBookingRoom($bookingId);
+        if ($result['success']) {
+            header("Location: chat.php?room_id=" . $result['room_id']);
+            exit();
+        } else {
+            $error = $result['error'];
+        }
     }
 }
 
@@ -37,10 +42,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 $roomsResult = $chatController->getDriverRooms();
 $rooms = $roomsResult['success'] ? $roomsResult['rooms'] : [];
 
-// Fetch assigned bookings
-$driverModel = new Driver();
-$driver = $driverModel->findByUserId($user['id']);
-$assignedBookings = $driver ? $driverModel->getBookings($driver['id']) : [];
+// Fetch assigned bookings via controller
+require_once dirname(dirname(__DIR__)) . '/app/controllers/DriverController.php';
+$driverController = new DriverController();
+$tripsResult = $driverController->viewTrips();
+$assignedBookings = $tripsResult['success'] ? array_merge($tripsResult['active_trips'], $tripsResult['completed_trips']) : [];
 
 // Page config
 $pageTitle = "Conversations - Lanka Renters";
@@ -108,6 +114,7 @@ include 'includes/navbar.php';
                 <p style="font-style: italic; color: var(--text-muted); font-size: 13px;">No assigned bookings found to initiate conversations.</p>
             <?php else: ?>
                 <form action="" method="POST">
+                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(AuthHelper::getCsrfToken()); ?>">
                     <input type="hidden" name="action" value="start_chat">
                     
                     <div class="form-group">

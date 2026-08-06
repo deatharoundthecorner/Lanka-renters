@@ -1,7 +1,6 @@
 <?php
 require_once dirname(dirname(__DIR__)) . '/app/helpers/AuthHelper.php';
-require_once dirname(dirname(__DIR__)) . '/app/models/Driver.php';
-require_once dirname(dirname(__DIR__)) . '/app/models/DriverPayment.php';
+require_once dirname(dirname(__DIR__)) . '/app/controllers/DriverController.php';
 
 AuthHelper::startSession();
 
@@ -18,16 +17,21 @@ if (($user['role'] ?? '') !== 'driver') {
     exit();
 }
 
-$driverModel = new Driver();
-$driver = $driverModel->findByUserId($user['id']);
-if (!$driver) {
-    die("Driver profile record not found.");
+$driverController = new DriverController();
+
+// Fetch earnings history and split
+$earningsResult = $driverController->viewEarningsDetail();
+if (!$earningsResult['success']) {
+    die("Error retrieving earnings details: " . htmlspecialchars($earningsResult['error']));
 }
 
-$paymentModel = new DriverPayment();
-$summary = $paymentModel->getEarningsSummary($driver['id']);
-$payments = $paymentModel->getPaymentHistory($driver['id']);
-$earningsSplit = $paymentModel->getEarningsSplit($driver['id']);
+$summary = $earningsResult['summary'];
+$earningsSplit = $earningsResult['split'];
+$payments = $earningsResult['history'];
+
+// Resolve dashboard monthly earnings
+$dashboardResult = $driverController->dashboard();
+$monthlyEarnings = $dashboardResult['success'] ? $dashboardResult['dashboard_stats']['monthly_earnings'] : 0.0;
 
 // Page config
 $pageTitle = "Earnings History - Lanka Renters";
@@ -48,72 +52,61 @@ include 'includes/navbar.php';
     <!-- Stats summary grid -->
     <section class="stats-grid" style="margin-bottom: 30px;">
         <div class="stat-card">
-            <h3>Paid Earnings</h3>
-            <p style="color: var(--success);">Rs. <?php echo number_format($earningsSplit['paid'], 2); ?></p>
-            <span>Payments received</span>
+            <h3><?php echo date('F'); ?> Earnings</h3>
+            <p style="color: var(--primary);">Rs. <?php echo number_format($monthlyEarnings, 2); ?></p>
+            <span>Current month earnings</span>
         </div>
 
         <div class="stat-card">
-            <h3>Pending Earnings</h3>
+            <h3>Pending Payments</h3>
             <p style="color: var(--warning);">Rs. <?php echo number_format($earningsSplit['pending'], 2); ?></p>
-            <span>In clearance process</span>
+            <span>Awaiting clearance</span>
+        </div>
+
+        <div class="stat-card">
+            <h3>Paid Payments</h3>
+            <p style="color: var(--success);">Rs. <?php echo number_format($earningsSplit['paid'], 2); ?></p>
+            <span>Successfully cleared</span>
         </div>
 
         <div class="stat-card">
             <h3>Total Earnings</h3>
-            <p style="color: var(--primary);">Rs. <?php echo number_format($earningsSplit['total'], 2); ?></p>
+            <p style="color: var(--text-main);">Rs. <?php echo number_format($earningsSplit['total'], 2); ?></p>
             <span>Overall accumulated sum</span>
-        </div>
-
-        <div class="stat-card">
-            <h3>Completed Paid Trips</h3>
-            <p><?php echo $summary['trips_count']; ?></p>
-            <span>Trip counts</span>
         </div>
     </section>
 
     <!-- Earnings History List -->
     <div class="card">
-        <h2 class="card-title">Earnings & Payment Logs</h2>
+        <h2 class="card-title">Trip Earnings History</h2>
         <?php if (empty($payments)): ?>
-            <p style="font-style: italic; color: var(--text-muted);">No completed earnings records found.</p>
+            <p style="font-style: italic; color: var(--text-muted);">No earnings records found.</p>
         <?php else: ?>
             <table>
                 <thead>
                     <tr>
                         <th>Booking ID</th>
-                        <th>Vehicle Assigned</th>
-                        <th>Rental Period</th>
-                        <th>Earning Amount</th>
-                        <th>Payment Status</th>
-                        <th>Date Paid</th>
+                        <th>Date</th>
+                        <th>Customer</th>
+                        <th>Amount</th>
+                        <th>Status</th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php foreach ($payments as $pay): ?>
                         <tr>
                             <td>#<?php echo htmlspecialchars($pay['booking_id']); ?></td>
-                            <td>
-                                <strong><?php echo htmlspecialchars($pay['make'] . ' ' . $pay['model']); ?></strong><br>
-                                <span style="font-size:12px; color:var(--text-muted);"><?php echo htmlspecialchars($pay['license_plate']); ?></span>
-                            </td>
-                            <td>
-                                <?php echo date('Y-m-d', strtotime($pay['start_date'])); ?> 
-                                to 
-                                <?php echo date('Y-m-d', strtotime($pay['end_date'])); ?>
-                            </td>
+                            <td><?php echo date('Y-m-d H:i', strtotime($pay['booking_date'])); ?></td>
+                            <td><strong><?php echo htmlspecialchars($pay['customer_name']); ?></strong></td>
                             <td>
                                 <strong>
-                                    <?php echo !empty($pay['amount']) ? 'Rs. ' . number_format($pay['amount'], 2) : 'N/A'; ?>
+                                    Rs. <?php echo number_format($pay['amount'], 2); ?>
                                 </strong>
                             </td>
                             <td>
-                                <span class="status-pill status-<?php echo ($pay['payment_status'] === 'completed' ? 'approved' : ($pay['payment_status'] === 'pending' ? 'pending' : 'rejected')); ?>">
-                                    <?php echo htmlspecialchars(ucfirst($pay['payment_status'] ?? 'pending')); ?>
+                                <span class="status-pill status-<?php echo ($pay['payment_status'] === 'paid' ? 'approved' : ($pay['payment_status'] === 'pending' ? 'pending' : 'rejected')); ?>">
+                                    <?php echo htmlspecialchars(ucfirst($pay['payment_status'])); ?>
                                 </span>
-                            </td>
-                            <td>
-                                <?php echo !empty($pay['paid_at']) ? date('Y-m-d H:i', strtotime($pay['paid_at'])) : '-'; ?>
                             </td>
                         </tr>
                     <?php endforeach; ?>

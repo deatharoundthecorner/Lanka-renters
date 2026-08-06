@@ -5,6 +5,12 @@ require_once dirname(__DIR__) . '/models/Driver.php';
 require_once dirname(__DIR__) . '/models/DriverDocument.php';
 require_once dirname(__DIR__) . '/models/DriverLeave.php';
 require_once dirname(__DIR__) . '/models/DriverAvailability.php';
+require_once dirname(__DIR__) . '/models/DriverOwnerLink.php';
+require_once dirname(__DIR__) . '/models/DriverPayment.php';
+require_once dirname(__DIR__) . '/models/Notification.php';
+require_once dirname(__DIR__) . '/models/DriverIncident.php';
+require_once dirname(__DIR__) . '/models/VehicleSafetyCheck.php';
+require_once dirname(__DIR__) . '/models/DriverPerformance.php';
 
 /**
  * Lanka Renters - Driver Controller
@@ -54,6 +60,14 @@ class DriverController {
             $driverModel = new Driver();
             $stats = $driverModel->getDashboardData($driverId);
             $vehicles = $driverModel->getAssignedVehicles($driverId);
+
+            // Fetch hybrid link stats and monthly earnings
+            $linkModel = new DriverOwnerLink();
+            $paymentModel = new DriverPayment();
+
+            $stats['connected_owners'] = $linkModel->getLinkCountByDriver($driverId, 'accepted');
+            $stats['pending_requests'] = $linkModel->getLinkCountByDriver($driverId, 'pending');
+            $stats['monthly_earnings'] = $paymentModel->getMonthlyEarnings($driverId);
 
             return [
                 'success'           => true,
@@ -150,6 +164,108 @@ class DriverController {
             ];
         }
     }
+
+    /**
+     * Edits an existing document.
+     * 
+     * @param int $documentId The document ID
+     * @param array $data Input document data (document_number, expiry_date, and optional file_path)
+     * @return array Response array containing status
+     */
+    public function editDocument($documentId, $data) {
+        try {
+            $driver = $this->getSecureDriver();
+            $driverId = $driver['id'];
+
+            $docModel = new DriverDocument();
+            $document = $docModel->getById($documentId);
+
+            if (!$document || $document['driver_id'] !== $driverId) {
+                return [
+                    'success' => false,
+                    'error'   => "Document not found or unauthorized."
+                ];
+            }
+
+            // Perform edit updates via model
+            $result = $docModel->update($documentId, $data);
+
+            if ($result) {
+                return [
+                    'success' => true,
+                    'message' => "Document updated successfully and is pending verification."
+                ];
+            }
+
+            return [
+                'success' => false,
+                'error'   => "Failed to update document."
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'error'   => $e->getMessage()
+            ];
+        }
+    }
+
+    /**
+     * Deletes an existing document (if pending).
+     * 
+     * @param int $documentId The document ID
+     * @return array Response array containing status
+     */
+    public function deleteDocument($documentId) {
+        try {
+            $driver = $this->getSecureDriver();
+            $driverId = $driver['id'];
+
+            $docModel = new DriverDocument();
+            $document = $docModel->getById($documentId);
+
+            if (!$document || $document['driver_id'] !== $driverId) {
+                return [
+                    'success' => false,
+                    'error'   => "Document not found or unauthorized."
+                ];
+            }
+
+            if ($document['verification_status'] !== 'pending') {
+                return [
+                    'success' => false,
+                    'error'   => "Only pending documents can be deleted."
+                ];
+            }
+
+            // Retrieve file path to remove it physically
+            $filePath = $document['file_path'];
+
+            $result = $docModel->delete($documentId);
+
+            if ($result) {
+                // Delete physical file
+                $fullPath = dirname(dirname(__DIR__)) . '/public/' . $filePath;
+                if (!empty($filePath) && file_exists($fullPath)) {
+                    unlink($fullPath);
+                }
+                return [
+                    'success' => true,
+                    'message' => "Document deleted successfully."
+                ];
+            }
+
+            return [
+                'success' => false,
+                'error'   => "Failed to delete document."
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'error'   => $e->getMessage()
+            ];
+        }
+    }
+
 
     /**
      * Changes the driver's current availability status.
@@ -263,6 +379,128 @@ class DriverController {
     }
 
     /**
+     * Edits an existing pending leave request.
+     * 
+     * @param int $leaveId The leave ID
+     * @param array $data Input leave data (start_date, end_date, reason)
+     * @return array Response array containing status
+     */
+    public function editLeave($leaveId, $data) {
+        try {
+            $driver = $this->getSecureDriver();
+            $driverId = $driver['id'];
+
+            $leaveModel = new DriverLeave();
+            $leave = $leaveModel->getById($leaveId);
+
+            if (!$leave || $leave['driver_id'] !== $driverId) {
+                return [
+                    'success' => false,
+                    'error'   => "Leave request not found or unauthorized."
+                ];
+            }
+
+            if ($leave['status'] !== 'pending') {
+                return [
+                    'success' => false,
+                    'error'   => "Only pending leave requests can be edited."
+                ];
+            }
+
+            // Validate fields
+            if (empty($data['start_date']) || empty($data['end_date'])) {
+                return [
+                    'success' => false,
+                    'error'   => "Start date and end date are required."
+                ];
+            }
+
+            if (empty($data['reason']) || trim($data['reason']) === '') {
+                return [
+                    'success' => false,
+                    'error'   => "Leave reason cannot be empty."
+                ];
+            }
+
+            if (strtotime($data['start_date']) > strtotime($data['end_date'])) {
+                return [
+                    'success' => false,
+                    'error'   => "Start date cannot fall after the end date."
+                ];
+            }
+
+            $result = $leaveModel->update($leaveId, $data);
+
+            if ($result) {
+                return [
+                    'success' => true,
+                    'message' => "Leave request updated successfully."
+                ];
+            }
+
+            return [
+                'success' => false,
+                'error'   => "Failed to update leave request."
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'error'   => $e->getMessage()
+            ];
+        }
+    }
+
+    /**
+     * Cancels an existing pending leave request.
+     * 
+     * @param int $leaveId The leave ID
+     * @return array Response array containing status
+     */
+    public function cancelLeave($leaveId) {
+        try {
+            $driver = $this->getSecureDriver();
+            $driverId = $driver['id'];
+
+            $leaveModel = new DriverLeave();
+            $leave = $leaveModel->getById($leaveId);
+
+            if (!$leave || $leave['driver_id'] !== $driverId) {
+                return [
+                    'success' => false,
+                    'error'   => "Leave request not found or unauthorized."
+                ];
+            }
+
+            if ($leave['status'] !== 'pending') {
+                return [
+                    'success' => false,
+                    'error'   => "Only pending leave requests can be cancelled."
+                ];
+            }
+
+            $result = $leaveModel->delete($leaveId);
+
+            if ($result) {
+                return [
+                    'success' => true,
+                    'message' => "Leave request cancelled successfully."
+                ];
+            }
+
+            return [
+                'success' => false,
+                'error'   => "Failed to cancel leave request."
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'error'   => $e->getMessage()
+            ];
+        }
+    }
+
+
+    /**
      * Returns a list of vehicles currently assigned to the driver.
      * 
      * @return array Response array containing assigned vehicle records
@@ -296,7 +534,7 @@ class DriverController {
      * @param float|null $longitude GPS longitude (optional)
      * @return array Response array containing status
      */
-    public function updatePickupStatus($bookingId, $status, $latitude = null, $longitude = null) {
+    public function updatePickupStatus($bookingId, $status, $driverNote = null) {
         try {
             // Retrieve secure driver context (checks session, verifies role)
             $driver = $this->getSecureDriver();
@@ -315,9 +553,47 @@ class DriverController {
 
             // Call Driver model which runs authorization validation and updates tables atomically
             $driverModel = new Driver();
-            $result = $driverModel->addPickupTracking($bookingId, $userId, $status, $latitude, $longitude);
+            $result = $driverModel->addPickupTracking($bookingId, $userId, $status, $driverNote);
 
             if ($result) {
+                if ($status === 'dropped_off') {
+                    $db = Database::getInstance()->getConnection();
+                    $sql = "SELECT b.booking_type, b.start_date, b.end_date, b.customer_id,
+                                   v.price_per_day, v.price_with_driver_per_day
+                            FROM `bookings` b
+                            JOIN `vehicles` v ON b.vehicle_id = v.id
+                            WHERE b.id = :booking_id LIMIT 1";
+                    $stmt = $db->prepare($sql);
+                    $stmt->execute(['booking_id' => $bookingId]);
+                    $booking = $stmt->fetch(PDO::FETCH_ASSOC);
+
+                    if ($booking && $booking['booking_type'] === 'with_driver') {
+                        $daily_rental = (float)$booking['price_per_day'];
+                        $daily_with_driver = $booking['price_with_driver_per_day'] !== null ? (float)$booking['price_with_driver_per_day'] : ($daily_rental + 3000.0);
+                        $driver_rate = max(0.0, $daily_with_driver - $daily_rental);
+                        
+                        $days = max(1, (int)ceil((strtotime($booking['end_date']) - strtotime($booking['start_date'])) / 86400));
+                        $paymentAmount = $driver_rate * $days;
+
+                        $paymentModel = new DriverPayment();
+                        $paymentModel->createPayment($driver['id'], $bookingId, $paymentAmount, 'pending');
+
+                        // Notifications
+                        $notificationModel = new Notification();
+                        $msgDriver = "Payment generated: Rs. " . number_format($paymentAmount, 2) . " has been credited to your pending earnings for Booking #" . $bookingId;
+                        $notificationModel->create($user['id'], "Payment Generated", $msgDriver);
+
+                        $sqlCust = "SELECT user_id FROM `customers` WHERE id = :customer_id LIMIT 1";
+                        $stmtCust = $db->prepare($sqlCust);
+                        $stmtCust->execute(['customer_id' => $booking['customer_id']]);
+                        $custUserId = $stmtCust->fetchColumn();
+                        if ($custUserId) {
+                            $msgCust = "Your booking #" . $bookingId . " has been marked as completed. Thank you for using Lanka Renters!";
+                            $notificationModel->create($custUserId, "Trip Completed", $msgCust);
+                        }
+                    }
+                }
+
                 return [
                     'success' => true,
                     'message' => "Pickup tracking status successfully updated to " . $status . "."
@@ -364,6 +640,599 @@ class DriverController {
                 'success'         => true,
                 'active_trips'    => $activeTrips,
                 'completed_trips' => $completedTrips
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'error'   => $e->getMessage()
+            ];
+        }
+    }
+
+    /**
+     * Retrieves all pending owner connection requests for the driver.
+     */
+    public function viewOwnerRequests() {
+        try {
+            $driver = $this->getSecureDriver();
+            $linkModel = new DriverOwnerLink();
+            $requests = $linkModel->getLinksByDriver($driver['id'], 'pending');
+            return [
+                'success'  => true,
+                'requests' => $requests
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'error'   => $e->getMessage()
+            ];
+        }
+    }
+
+    /**
+     * Driver accepts an owner's connection request.
+     */
+    public function acceptOwnerRequest($linkId) {
+        try {
+            $driver = $this->getSecureDriver();
+            $linkModel = new DriverOwnerLink();
+            
+            // Verify link ownership
+            $link = $linkModel->findById($linkId);
+            if (!$link || (int)$link['driver_id'] !== (int)$driver['id']) {
+                return [
+                    'success' => false,
+                    'error'   => "Security Violation: Unauthorized connection request."
+                ];
+            }
+
+            $success = $linkModel->updateStatus($linkId, 'accepted');
+            if ($success) {
+                // Notify Owner
+                $notificationModel = new Notification();
+                $db = Database::getInstance()->getConnection();
+                $sqlOwner = "SELECT vo.user_id FROM `vehicle_owners` vo WHERE vo.id = :owner_id LIMIT 1";
+                $stmt = $db->prepare($sqlOwner);
+                $stmt->execute(['owner_id' => $link['owner_id']]);
+                $ownerUserId = $stmt->fetchColumn();
+                
+                if ($ownerUserId) {
+                    $msg = "Driver " . $driver['name'] . " has accepted your connection request.";
+                    $notificationModel->create($ownerUserId, "Connection Request Accepted", $msg);
+                }
+
+                return [
+                    'success' => true,
+                    'message' => "Connection request accepted successfully."
+                ];
+            }
+
+            return [
+                'success' => false,
+                'error'   => "Failed to accept connection request."
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'error'   => $e->getMessage()
+            ];
+        }
+    }
+
+    /**
+     * Driver rejects an owner's connection request.
+     */
+    public function rejectOwnerRequest($linkId) {
+        try {
+            $driver = $this->getSecureDriver();
+            $linkModel = new DriverOwnerLink();
+            
+            // Verify link ownership
+            $link = $linkModel->findById($linkId);
+            if (!$link || (int)$link['driver_id'] !== (int)$driver['id']) {
+                return [
+                    'success' => false,
+                    'error'   => "Security Violation: Unauthorized connection request."
+                ];
+            }
+
+            $success = $linkModel->updateStatus($linkId, 'rejected');
+            if ($success) {
+                // Notify Owner
+                $notificationModel = new Notification();
+                $db = Database::getInstance()->getConnection();
+                $sqlOwner = "SELECT vo.user_id FROM `vehicle_owners` vo WHERE vo.id = :owner_id LIMIT 1";
+                $stmt = $db->prepare($sqlOwner);
+                $stmt->execute(['owner_id' => $link['owner_id']]);
+                $ownerUserId = $stmt->fetchColumn();
+                
+                if ($ownerUserId) {
+                    $msg = "Driver " . $driver['name'] . " has rejected your connection request.";
+                    $notificationModel->create($ownerUserId, "Connection Request Rejected", $msg);
+                }
+
+                return [
+                    'success' => true,
+                    'message' => "Connection request rejected successfully."
+                ];
+            }
+
+            return [
+                'success' => false,
+                'error'   => "Failed to reject connection request."
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'error'   => $e->getMessage()
+            ];
+        }
+    }
+
+    /**
+     * Submits a vehicle safety checklist.
+     * 
+     * @param array $data Contains booking_id, brakes, lights, tires, fuel
+     * @return array Response array containing status
+     */
+    public function submitSafetyCheck($data) {
+        try {
+            $driver = $this->getSecureDriver();
+            $bookingId = (int)($data['booking_id'] ?? 0);
+            
+            $brakes = isset($data['brakes']) ? 1 : 0;
+            $lights = isset($data['lights']) ? 1 : 0;
+            $tires = isset($data['tires']) ? 1 : 0;
+            $fuel = isset($data['fuel']) ? 1 : 0;
+
+            // Fetch booking details to verify it exists and is assigned
+            $db = Database::getInstance()->getConnection();
+            $sqlBooking = "SELECT vehicle_id FROM bookings WHERE id = :booking_id AND driver_id = :driver_id LIMIT 1";
+            $stmt = $db->prepare($sqlBooking);
+            $stmt->execute([
+                'booking_id' => $bookingId,
+                'driver_id'  => $driver['id']
+            ]);
+            $booking = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$booking) {
+                return [
+                    'success' => false,
+                    'error'   => "Booking not found or not assigned to you."
+                ];
+            }
+
+            $safetyCheckModel = new VehicleSafetyCheck();
+            
+            // Check duplicate check
+            $existing = $safetyCheckModel->getByBooking($bookingId);
+            if ($existing) {
+                return [
+                    'success' => false,
+                    'error'   => "Safety check has already been recorded for this booking."
+                ];
+            }
+
+            // Save safety check
+            $checkId = $safetyCheckModel->create([
+                'driver_id'  => $driver['id'],
+                'vehicle_id' => $booking['vehicle_id'],
+                'booking_id' => $bookingId,
+                'brakes'     => $brakes,
+                'lights'     => $lights,
+                'tires'      => $tires,
+                'fuel'       => $fuel
+            ]);
+
+            if ($checkId) {
+                return [
+                    'success' => true,
+                    'message' => "Vehicle safety checks logged successfully!"
+                ];
+            }
+
+            return [
+                'success' => false,
+                'error'   => "Failed to log vehicle safety check."
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'error'   => $e->getMessage()
+            ];
+        }
+    }
+
+    /**
+     * Edits an existing pending vehicle safety check.
+     * 
+     * @param int $checkId The safety check ID
+     * @param array $data Contains brakes, lights, tires, fuel
+     * @return array Response array containing status
+     */
+    public function editSafetyCheck($checkId, $data) {
+        try {
+            $driver = $this->getSecureDriver();
+            $driverId = $driver['id'];
+
+            $safetyCheckModel = new VehicleSafetyCheck();
+            $check = $safetyCheckModel->getById($checkId);
+
+            if (!$check || $check['driver_id'] !== $driverId) {
+                return [
+                    'success' => false,
+                    'error'   => "Safety check not found or unauthorized."
+                ];
+            }
+
+            // Verify if booking is still in pending_pickup status
+            $db = Database::getInstance()->getConnection();
+            $sqlBooking = "SELECT pickup_status FROM bookings WHERE id = :booking_id LIMIT 1";
+            $stmt = $db->prepare($sqlBooking);
+            $stmt->execute(['booking_id' => $check['booking_id']]);
+            $pickupStatus = $stmt->fetchColumn();
+
+            if ($pickupStatus !== 'pending_pickup') {
+                return [
+                    'success' => false,
+                    'error'   => "This safety check cannot be edited as the trip has already started."
+                ];
+            }
+
+            $brakes = isset($data['brakes']) ? 1 : 0;
+            $lights = isset($data['lights']) ? 1 : 0;
+            $tires = isset($data['tires']) ? 1 : 0;
+            $fuel = isset($data['fuel']) ? 1 : 0;
+
+            $result = $safetyCheckModel->update($checkId, [
+                'brakes' => $brakes,
+                'lights' => $lights,
+                'tires'  => $tires,
+                'fuel'   => $fuel
+            ]);
+
+            if ($result) {
+                return [
+                    'success' => true,
+                    'message' => "Vehicle safety check updated successfully."
+                ];
+            }
+
+            return [
+                'success' => false,
+                'error'   => "Failed to update safety check."
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'error'   => $e->getMessage()
+            ];
+        }
+    }
+
+    /**
+     * Deletes a pending vehicle safety check.
+     * 
+     * @param int $checkId The safety check ID
+     * @return array Response array containing status
+     */
+    public function deleteSafetyCheck($checkId) {
+        try {
+            $driver = $this->getSecureDriver();
+            $driverId = $driver['id'];
+
+            $safetyCheckModel = new VehicleSafetyCheck();
+            $check = $safetyCheckModel->getById($checkId);
+
+            if (!$check || $check['driver_id'] !== $driverId) {
+                return [
+                    'success' => false,
+                    'error'   => "Safety check not found or unauthorized."
+                ];
+            }
+
+            // Verify if booking is still in pending_pickup status
+            $db = Database::getInstance()->getConnection();
+            $sqlBooking = "SELECT pickup_status FROM bookings WHERE id = :booking_id LIMIT 1";
+            $stmt = $db->prepare($sqlBooking);
+            $stmt->execute(['booking_id' => $check['booking_id']]);
+            $pickupStatus = $stmt->fetchColumn();
+
+            if ($pickupStatus !== 'pending_pickup') {
+                return [
+                    'success' => false,
+                    'error'   => "This safety check cannot be deleted as the trip has already started."
+                ];
+            }
+
+            $result = $safetyCheckModel->delete($checkId);
+
+            if ($result) {
+                return [
+                    'success' => true,
+                    'message' => "Safety check record deleted successfully."
+                ];
+            }
+
+            return [
+                'success' => false,
+                'error'   => "Failed to delete safety check."
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'error'   => $e->getMessage()
+            ];
+        }
+    }
+
+    /**
+     * Lists all safety checks recorded by the driver.
+     * 
+     * @return array Response array containing safety check logs
+     */
+    public function viewSafetyChecks() {
+        try {
+            $driver = $this->getSecureDriver();
+            $safetyCheckModel = new VehicleSafetyCheck();
+            $checks = $safetyCheckModel->getByDriverId($driver['id']);
+            return [
+                'success' => true,
+                'checks'  => $checks
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'error'   => $e->getMessage()
+            ];
+        }
+    }
+
+
+    /**
+     * Reports an incident and handles optional file upload with security constraints.
+     * 
+     * @param array $data Contains booking_id, description, incident_date, severity
+     * @param array|null $file Contains files metadata of $_FILES['incident_photo']
+     * @return array Response array containing status
+     */
+    public function reportIncident($data, $file = null) {
+        try {
+            $driver = $this->getSecureDriver();
+            $driverId = $driver['id'];
+
+            $bookingId = (int)($data['booking_id'] ?? 0);
+            $description = trim($data['description'] ?? '');
+            $severity = $data['severity'] ?? 'minor';
+            $incidentDate = $data['incident_date'] ?? '';
+
+            $incidentModel = new DriverIncident();
+
+            // Security validation: booking must be assigned to driver
+            if (!$incidentModel->isBookingAssignedToDriver($bookingId, $driverId)) {
+                return [
+                    'success' => false,
+                    'error'   => "Unauthorized. You can only report incidents for bookings assigned to you."
+                ];
+            }
+
+            if (empty($description) || empty($incidentDate)) {
+                return [
+                    'success' => false,
+                    'error'   => "Description and Incident Date are required fields."
+                ];
+            }
+
+            // Create incident
+            $incidentId = $incidentModel->create([
+                'booking_id'    => $bookingId,
+                'reported_by'   => $driver['user_id'], // FK to users.id
+                'description'   => $description,
+                'incident_date' => $incidentDate,
+                'severity'      => $severity
+            ]);
+
+            if (!$incidentId) {
+                return [
+                    'success' => false,
+                    'error'   => "Failed to submit incident report."
+                ];
+            }
+
+            // Photo Upload
+            if ($file && isset($file['error']) && $file['error'] === UPLOAD_ERR_OK) {
+                $fileTmpPath = $file['tmp_name'];
+                $fileName = $file['name'];
+                $fileSize = $file['size'];
+                $fileExtension = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+                
+                // Security Constraint 1: Validate file size (max 5MB)
+                if ($fileSize > 5 * 1024 * 1024) {
+                    return [
+                        'success' => true,
+                        'message' => "Incident successfully reported (ID: #" . $incidentId . "), but file size exceeded 5MB limit and was rejected."
+                    ];
+                }
+
+                // Security Constraint 2: Validate file extensions and MIME type
+                $allowedExtensions = ['jpg', 'jpeg', 'png', 'pdf'];
+                if (!in_array($fileExtension, $allowedExtensions)) {
+                    return [
+                        'success' => true,
+                        'message' => "Incident successfully reported (ID: #" . $incidentId . "), but file extension is not allowed and attachment was rejected."
+                    ];
+                }
+
+                // Verify actual MIME type (requires finfo)
+                if (function_exists('finfo_open')) {
+                    $finfo = finfo_open(FILEINFO_MIME_TYPE);
+                    $mimeType = finfo_file($finfo, $fileTmpPath);
+                    finfo_close($finfo);
+                    
+                    $allowedMimes = ['image/jpeg', 'image/png', 'application/pdf'];
+                    if (!in_array($mimeType, $allowedMimes)) {
+                        return [
+                            'success' => true,
+                            'message' => "Incident successfully reported (ID: #" . $incidentId . "), but file content type verification failed and attachment was rejected."
+                        ];
+                    }
+                }
+
+                $uploadBaseDir = dirname(dirname(__DIR__)) . '/public/uploads/incidents/';
+                if (!is_dir($uploadBaseDir)) {
+                    mkdir($uploadBaseDir, 0755, true);
+                }
+                
+                $newFileName = 'incident_' . $incidentId . '_' . time() . '.' . $fileExtension;
+                $destPath = $uploadBaseDir . $newFileName;
+                
+                $dbFilePath = 'uploads/incidents/' . $newFileName;
+                
+                if (move_uploaded_file($fileTmpPath, $destPath)) {
+                    $incidentModel->addPhoto($incidentId, $dbFilePath);
+                }
+            }
+
+            return [
+                'success' => true,
+                'message' => "Incident successfully reported. ID: #" . $incidentId
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'error'   => $e->getMessage()
+            ];
+        }
+    }
+
+    /**
+     * Retrieves the driver's performance metrics and customer reviews list.
+     * 
+     * @return array Response array containing stats and reviews
+     */
+    public function viewPerformance() {
+        try {
+            $driver = $this->getSecureDriver();
+            $driverId = $driver['id'];
+
+            $performanceModel = new DriverPerformance();
+
+            $stats = $performanceModel->getStatistics($driverId);
+            $reviews = $performanceModel->getRatingSummary($driverId);
+
+            return [
+                'success' => true,
+                'stats'   => $stats,
+                'reviews' => $reviews
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'error'   => $e->getMessage()
+            ];
+        }
+    }
+
+    /**
+     * Retrieves the detailed split of earnings and complete transaction list.
+     * 
+     * @return array Response array containing earnings stats and logs
+     */
+    public function viewEarningsDetail() {
+        try {
+            $driver = $this->getSecureDriver();
+            $driverId = $driver['id'];
+
+            $paymentModel = new DriverPayment();
+            $summary = $paymentModel->getEarningsSummary($driverId);
+            $split = $paymentModel->getEarningsSplit($driverId);
+            $history = $paymentModel->getPaymentHistory($driverId);
+
+            return [
+                'success' => true,
+                'summary' => $summary,
+                'split'   => $split,
+                'history' => $history
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'error'   => $e->getMessage()
+            ];
+        }
+    }
+
+    /**
+     * Updates the driver's profile details.
+     * 
+     * @param array $data Input profile fields (phone, address, emergency_contact)
+     * @return array Response array containing status
+     */
+    public function updateProfile($data) {
+        try {
+            $driver = $this->getSecureDriver();
+            
+            $phone = trim($data['phone'] ?? '');
+            $address = trim($data['address'] ?? '');
+            $emergencyContact = trim($data['emergency_contact'] ?? '');
+
+            // Validate phone
+            if (empty($phone)) {
+                return [
+                    'success' => false,
+                    'error'   => "Phone number is required."
+                ];
+            }
+
+            $driverModel = new Driver();
+            $result = $driverModel->updateProfile($driver['id'], $driver['user_id'], [
+                'phone'             => $phone,
+                'address'           => $address !== '' ? $address : null,
+                'emergency_contact' => $emergencyContact !== '' ? $emergencyContact : null
+            ]);
+
+            if ($result) {
+                return [
+                    'success' => true,
+                    'message' => "Profile updated successfully."
+                ];
+            }
+
+            return [
+                'success' => false,
+                'error'   => "Failed to update profile."
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'error'   => $e->getMessage()
+            ];
+        }
+    }
+
+    /**
+     * Deactivates the driver's profile (soft-delete).
+     * Sets user status to 'inactive' and signs them out.
+     * 
+     * @return array Response array containing status
+     */
+    public function deactivateProfile() {
+        try {
+            $driver = $this->getSecureDriver();
+            
+            $driverModel = new Driver();
+            $result = $driverModel->deactivate($driver['user_id']);
+
+            if ($result) {
+                return [
+                    'success' => true,
+                    'message' => "Profile deactivated successfully."
+                ];
+            }
+
+            return [
+                'success' => false,
+                'error'   => "Failed to deactivate profile."
             ];
         } catch (Exception $e) {
             return [

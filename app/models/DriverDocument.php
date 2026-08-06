@@ -120,6 +120,50 @@ class DriverDocument {
     }
 
     /**
+     * Returns a document record by its primary key ID.
+     * 
+     * @param int $id The document ID
+     * @return array|false The document record or false
+     */
+    public function getById($id) {
+        $sql = "SELECT * FROM `driver_documents` WHERE `id` = :id LIMIT 1";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute(['id' => $id]);
+        return $stmt->fetch();
+    }
+
+    /**
+     * Updates an existing driver document record.
+     * Sets verification status back to 'pending' and clears rejected_reason.
+     * 
+     * @param int $id The document primary key ID
+     * @param array $data Contains document_number, expiry_date, and optionally file_path
+     * @return bool True on success, false on failure
+     */
+    public function update($id, $data) {
+        $fields = [
+            "`document_number` = :document_number",
+            "`expiry_date` = :expiry_date",
+            "`verification_status` = 'pending'",
+            "`rejected_reason` = NULL"
+        ];
+        $params = [
+            'id'              => $id,
+            'document_number' => $data['document_number'] ?? null,
+            'expiry_date'     => !empty($data['expiry_date']) ? $data['expiry_date'] : null
+        ];
+
+        if (isset($data['file_path'])) {
+            $fields[] = "`file_path` = :file_path";
+            $params['file_path'] = $data['file_path'];
+        }
+
+        $sql = "UPDATE `driver_documents` SET " . implode(", ", $fields) . " WHERE `id` = :id";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute($params);
+    }
+
+    /**
      * Deletes a document from the system.
      * Security Constraint: Only permits deleting documents that are still in a 'pending' verification state.
      * 

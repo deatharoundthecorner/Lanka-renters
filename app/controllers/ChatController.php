@@ -173,4 +173,51 @@ class ChatController {
             ];
         }
     }
+
+    /**
+     * Retrieves the other participant's details in a chat room.
+     * 
+     * @param int $roomId Room ID
+     * @return array Participant details or error
+     */
+    public function getOtherParticipant($roomId) {
+        try {
+            $context = $this->getSessionContext();
+            if (!$this->chatModel->isParticipant($roomId, $context['user_id'])) {
+                return [
+                    'success' => false,
+                    'error'   => "Access denied."
+                ];
+            }
+
+            $db = Database::getInstance()->getConnection();
+            $sql = "SELECT u.name, u.role, u.id as user_id 
+                    FROM `chat_participants` cp 
+                    JOIN `users` u ON cp.user_id = u.id 
+                    WHERE cp.room_id = :room_id AND cp.user_id != :user_id LIMIT 1";
+            $stmt = $db->prepare($sql);
+            $stmt->execute([
+                'room_id' => $roomId,
+                'user_id' => $context['user_id']
+            ]);
+            $participant = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if ($participant) {
+                return [
+                    'success'     => true,
+                    'participant' => $participant
+                ];
+            }
+
+            return [
+                'success' => false,
+                'error'   => "No other participant found."
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'error'   => $e->getMessage()
+            ];
+        }
+    }
 }
