@@ -11,29 +11,6 @@
     </div>
 </header>
 
-<div class="dashboard-grid">
-    <div class="stat-card">
-        <div class="stat-title">Total Drivers</div>
-        <div class="stat-number">125</div>
-        <div class="stat-caption">Registered drivers on the platform</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-title">Pending Verification</div>
-        <div class="stat-number">12</div>
-        <div class="stat-caption">Drivers awaiting approval</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-title">Approved Drivers</div>
-        <div class="stat-number">105</div>
-        <div class="stat-caption">Verified and active drivers</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-title">Suspended Drivers</div>
-        <div class="stat-number">8</div>
-        <div class="stat-caption">Drivers paused from assignments</div>
-    </div>
-</div>
-
 <section class="filters-card">
     <div class="filters-card-header">
         <div class="filter-icon" aria-hidden="true">
