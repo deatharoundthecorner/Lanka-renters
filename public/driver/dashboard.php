@@ -122,27 +122,15 @@ include 'includes/navbar.php';
         </div>
 
         <div class="stat-card">
-            <h3>Connected Owners</h3>
-            <p><?php echo $stats['connected_owners']; ?> Owners</p>
-            <span>Active connections</span>
-        </div>
-
-        <div class="stat-card">
-            <h3>Pending Requests</h3>
-            <p><?php echo $stats['pending_requests']; ?></p>
-            <span>Connection requests</span>
-        </div>
-
-        <div class="stat-card">
-            <h3>Monthly Earnings</h3>
-            <p>Rs. <?php echo number_format($stats['monthly_earnings'], 2); ?></p>
-            <span>Current month earnings</span>
-        </div>
-
-        <div class="stat-card">
             <h3>Completed Trips</h3>
             <p><?php echo $perfStats['completed_trips']; ?></p>
             <span>Total completed trips</span>
+        </div>
+
+        <div class="stat-card">
+            <h3>Total Earnings</h3>
+            <p>Rs. <?php echo number_format($paymentSummary['total_earnings'], 2); ?></p>
+            <span>This month</span>
         </div>
     </section>
 

@@ -2,8 +2,7 @@
 
 // Lanka Renters - Database Configuration Placeholder
 return [
-    'host' => '127.0.0.1',
-    'port' => 3308,
+    'host' => 'localhost',
     'db'   => 'lanka_renters',
     'user' => 'root',
     'pass' => '',

@@ -43,15 +43,9 @@ class ChatController {
         try {
             $context = $this->getSessionContext();
             $rooms = $this->chatModel->getDriverRooms($context['user_id']);
-            $filteredRooms = [];
-            foreach ($rooms as $room) {
-                if ($this->isChatConnectionAllowed($room['room_id'])) {
-                    $filteredRooms[] = $room;
-                }
-            }
             return [
                 'success' => true,
-                'rooms'   => $filteredRooms
+                'rooms'   => $rooms
             ];
         } catch (Exception $e) {
             return [
@@ -67,66 +61,6 @@ class ChatController {
      * @param int $roomId Room ID
      * @return array Response payload containing messages
      */
-    /**
-     * Checks if the chat is allowed based on the driver-owner connection status.
-     */
-    private function isChatConnectionAllowed($roomId) {
-        $db = Database::getInstance()->getConnection();
-        
-        $sql = "SELECT cp.user_id, u.role 
-                FROM `chat_participants` cp
-                JOIN `users` u ON cp.user_id = u.id
-                WHERE cp.room_id = :room_id";
-        $stmt = $db->prepare($sql);
-        $stmt->execute(['room_id' => $roomId]);
-        $participants = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-        $driverUserId = null;
-        $ownerUserId = null;
-        foreach ($participants as $p) {
-            if ($p['role'] === 'driver') {
-                $driverUserId = $p['user_id'];
-            } elseif ($p['role'] === 'owner') {
-                $ownerUserId = $p['user_id'];
-            }
-        }
-
-        if ($driverUserId !== null && $ownerUserId !== null) {
-            $sqlD = "SELECT id FROM `drivers` WHERE `user_id` = :uid LIMIT 1";
-            $stmtD = $db->prepare($sqlD);
-            $stmtD->execute(['uid' => $driverUserId]);
-            $driverId = $stmtD->fetchColumn();
-
-            $sqlO = "SELECT id FROM `vehicle_owners` WHERE `user_id` = :uid LIMIT 1";
-            $stmtO = $db->prepare($sqlO);
-            $stmtO->execute(['uid' => $ownerUserId]);
-            $ownerId = $stmtO->fetchColumn();
-
-            if ($driverId && $ownerId) {
-                $sqlLink = "SELECT `status` FROM `driver_owner_links` 
-                            WHERE `driver_id` = :driver_id AND `owner_id` = :owner_id LIMIT 1";
-                $stmtLink = $db->prepare($sqlLink);
-                $stmtLink->execute([
-                    'driver_id' => $driverId,
-                    'owner_id'  => $ownerId
-                ]);
-                $status = $stmtLink->fetchColumn();
-
-                if ($status !== 'accepted') {
-                    return false;
-                }
-            }
-        }
-
-        return true;
-    }
-
-    /**
-     * Retrieves messages for a specific room after verifying participant access.
-     * 
-     * @param int $roomId Room ID
-     * @return array Response payload containing messages
-     */
     public function getRoomMessages($roomId) {
         try {
             $context = $this->getSessionContext();
@@ -134,13 +68,6 @@ class ChatController {
                 return [
                     'success' => false,
                     'error'   => "Access denied. You are not a participant in this chat room."
-                ];
-            }
-
-            if (!$this->isChatConnectionAllowed($roomId)) {
-                return [
-                    'success' => false,
-                    'error'   => "Chat blocked. Driver <-> Owner chat is only allowed when connection is accepted."
                 ];
             }
 
@@ -179,13 +106,6 @@ class ChatController {
                 return [
                     'success' => false,
                     'error'   => "Access denied. You are not a participant in this chat room."
-                ];
-            }
-
-            if (!$this->isChatConnectionAllowed($roomId)) {
-                return [
-                    'success' => false,
-                    'error'   => "Chat blocked. Driver <-> Owner chat is only allowed when connection is accepted."
                 ];
             }
 

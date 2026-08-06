@@ -200,12 +200,8 @@ class Driver {
      * @return bool True on success, false on failure
      */
     public function addPickupTracking($bookingId, $userId, $status, $latitude = null, $longitude = null) {
-        $startedTransaction = false;
         try {
-            if (!$this->db->inTransaction()) {
-                $this->db->beginTransaction();
-                $startedTransaction = true;
-            }
+            $this->db->beginTransaction();
 
             // 1. Verify the booking is assigned to this driver (checking by user_id linked to driver)
             $sqlCheck = "SELECT b.id FROM `bookings` b 
@@ -220,12 +216,8 @@ class Driver {
                 throw new Exception("Unauthorized: This booking is not assigned to you.");
             }
 
-            // 2. Update the booking's current pickup status (and mark completed if dropped off)
-            if ($status === 'dropped_off') {
-                $sqlBooking = "UPDATE `bookings` SET `pickup_status` = :status, `status` = 'completed' WHERE `id` = :booking_id";
-            } else {
-                $sqlBooking = "UPDATE `bookings` SET `pickup_status` = :status WHERE `id` = :booking_id";
-            }
+            // 2. Update the booking's current pickup status
+            $sqlBooking = "UPDATE `bookings` SET `pickup_status` = :status WHERE `id` = :booking_id";
             $stmtBooking = $this->db->prepare($sqlBooking);
             $stmtBooking->execute([
                 'status'     => $status,
@@ -244,12 +236,10 @@ class Driver {
                 'longitude'  => $longitude
             ]);
 
-            if ($startedTransaction) {
-                $this->db->commit();
-            }
+            $this->db->commit();
             return true;
         } catch (Exception $e) {
-            if ($startedTransaction && $this->db->inTransaction()) {
+            if ($this->db->inTransaction()) {
                 $this->db->rollBack();
             }
             throw $e;
@@ -274,53 +264,5 @@ class Driver {
         $stmt = $this->db->prepare($sql);
         $stmt->execute(['driver_id' => $driverId]);
         return $stmt->fetchAll();
-    }
-
-    /**
-     * Retrieves all available, verified drivers.
-     * 
-     * @return array List of available verified drivers
-     */
-    public function getAvailableVerifiedDrivers() {
-        $sql = "SELECT d.id, u.name, d.rating_avg as rating, d.availability_status,
-                       (SELECT COUNT(*) FROM `bookings` b WHERE b.driver_id = d.id AND b.status = 'completed') as completed_trips
-                FROM `drivers` d
-                JOIN `users` u ON d.user_id = u.id
-                WHERE u.status = 'active'
-                  AND d.availability_status = 'available'
-                  AND (
-                    SELECT 
-                      CASE 
-                        WHEN COUNT(dd.id) = 0 THEN 'pending'
-                        WHEN SUM(CASE WHEN dd.verification_status = 'rejected' THEN 1 ELSE 0 END) > 0 THEN 'rejected'
-                        WHEN COUNT(DISTINCT dd.document_type) < 3 THEN 'pending'
-                        WHEN SUM(CASE WHEN dd.verification_status = 'pending' THEN 1 ELSE 0 END) > 0 THEN 'pending'
-                        ELSE 'approved'
-                      END
-                    FROM `driver_documents` dd
-                    WHERE dd.driver_id = d.id
-                  ) = 'approved'";
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute();
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    }
-
-    /**
-     * Checks if a driver has a conflicting booking.
-     * Overlap formula: (start1 < end2) AND (end1 > start2)
-     */
-    public function hasBookingConflict($driverId, $startDate, $endDate) {
-        $sql = "SELECT COUNT(*) FROM `bookings` 
-                WHERE `driver_id` = :driver_id 
-                  AND `status` NOT IN ('cancelled', 'completed')
-                  AND :start_date < `end_date` 
-                  AND :end_date > `start_date`";
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute([
-            'driver_id'  => $driverId,
-            'start_date' => $startDate,
-            'end_date'   => $endDate
-        ]);
-        return (int)$stmt->fetchColumn() > 0;
     }
 }

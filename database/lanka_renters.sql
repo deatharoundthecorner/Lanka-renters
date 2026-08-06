@@ -100,11 +100,11 @@ CREATE TABLE `driver_owner_links` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `driver_id` INT NOT NULL,
   `owner_id` INT NOT NULL,
-  `status` ENUM('pending', 'accepted', 'rejected', 'blocked') NOT NULL DEFAULT 'pending',
-  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  `accepted_at` TIMESTAMP NULL DEFAULT NULL,
+  `link_status` ENUM('pending', 'active', 'terminated') NOT NULL DEFAULT 'pending',
+  `linked_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `terminated_at` TIMESTAMP NULL DEFAULT NULL,
   UNIQUE KEY `uq_driver_owner` (`driver_id`, `owner_id`),
-  INDEX `idx_driver_owner_status` (`owner_id`, `status`),
+  INDEX `idx_driver_owner_status` (`owner_id`, `link_status`),
   CONSTRAINT `fk_owner_links_driver` FOREIGN KEY (`driver_id`) REFERENCES `drivers` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_owner_links_owner` FOREIGN KEY (`owner_id`) REFERENCES `vehicle_owners` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -380,18 +380,4 @@ CREATE TABLE IF NOT EXISTS `driver_vehicle_checks` (
   CONSTRAINT `fk_vehicle_checks_driver` FOREIGN KEY (`driver_id`) REFERENCES `drivers` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_vehicle_checks_vehicle` FOREIGN KEY (`vehicle_id`) REFERENCES `vehicles` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_vehicle_checks_booking` FOREIGN KEY (`booking_id`) REFERENCES `bookings` (`id`) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- 24. Driver Payments Table
-CREATE TABLE `driver_payments` (
-  `id` INT AUTO_INCREMENT PRIMARY KEY,
-  `driver_id` INT NOT NULL,
-  `booking_id` INT NOT NULL,
-  `amount` DECIMAL(10, 2) NOT NULL,
-  `payment_status` ENUM('pending', 'paid') NOT NULL DEFAULT 'pending',
-  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  INDEX `idx_driver_payments_driver` (`driver_id`),
-  INDEX `idx_driver_payments_booking` (`booking_id`),
-  CONSTRAINT `fk_driver_payments_driver` FOREIGN KEY (`driver_id`) REFERENCES `drivers` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_driver_payments_booking` FOREIGN KEY (`booking_id`) REFERENCES `bookings` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
