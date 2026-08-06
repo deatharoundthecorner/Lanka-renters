@@ -3,7 +3,7 @@
 ?>
 <header class="page-header">
     <div>
-        <h1>Customers</h1>
+        <h1>Users</h1>
         <p>Manage registered customers and review account activity.</p>
     </div>
 </header>
