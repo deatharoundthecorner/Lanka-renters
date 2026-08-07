@@ -23,7 +23,8 @@
         </div>
     </div>
 
-    <div class="filter-grid">
+    <section class="filters-card users-filters">
+<div class="filter-grid">
         <label class="filter-group">
             <span>Search</span>
             <input type="search" placeholder="Search customer name or email...">
@@ -57,51 +58,86 @@
 </section>
 
 <div class="panel-card wide-card" style="margin-top:24px;">
-    <div class="table-header users-table">
-        <span>Customer</span>
-        <span>Contact</span>
-        <span>District</span>
-        <span>Status</span>
-        <span>Actions</span>
-    </div>
+   <div class="table-header users-table">
+    <span>Customer ID</span>
+    <span>Customer Name</span>
+    <span>Contact</span>
+    <span>Submitted Documents</span>
+    <span>Actions</span>
+</div>
     <div class="table-row users-table">
-        <span class="customer-info">
-            <strong>Ruwan Bandara</strong>
-            <small>Member since 12 Jul 2026</small>
-        </span>
-        <span>ruwan@email.com<br>0771234567</span>
-        <span>Colombo</span>
-        <span class="status-pill status-warning">Pending</span>
-        <span class="row-actions">
-            <button class="btn btn-outline">View</button>
-            <button class="btn btn-primary">Approve</button>
-            <button class="btn btn-secondary">Reject</button>
-        </span>
-    </div>
-    <div class="table-row users-table">
-        <span class="customer-info">
-            <strong>Dilani Weerasinghe</strong>
-            <small>Member since 09 Jul 2026</small>
-        </span>
-        <span>dilani@email.com<br>0719876543</span>
-        <span>Gampaha</span>
-        <span class="status-pill status-success">Active</span>
-        <span class="row-actions">
-            <button class="btn btn-outline">View</button>
-            <button class="btn btn-outline">Suspend</button>
-        </span>
-    </div>
-    <div class="table-row users-table">
-        <span class="customer-info">
-            <strong>Tharindu Alwis</strong>
-            <small>Member since 03 Jul 2026</small>
-        </span>
-        <span>tharindu@email.com<br>0754444444</span>
-        <span>Kandy</span>
-        <span class="status-pill status-suspended">Suspended</span>
-        <span class="row-actions">
-            <button class="btn btn-outline">View</button>
-            <button class="btn btn-primary">Reactivate</button>
-        </span>
-    </div>
+
+    <span>
+        CUS-001
+    </span>
+
+    <span>
+        Kasun Perera
+    </span>
+
+    <span class="contact-info">
+        kasun@gmail.com
+        <small>0771234567</small>
+    </span>
+
+    <span class="document-actions">
+        <button class="btn btn-outline btn-sm">
+            View NIC
+        </button>
+
+        <button class="btn btn-outline btn-sm">
+            View License
+        </button>
+    </span>
+
+    <span class="row-actions">
+        <button class="btn btn-primary btn-sm">
+            Approve
+        </button>
+
+        <button class="btn btn-secondary btn-sm">
+            Reject
+        </button>
+    </span>
+
+</div>
+
+
+<div class="table-row users-table">
+
+    <span>
+        CUS-002
+    </span>
+
+    <span>
+        Dilani Silva
+    </span>
+
+    <span class="contact-info">
+        dilani@gmail.com
+        <small>0719876543</small>
+    </span>
+
+    <span class="document-actions">
+        <button class="btn btn-outline btn-sm">
+            View NIC
+        </button>
+
+        <button class="btn btn-outline btn-sm">
+            View License
+        </button>
+    </span>
+
+    <span class="row-actions">
+
+        <button class="btn btn-primary btn-sm">
+            Approve
+        </button>
+
+        <button class="btn btn-secondary btn-sm">
+            Reject
+        </button>
+
+    </span>
+
 </div>

@@ -149,92 +149,56 @@
 
 <section class="panel-card wide-card">
     <div class="table-header bookings-table">
-        <span>Booking ID</span>
-        <span>Customer</span>
-        <span>Vehicle</span>
-        <span>Owner</span>
-        <span>Driver</span>
-        <span>Pickup</span>
-        <span>Return</span>
-        <span>Status</span>
-        <span>Payment</span>
-        <span>Action</span>
-    </div>
+    <span>Booking ID</span>
+    <span>Customer</span>
+    <span>Vehicle</span>
+    <span>Owner</span>
+    <span>Driver</span>
+    <span>Status</span>
+</div>
 
-    <div class="table-row bookings-table">
-        <span>BK-2026-001</span>
-        <span>Kasun Perera</span>
-        <span>Toyota Prius</span>
-        <span>Nimal Fernando</span>
-        <span>Ruwan Bandara</span>
-        <span>10 Aug 2026</span>
-        <span>15 Aug 2026</span>
-        <span><span class="status-pill status-confirmed">Confirmed</span></span>
-        <span><span class="payment-pill payment-paid">Paid</span></span>
-        <span class="row-actions">
-            <button class="btn btn-outline">View</button>
+   <div class="table-row bookings-table">
+    <span>BK-2026-001</span>
+    <span>Kasun Perera</span>
+    <span>Toyota Prius</span>
+    <span>Nimal Fernando</span>
+    <span>Ruwan Bandara</span>
+
+    <span class="status-actions">
+        <button class="btn btn-primary">Approve</button>
+        <button class="btn btn-secondary">Reject</button>
+    </span>
+</div>
+
+
+<div class="table-row bookings-table">
+    <span>BK-2026-002</span>
+    <span>Dilani Silva</span>
+    <span>Honda Vezel</span>
+    <span>Chaminda Perera</span>
+    <span>Not Assigned</span>
+
+    <span class="status-actions">
+        <span class="status-pill status-confirmed">
+            Approved
         </span>
-    </div>
-    <div class="table-row bookings-table">
-        <span>BK-2026-002</span>
-        <span>Dilani Silva</span>
-        <span>Honda Vezel</span>
-        <span>Chaminda Perera</span>
-        <span>Not Assigned</span>
-        <span>12 Aug 2026</span>
-        <span>18 Aug 2026</span>
-        <span><span class="status-pill status-warning">Pending</span></span>
-        <span><span class="payment-pill payment-pending">Pending</span></span>
-        <span class="row-actions">
-            <button class="btn btn-primary">Approve</button>
-            <button class="btn btn-secondary">Reject</button>
-            <button class="btn btn-outline">View</button>
+    </span>
+</div>
+
+
+<div class="table-row bookings-table">
+    <span>BK-2026-003</span>
+    <span>Amal Fernando</span>
+    <span>Toyota KDH</span>
+    <span>Sunil Jayasinghe</span>
+    <span>Lakshan Perera</span>
+
+    <span class="status-actions">
+        <span class="status-pill status-cancelled">
+            Rejected
         </span>
-    </div>
-    <div class="table-row bookings-table">
-        <span>BK-2026-003</span>
-        <span>Amal Fernando</span>
-        <span>Toyota KDH</span>
-        <span>Sunil Jayasinghe</span>
-        <span>Lakshan Perera</span>
-        <span>05 Aug 2026</span>
-        <span>08 Aug 2026</span>
-        <span><span class="status-pill status-active">Active</span></span>
-        <span><span class="payment-pill payment-paid">Paid</span></span>
-        <span class="row-actions">
-            <button class="btn btn-primary">Track</button>
-            <button class="btn btn-outline">View Details</button>
-        </span>
-    </div>
-    <div class="table-row bookings-table">
-        <span>BK-2026-004</span>
-        <span>Sahan Perera</span>
-        <span>Suzuki Alto</span>
-        <span>Kasun Silva</span>
-        <span>Dinesh Fernando</span>
-        <span>28 Jul 2026</span>
-        <span>30 Jul 2026</span>
-        <span><span class="status-pill status-completed">Completed</span></span>
-        <span><span class="payment-pill payment-paid">Paid</span></span>
-        <span class="row-actions">
-            <button class="btn btn-secondary">View Invoice</button>
-            <button class="btn btn-outline">View Details</button>
-        </span>
-    </div>
-    <div class="table-row bookings-table">
-        <span>BK-2026-005</span>
-        <span>Priyanka Jayawardena</span>
-        <span>Hyundai Staria</span>
-        <span>Rohitha Silva</span>
-        <span>Not Assigned</span>
-        <span>02 Aug 2026</span>
-        <span>06 Aug 2026</span>
-        <span><span class="status-pill status-cancelled">Cancelled</span></span>
-        <span><span class="payment-pill payment-failed">Failed</span></span>
-        <span class="row-actions">
-            <button class="btn btn-outline">View Details</button>
-        </span>
-    </div>
+    </span>
+</div>
 </section>
 
 <div class="modal-backdrop hidden" id="bookingDetailsModal">
