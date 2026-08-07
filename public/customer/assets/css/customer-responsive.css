@@ -1,0 +1,125 @@
+/* Laptop and tablet dashboard grids */
+@media (max-width: 1120px) {
+    .stats-grid,
+    .quick-links-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .dashboard-grid--main {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Tablet and mobile navigation */
+@media (max-width: 960px) {
+    .customer-shell {
+        grid-template-columns: 1fr;
+    }
+
+    .customer-sidebar {
+        position: relative;
+        width: 100%;
+        height: auto;
+        min-height: 0;
+    }
+
+    .js .customer-sidebar {
+        position: fixed;
+        inset: 0 auto 0 0;
+        width: min(86vw, 310px);
+        height: 100vh;
+        min-height: 0;
+        transform: translateX(-105%);
+        transition: transform var(--transition-fast);
+    }
+
+    .js .sidebar-close,
+    .js .menu-button {
+        display: inline-grid;
+    }
+
+    .js body.sidebar-is-open {
+        overflow: hidden;
+    }
+
+    .js body.sidebar-is-open .customer-sidebar {
+        transform: translateX(0);
+    }
+
+    .js body.sidebar-is-open .sidebar-overlay {
+        display: block;
+    }
+}
+
+/* Small-screen content and card layout */
+@media (max-width: 640px) {
+    .customer-navbar {
+        min-height: 3.8rem;
+        padding: 0.6rem 0.85rem;
+    }
+
+    .navbar-context p span,
+    .profile-menu__name,
+    .profile-menu__trigger > .icon {
+        display: none;
+    }
+
+    .navbar-context p {
+        max-width: 8.5rem;
+    }
+
+    .customer-content {
+        padding: 1.15rem 0.9rem 1.75rem;
+    }
+
+    .page-header,
+    .welcome-strip,
+    .customer-footer {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .page-header .button,
+    .next-action-card .button {
+        width: 100%;
+    }
+
+    .next-action-card {
+        grid-template-columns: auto minmax(0, 1fr);
+    }
+
+    .next-action-card .button {
+        grid-column: 1 / -1;
+    }
+
+    .stats-grid,
+    .quick-links-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .card,
+    .stat-card {
+        padding: 1rem;
+    }
+
+    .card__header {
+        align-items: flex-start;
+    }
+
+    .customer-footer {
+        gap: 0.35rem;
+    }
+}
+
+/* Respect reduced-motion preferences */
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+        transition-duration: 0.01ms;
+    }
+}
