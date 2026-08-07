@@ -1,4 +1,6 @@
 <?php
+require_once dirname(__DIR__) . '/app/controllers/AuthController.php';
+require_once dirname(__DIR__) . '/app/helpers/AuthHelper.php';
 
 // Unified Sign In Page
 
