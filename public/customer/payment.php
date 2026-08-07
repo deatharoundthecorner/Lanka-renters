@@ -1,37 +1,5 @@
 <?php
 
-$invoiceNo = $invoiceNo ?? "INV-1001";
-
-$total = $total ?? "Rs. 18,500";
-
-$status = $status ?? "Pending Verification";
-
-?>
-
-<div class="invoice-card">
-
-    <h3>
-
-        Invoice <?= htmlspecialchars($invoiceNo) ?>
-
-    </h3>
-
-    <p>
-
-        Total
-
-        <strong>
-
-            <?= htmlspecialchars($total) ?>
-
-        </strong>
-
-    </p>
-
-    <span class="badge badge-warning">
-
-        <?= htmlspecialchars($status) ?>
-
-    </span>
-
-</div>
+$customerPageTitle = 'Payment';
+$customerPageDescription = 'This legacy Customer payment route is protected pending payment implementation.';
+require __DIR__ . '/_foundation_page.php';

@@ -1,83 +1,32 @@
 <?php
-$pageTitle = "Dashboard";
-include 'components/layout/header.php';
+
+if (!defined('CUSTOMER_DASHBOARD_VIEW')) {
+    require_once dirname(__DIR__) . '/_bootstrap.php';
+    header('Location: ' . customer_url('dashboard.php'), true, 302);
+    exit;
+}
+
+$pageTitle = $viewData['page_title'];
+require dirname(__DIR__) . '/components/layout/header.php';
 ?>
+<div class="customer-shell">
+    <?php require dirname(__DIR__) . '/components/layout/sidebar.php'; ?>
 
-<div class="dashboard">
+    <div class="customer-main">
+        <?php require dirname(__DIR__) . '/components/layout/navbar.php'; ?>
 
-    <?php include 'components/layout/sidebar.php'; ?>
+        <main class="customer-content" id="main-content">
+            <?php require dirname(__DIR__) . '/components/layout/page-header.php'; ?>
 
-    <div class="main-content">
-
-        <?php include 'components/layout/navbar.php'; ?>
-
-        <main class="page-content">
-
-            <div class="content-wrapper">
-
-                <?php
-                $pageHeading = "Dashboard";
-                $pageDescription = "Welcome back to Lanka Renters.";
-                include 'components/layout/page-header.php';
-                ?>
-
-                <!-- Statistics -->
-                <section class="stat-grid">
-
-                    <?php
-
-                    $title="Current Bookings";
-                    $value="1";
-                    $icon="booking";
-                    include 'components/dashboard/stat-card.php';
-
-                    $title="Upcoming";
-                    $value="2";
-                    $icon="calendar";
-                    include 'components/dashboard/stat-card.php';
-
-                    $title="Completed";
-                    $value="15";
-                    $icon="success";
-                    include 'components/dashboard/stat-card.php';
-
-                    $title="Pending Payments";
-                    $value="LKR 18,500";
-                    $icon="payment";
-                    include 'components/dashboard/stat-card.php';
-
-                    ?>
-
-                </section>
-
-                <!-- Quick Actions -->
-
-                <section class="quick-actions">
-
-                    <?php
-
-                    $title="Search Vehicle";
-                    include 'components/dashboard/quick-action-card.php';
-
-                    $title="Book Vehicle";
-                    include 'components/dashboard/quick-action-card.php';
-
-                    $title="Payments";
-                    include 'components/dashboard/quick-action-card.php';
-
-                    $title="Chat";
-                    include 'components/dashboard/quick-action-card.php';
-
-                    ?>
-
-                </section>
-
-            </div>
-
+            <section class="foundation-card" aria-labelledby="foundation-heading">
+                <p class="eyebrow">Phase 1 foundation</p>
+                <h2 id="foundation-heading">Customer MVC is connected</h2>
+                <p>
+                    This request passed through the Customer controller and model before this view was rendered.
+                    Booking and vehicle features intentionally begin in a later phase.
+                </p>
+            </section>
         </main>
-
     </div>
-
 </div>
-
-<?php include 'components/layout/footer.php'; ?>
+<?php require dirname(__DIR__) . '/components/layout/footer.php'; ?>
