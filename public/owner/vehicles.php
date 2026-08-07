@@ -77,7 +77,7 @@ $csrfToken = AuthHelper::getCsrfToken();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Vehicles - LankaRenters Owner</title>
     <!-- Link Owner Design CSS -->
-    <link rel="stylesheet" href="assets/css/owner-style.css">
+    <link rel="stylesheet" href="includes/assets/css/owner-style.css">
     <style>
         /* Supplementary Component Styles */
         .alert-banner {
