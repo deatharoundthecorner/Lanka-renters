@@ -1,8 +1,6 @@
 <?php
 require_once dirname(dirname(__DIR__)) . '/app/controllers/DriverController.php';
 require_once dirname(dirname(__DIR__)) . '/app/helpers/AuthHelper.php';
-require_once dirname(dirname(__DIR__)) . '/app/models/DriverPerformance.php';
-require_once dirname(dirname(__DIR__)) . '/app/models/DriverPayment.php';
 require_once dirname(dirname(__DIR__)) . '/app/models/Notification.php';
 
 AuthHelper::startSession();
@@ -26,18 +24,23 @@ $driverController = new DriverController();
 $statusError = '';
 $statusSuccess = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
-    if ($_POST['action'] === 'update_availability') {
-        $newStatus = $_POST['availability_status'] ?? '';
-        $result = $driverController->updateAvailability($newStatus);
-        if ($result['success']) {
-            $statusSuccess = $result['message'];
-        } else {
-            $statusError = $result['error'];
+    // Validate CSRF token for availability update and logout
+    if (!AuthHelper::validateCsrfToken($_POST['csrf_token'] ?? '')) {
+        $statusError = "CSRF security verification failed.";
+    } else {
+        if ($_POST['action'] === 'update_availability') {
+            $newStatus = $_POST['availability_status'] ?? '';
+            $result = $driverController->updateAvailability($newStatus);
+            if ($result['success']) {
+                $statusSuccess = $result['message'];
+            } else {
+                $statusError = $result['error'];
+            }
+        } elseif ($_POST['action'] === 'logout') {
+            AuthHelper::logout();
+            header("Location: login.php");
+            exit();
         }
-    } elseif ($_POST['action'] === 'logout') {
-        AuthHelper::logout();
-        header("Location: login.php");
-        exit();
     }
 }
 
@@ -51,15 +54,13 @@ $profile = $dashboardResult['profile'];
 $stats = $dashboardResult['dashboard_stats'];
 $vehicles = $dashboardResult['assigned_vehicles'];
 
-// Fetch advanced analytics for Overview Section
-$performanceModel = new DriverPerformance();
-$perfStats = $performanceModel->getStatistics($profile['id']);
-$reviewsList = $performanceModel->getRatingSummary($profile['id']);
-$totalReviews = count($reviewsList);
+// Fetch advanced analytics for Overview Section via controller
+$perfResult = $driverController->viewPerformance();
+$perfStats = $perfResult['success'] ? $perfResult['stats'] : ['completed_trips' => 0, 'cancelled_trips' => 0, 'total_hours' => 0, 'avg_rating' => 5.0];
+$totalReviews = $perfResult['success'] ? count($perfResult['reviews']) : 0;
 
-$paymentModel = new DriverPayment();
-$paymentSummary = $paymentModel->getEarningsSummary($profile['id']);
-$earningsSplit = $paymentModel->getEarningsSplit($profile['id']);
+$earningsResult = $driverController->viewEarningsDetail();
+$earningsSplit = $earningsResult['success'] ? $earningsResult['split'] : ['paid' => 0.0, 'pending' => 0.0, 'total' => 0.0];
 
 // Fetch trips for Operations Section
 $tripsResult = $driverController->viewTrips();
@@ -122,15 +123,27 @@ include 'includes/navbar.php';
         </div>
 
         <div class="stat-card">
-            <h3>Completed Trips</h3>
-            <p><?php echo $perfStats['completed_trips']; ?></p>
-            <span>Total completed trips</span>
+            <h3>Connected Owners</h3>
+            <p><?php echo $stats['connected_owners']; ?> Owners</p>
+            <span>Active connections</span>
         </div>
 
         <div class="stat-card">
-            <h3>Total Earnings</h3>
-            <p>Rs. <?php echo number_format($paymentSummary['total_earnings'], 2); ?></p>
-            <span>This month</span>
+            <h3>Pending Requests</h3>
+            <p><?php echo $stats['pending_requests']; ?></p>
+            <span>Connection requests</span>
+        </div>
+
+        <div class="stat-card">
+            <h3>Monthly Earnings</h3>
+            <p>Rs. <?php echo number_format($stats['monthly_earnings'], 2); ?></p>
+            <span>Current month earnings</span>
+        </div>
+
+        <div class="stat-card">
+            <h3>Completed Trips</h3>
+            <p><?php echo $perfStats['completed_trips']; ?></p>
+            <span>Total completed trips</span>
         </div>
     </section>
 

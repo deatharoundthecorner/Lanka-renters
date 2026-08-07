@@ -1,70 +1,129 @@
 <?php
 // Drivers page content (partial)
 ?>
-<header class="admin-header">
+<header class="page-header">
     <div>
-        <h1>Drivers</h1>
-        <p>Review driver submissions and confirm identity before dispatch.</p>
+        <h1>Drivers Management</h1>
+        <p>Review driver registrations, verify documents, and manage approved drivers.</p>
     </div>
     <div class="admin-userbubble">
-        <button class="btn-outline">Open approval queue</button>
-        <div class="user-initial">D</div>
+        <button class="btn btn-primary btn-sm">Add Driver</button>
     </div>
 </header>
-<div class="dashboard-cards">
-    <section class="panel-card">
-        <h2>Driver approvals</h2>
-        <div class="list-card">
-            <div class="incident-card">
-                <div class="incident-main">
-                    <div class="incident-header">
-                        <div>
-                            <div class="incident-title">Ruwan Bandara · Pending license review</div>
-                            <div class="incident-meta">Review evidence, apply the rule, then keep a clear record.</div>
-                        </div>
-                    </div>
-                    <div class="incident-detail">
-                        <strong>Submitted documents</strong>
-                        <p class="muted">Driver license, ID proof, and vehicle registration received.</p>
-                    </div>
-                </div>
-                <div class="incident-actions">
-                    <button class="btn-primary">Approve</button>
-                    <button class="btn-secondary">Reject</button>
-                </div>
-            </div>
-            <div class="incident-card">
-                <div class="incident-main">
-                    <div class="incident-header">
-                        <div>
-                            <div class="incident-title">Dilani Weerasinghe · Pending background check</div>
-                            <div class="incident-meta">Confirm customer reviews and vehicle familiarity.</div>
-                        </div>
-                    </div>
-                    <div class="incident-detail">
-                        <strong>Submitted documents</strong>
-                        <p class="muted">Background report and driving history attached.</p>
-                    </div>
-                </div>
-                <div class="incident-actions">
-                    <button class="btn-primary">Approve</button>
-                    <button class="btn-secondary">Reject</button>
-                </div>
-            </div>
+
+<section class="filters-card">
+    <div class="filters-card-header">
+        <div class="filter-icon" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M3 5h18" stroke="#1d4ed8" stroke-width="2" stroke-linecap="round"/>
+                <path d="M6 12h12" stroke="#1d4ed8" stroke-width="2" stroke-linecap="round"/>
+                <path d="M10 19h4" stroke="#1d4ed8" stroke-width="2" stroke-linecap="round"/>
+            </svg>
         </div>
-    </section>
-    <aside class="panel-card">
-        <h2>Admin essentials</h2>
-        <div style="display:grid; gap:10px;">
-            <div style="color:#64748b;">The rules that matter most today.</div>
-            <ul style="padding-left:18px; margin:0; color:#0f172a;">
-                <li>Verify drivers before assigning rentals.</li>
-                <li>Check ID proof and license validity.</li>
-                <li>Approve only after owning or admin confirmation.</li>
-            </ul>
+        <div>
+            <p class="section-label">Filters</p>
+            <p class="section-description">Search drivers by name, documents, district, or type.</p>
         </div>
-        <div style="margin-top:18px; background:#eef2ff; border-radius:12px; padding:12px; color:#2563eb;">
-            Driver verification is required before covering vehicles under insurance.
+    </div>
+
+    <form class="filter-grid" method="GET" action="">
+        <label class="filter-group">
+            <span>Search</span>
+            <input type="search" name="q" placeholder="Search driver name, NIC, license number..." />
+        </label>
+        <label class="filter-group">
+            <span>Status</span>
+            <select name="status">
+                <option>All</option>
+                <option>Pending Verification</option>
+                <option>Approved</option>
+                <option>Rejected</option>
+                <option>Suspended</option>
+            </select>
+        </label>
+        <label class="filter-group">
+            <span>District</span>
+            <select name="district">
+                <option>All Districts</option>
+                <option>Colombo</option>
+                <option>Gampaha</option>
+                <option>Kandy</option>
+                <option>Galle</option>
+                <option>Matara</option>
+                <option>Kurunegala</option>
+            </select>
+        </label>
+        <label class="filter-group">
+            <span>Driver Type</span>
+            <select name="driver_type">
+                <option>All</option>
+                <option>Individual Driver</option>
+                <option>Vehicle Owner Driver</option>
+            </select>
+        </label>
+        <div class="filter-actions" style="grid-column: span 2;">
+            <button class="btn btn-primary btn-sm" type="submit">Search</button>
+            <button class="btn btn-secondary btn-sm" type="reset">Reset</button>
         </div>
-    </aside>
-</div>
+    </form>
+</section>
+
+<section class="panel-card wide-card" style="margin-top: 24px;">
+    <div class="table-header" style="grid-template-columns: 1.5fr 1fr 1fr 1fr 1.25fr 1.2fr;">
+        <span>Driver</span>
+        <span>Contact</span>
+        <span>License No</span>
+        <span>District</span>
+        <span>Registration Date</span>
+        <span>Action</span>
+    </div>
+
+    <div class="table-row" style="grid-template-columns: 1.5fr 1fr 1fr 1fr 1.25fr 1.2fr;">
+        <span>Ruwan Bandara</span>
+        <span>0771234567</span>
+        <span>B1234567</span>
+        <span>Colombo</span>
+        <span>31 Jul 2026</span>
+        <span class="row-actions">
+            <button class="btn btn-primary btn-sm">Approve</button>
+            <button class="btn btn-outline btn-sm">Reject</button>
+            <button class="btn btn-outline btn-sm">View Documents</button>
+        </span>
+    </div>
+
+    <div class="table-row" style="grid-template-columns: 1.5fr 1fr 1fr 1fr 1.25fr 1.2fr;">
+        <span>Dilani Weerasinghe</span>
+        <span>0719876543</span>
+        <span>C4567890</span>
+        <span>Kandy</span>
+        <span>29 Jul 2026</span>
+        <span class="row-actions">
+            <button class="btn btn-primary btn-sm">Approve</button>
+            <button class="btn btn-outline btn-sm">Reject</button>
+            <button class="btn btn-outline btn-sm">View Documents</button>
+        </span>
+    </div>
+
+    <div class="table-row" style="grid-template-columns: 1.5fr 1fr 1fr 1fr 1.25fr 1.2fr;">
+        <span>Tharindu Alwis</span>
+        <span>0755555555</span>
+        <span>D9876543</span>
+        <span>Galle</span>
+        <span>20 Jul 2026</span>
+        <span class="row-actions">
+            <button class="btn btn-outline btn-sm">View Profile</button>
+            <button class="btn btn-secondary btn-sm">Suspend</button>
+        </span>
+    </div>
+
+    <div class="table-row" style="grid-template-columns: 1.5fr 1fr 1fr 1fr 1.25fr 1.2fr;">
+        <span>Kasun Perera</span>
+        <span>0764321987</span>
+        <span>E2345678</span>
+        <span>Gampaha</span>
+        <span>18 Jul 2026</span>
+        <span class="row-actions">
+            <button class="btn btn-primary btn-sm">Reactivate</button>
+        </span>
+    </div>
+</section>

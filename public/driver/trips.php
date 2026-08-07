@@ -24,16 +24,20 @@ $success = '';
 
 // Handle pickup status updates
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'update_pickup') {
-    $bookingId = (int)($_POST['booking_id'] ?? 0);
-    $status = $_POST['pickup_status'] ?? '';
-    $latitude = !empty($_POST['latitude']) ? (float)$_POST['latitude'] : null;
-    $longitude = !empty($_POST['longitude']) ? (float)$_POST['longitude'] : null;
-    
-    $result = $driverController->updatePickupStatus($bookingId, $status, $latitude, $longitude);
-    if ($result['success']) {
-        $success = $result['message'];
+    // Validate CSRF token
+    if (!AuthHelper::validateCsrfToken($_POST['csrf_token'] ?? '')) {
+        $error = "CSRF security verification failed.";
     } else {
-        $error = $result['error'];
+        $bookingId = (int)($_POST['booking_id'] ?? 0);
+        $status = $_POST['pickup_status'] ?? '';
+        $driverNote = !empty($_POST['driver_note']) ? trim($_POST['driver_note']) : null;
+        
+        $result = $driverController->updatePickupStatus($bookingId, $status, $driverNote);
+        if ($result['success']) {
+            $success = $result['message'];
+        } else {
+            $error = $result['error'];
+        }
     }
 }
 
@@ -98,6 +102,7 @@ include 'includes/navbar.php';
                 <div style="border-left: 1px solid var(--border); padding-left: 30px;">
                     <h3 style="font-size: 15px; font-weight: 700; margin-bottom: 15px;">Update Pickup Status</h3>
                     <form action="" method="POST">
+                        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(AuthHelper::getCsrfToken()); ?>">
                         <input type="hidden" name="action" value="update_pickup">
                         <input type="hidden" name="booking_id" value="<?php echo htmlspecialchars($trip['id']); ?>">
                         
@@ -112,21 +117,12 @@ include 'includes/navbar.php';
                             </select>
                         </div>
 
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
-                            <div class="form-group" style="margin-bottom:0;">
-                                <label class="form-label" style="font-size:12px;">Latitude (Optional)</label>
-                                <input type="number" step="any" name="latitude" id="latitude_<?php echo $trip['id']; ?>" class="form-control" placeholder="e.g. 6.9271">
-                            </div>
-                            <div class="form-group" style="margin-bottom:0;">
-                                <label class="form-label" style="font-size:12px;">Longitude (Optional)</label>
-                                <input type="number" step="any" name="longitude" id="longitude_<?php echo $trip['id']; ?>" class="form-control" placeholder="e.g. 79.8612">
-                            </div>
+                        <div class="form-group">
+                            <label for="driver_note_<?php echo $trip['id']; ?>" class="form-label">Driver Note (Optional)</label>
+                            <textarea name="driver_note" id="driver_note_<?php echo $trip['id']; ?>" class="form-control" rows="3" placeholder="e.g. Reached pickup location"></textarea>
                         </div>
 
-                        <div style="display: flex; gap: 10px;">
-                            <button type="button" class="btn-secondary" style="flex: 1;" onclick="detectGPS(<?php echo $trip['id']; ?>)">Detect GPS</button>
-                            <button type="submit" class="btn-blue" style="flex: 1.5;">Update Status</button>
-                        </div>
+                        <button type="submit" class="btn-blue" style="width: 100%; margin-top: 10px;">Update Status</button>
                     </form>
                 </div>
             </div>
@@ -170,24 +166,7 @@ include 'includes/navbar.php';
         <?php endif; ?>
     </div>
 
-    <!-- Geolocation script -->
-    <script>
-        function detectGPS(tripId) {
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(
-                    function(position) {
-                        document.getElementById('latitude_' + tripId).value = position.coords.latitude.toFixed(6);
-                        document.getElementById('longitude_' + tripId).value = position.coords.longitude.toFixed(6);
-                    },
-                    function(error) {
-                        alert("Geolocation Error: " + error.message);
-                    }
-                );
-            } else {
-                alert("Geolocation is not supported by this browser.");
-            }
-        }
-    </script>
+
 </main>
 <?php
 include 'includes/footer.php';

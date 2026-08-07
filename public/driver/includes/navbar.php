@@ -1,10 +1,7 @@
 <?php
-// Retrieve unread notifications count for badge
-$db = Database::getInstance()->getConnection();
-$sqlNotifCount = "SELECT COUNT(*) FROM `notifications` WHERE `user_id` = :user_id AND `is_read` = FALSE";
-$stmtNotifCount = $db->prepare($sqlNotifCount);
-$stmtNotifCount->execute(['user_id' => $user['id']]);
-$unreadCount = (int)$stmtNotifCount->fetchColumn();
+require_once dirname(dirname(dirname(__DIR__))) . '/app/models/Notification.php';
+$notificationModel = new Notification();
+$unreadCount = $notificationModel->getUnreadCount($user['id']);
 ?>
 <header class="top-navbar">
     <div class="navbar-left">
@@ -35,6 +32,7 @@ $unreadCount = (int)$stmtNotifCount->fetchColumn();
             </div>
             <!-- Logout button in top navbar -->
             <form action="dashboard.php" method="POST" style="margin: 0; display: inline-block;">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(AuthHelper::getCsrfToken()); ?>">
                 <input type="hidden" name="action" value="logout">
                 <button type="submit" class="btn-secondary" style="padding: 6px 12px; font-size: 12px; border-radius: 4px;">Logout</button>
             </form>

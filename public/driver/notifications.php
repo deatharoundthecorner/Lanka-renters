@@ -1,6 +1,7 @@
 <?php
 require_once dirname(dirname(__DIR__)) . '/app/helpers/AuthHelper.php';
 require_once dirname(dirname(__DIR__)) . '/app/models/Notification.php';
+require_once dirname(dirname(__DIR__)) . '/app/controllers/DriverController.php';
 
 AuthHelper::startSession();
 
@@ -18,18 +19,47 @@ if (($user['role'] ?? '') !== 'driver') {
 }
 
 $notificationModel = new Notification();
+$driverController = new DriverController();
+
 $error = '';
 $success = '';
 
-// Handle mark as read
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'mark_read') {
-    $notificationId = (int)($_POST['notification_id'] ?? 0);
-    if ($notificationModel->markAsRead($notificationId, $user['id'])) {
-        $success = "Notification marked as read.";
+// Handle connection and notification actions
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
+    // Validate CSRF token
+    if (!AuthHelper::validateCsrfToken($_POST['csrf_token'] ?? '')) {
+        $error = "CSRF security verification failed.";
     } else {
-        $error = "Failed to update notification status.";
+        if ($_POST['action'] === 'accept_request') {
+            $linkId = (int)($_POST['link_id'] ?? 0);
+            $res = $driverController->acceptOwnerRequest($linkId);
+            if ($res['success']) {
+                $success = $res['message'];
+            } else {
+                $error = $res['error'];
+            }
+        } elseif ($_POST['action'] === 'reject_request') {
+            $linkId = (int)($_POST['link_id'] ?? 0);
+            $res = $driverController->rejectOwnerRequest($linkId);
+            if ($res['success']) {
+                $success = $res['message'];
+            } else {
+                $error = $res['error'];
+            }
+        } elseif ($_POST['action'] === 'mark_read') {
+            $notificationId = (int)($_POST['notification_id'] ?? 0);
+            if ($notificationModel->markAsRead($notificationId, $user['id'])) {
+                $success = "Notification marked as read.";
+            } else {
+                $error = "Failed to update notification status.";
+            }
+        }
     }
 }
+
+// Fetch pending connection requests
+$requestsResult = $driverController->viewOwnerRequests();
+$requests = $requestsResult['success'] ? $requestsResult['requests'] : [];
 
 // Fetch all notifications
 $notifications = $notificationModel->getByUserId($user['id']);
@@ -62,6 +92,44 @@ include 'includes/navbar.php';
         </div>
     <?php endif; ?>
 
+    <!-- Connection Requests Card -->
+    <div class="card" style="margin-bottom: 25px;">
+        <h2 class="card-title">Owner Connection Requests</h2>
+        <?php if (empty($requests)): ?>
+            <p style="font-style: italic; color: var(--text-muted);">No pending owner connection requests.</p>
+        <?php else: ?>
+            <div style="display: flex; flex-direction: column; gap: 15px;">
+                <?php foreach ($requests as $req): ?>
+                    <div style="border: 1px solid var(--border); padding: 18px 24px; border-radius: 6px; background-color: #ffffff; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                        <div>
+                            <div style="font-weight: 700; font-size: 15px; margin-bottom: 4px; color: var(--text-main);">
+                                Request from Owner: <?php echo htmlspecialchars($req['owner_name']); ?>
+                            </div>
+                            <div style="color: var(--text-muted); font-size: 13px; margin-bottom: 6px;">
+                                Owner Vehicles Count: <strong><?php echo $req['vehicle_count']; ?></strong><br>
+                                Request Date: <?php echo date('Y-m-d H:i', strtotime($req['created_at'])); ?>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 10px;">
+                            <form action="" method="POST" style="margin: 0;">
+                                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(AuthHelper::getCsrfToken()); ?>">
+                                <input type="hidden" name="action" value="accept_request">
+                                <input type="hidden" name="link_id" value="<?php echo (int)$req['id']; ?>">
+                                <button type="submit" class="btn-blue" style="padding: 8px 16px; font-size: 13px; background-color: var(--success); border-color: var(--success);">Accept</button>
+                            </form>
+                            <form action="" method="POST" style="margin: 0;">
+                                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(AuthHelper::getCsrfToken()); ?>">
+                                <input type="hidden" name="action" value="reject_request">
+                                <input type="hidden" name="link_id" value="<?php echo (int)$req['id']; ?>">
+                                <button type="submit" class="btn-blue" style="padding: 8px 16px; font-size: 13px; background-color: var(--danger); border-color: var(--danger);">Reject</button>
+                            </form>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
+    </div>
+
     <!-- List of Notifications -->
     <div class="card">
         <h2 class="card-title">Your Notification Log</h2>
@@ -81,6 +149,7 @@ include 'includes/navbar.php';
                         <div>
                             <?php if ($isUnread): ?>
                                 <form action="" method="POST" style="margin: 0;">
+                                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(AuthHelper::getCsrfToken()); ?>">
                                     <input type="hidden" name="action" value="mark_read">
                                     <input type="hidden" name="notification_id" value="<?php echo (int)$notif['id']; ?>">
                                     <button type="submit" class="btn-blue" style="padding: 6px 12px; font-size: 12px;">Mark as Read</button>
