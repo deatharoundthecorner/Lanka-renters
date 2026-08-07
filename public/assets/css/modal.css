@@ -1,0 +1,27 @@
+.modal{
+
+    position:fixed;
+
+    inset:0;
+
+    display:none;
+
+    justify-content:center;
+
+    align-items:center;
+
+    background:rgba(0,0,0,.4);
+
+}
+
+.modal-content{
+
+    background:white;
+
+    width:500px;
+
+    border-radius:var(--radius-lg);
+
+    padding:24px;
+
+}

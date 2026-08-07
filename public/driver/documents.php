@@ -1,22 +1,14 @@
 <?php
 require_once dirname(dirname(__DIR__)) . '/app/controllers/DriverController.php';
 require_once dirname(dirname(__DIR__)) . '/app/helpers/AuthHelper.php';
+require_once dirname(dirname(__DIR__)) . '/app/models/DriverDocument.php';
 
 AuthHelper::startSession();
 
-// Localized driver auth check
-if (!AuthHelper::isLoggedIn()) {
-    header("Location: login.php");
-    exit();
-}
+// Centralized role check
+AuthHelper::requireRole('driver');
 
 $user = AuthHelper::getCurrentUser();
-if (($user['role'] ?? '') !== 'driver') {
-    AuthHelper::logout();
-    header("Location: login.php");
-    exit();
-}
-
 $driverController = new DriverController();
 
 $error = '';
@@ -31,7 +23,7 @@ if (!$dashboardResult['success']) {
     $driverId = $dashboardResult['profile']['id'];
 }
 
-// 1. Handle document delete action
+// 1. Handle document delete action (Security Constraint: Only allows pending status)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'delete_document') {
     if (!AuthHelper::validateCsrfToken($_POST['csrf_token'] ?? '')) {
         $error = "CSRF security verification failed.";
@@ -46,7 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     }
 }
 
-// 2. Handle document upload submissions
+// 2. Handle document upload submissions (creates a new version)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'upload_document') {
     if (!AuthHelper::validateCsrfToken($_POST['csrf_token'] ?? '')) {
         $error = "CSRF security verification failed.";
@@ -55,7 +47,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $documentNumber = trim($_POST['document_number'] ?? '');
         $expiryDate = $_POST['expiry_date'] ?? '';
         
-        // Form field validations
         if (empty($documentType) || empty($documentNumber) || empty($expiryDate)) {
             $error = "All document fields are required.";
         } elseif (isset($_FILES['document_file']) && $_FILES['document_file']['error'] === UPLOAD_ERR_OK) {
@@ -70,7 +61,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             } elseif ($fileSize > 5 * 1024 * 1024) {
                 $error = "Document file size exceeds the maximum limit of 5MB.";
             } else {
-                // Verify actual MIME type (requires finfo)
                 $mimeValid = true;
                 if (function_exists('finfo_open')) {
                     $finfo = finfo_open(FILEINFO_MIME_TYPE);
@@ -113,7 +103,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                             ]);
                             
                             if ($uploadResult['success']) {
-                                $success = $uploadResult['message'];
+                                $success = "Document replacement version uploaded successfully and is pending admin approval.";
                             } else {
                                 if (file_exists($destPath)) {
                                     unlink($destPath);
@@ -134,127 +124,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     }
 }
 
-// 3. Handle document edit/replace submissions
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'edit_document') {
-    if (!AuthHelper::validateCsrfToken($_POST['csrf_token'] ?? '')) {
-        $error = "CSRF security verification failed.";
-    } else {
-        $documentId = (int)($_POST['document_id'] ?? 0);
-        $documentNumber = trim($_POST['document_number'] ?? '');
-        $expiryDate = $_POST['expiry_date'] ?? '';
-        
-        if (empty($documentNumber) || empty($expiryDate)) {
-            $error = "All document fields are required.";
-        } else {
-            $updateData = [
-                'document_number' => $documentNumber,
-                'expiry_date'     => $expiryDate
-            ];
-
-            $fileUploaded = false;
-            $destPath = '';
-
-            // Check if replacing document file
-            if (isset($_FILES['document_file']) && $_FILES['document_file']['error'] === UPLOAD_ERR_OK) {
-                $fileTmpPath = $_FILES['document_file']['tmp_name'];
-                $fileName = $_FILES['document_file']['name'];
-                $fileSize = $_FILES['document_file']['size'];
-                $fileExtension = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
-                
-                $allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png'];
-                if (!in_array($fileExtension, $allowedExtensions)) {
-                    $error = "Only PDF, JPG, JPEG, and PNG files are allowed.";
-                } elseif ($fileSize > 5 * 1024 * 1024) {
-                    $error = "Document file size exceeds the maximum limit of 5MB.";
-                } else {
-                    $mimeValid = true;
-                    if (function_exists('finfo_open')) {
-                        $finfo = finfo_open(FILEINFO_MIME_TYPE);
-                        $mimeType = finfo_file($finfo, $fileTmpPath);
-                        finfo_close($finfo);
-                        
-                        $allowedMimes = ['image/jpeg', 'image/png', 'application/pdf'];
-                        if (!in_array($mimeType, $allowedMimes)) {
-                            $mimeValid = false;
-                            $error = "Invalid document file type. Only PDF, JPG, JPEG, and PNG are allowed.";
-                        }
-                    }
-                    
-                    if ($mimeValid && $driverId > 0) {
-                        $docModel = new DriverDocument();
-                        $oldDoc = $docModel->getById($documentId);
-                        
-                        if ($oldDoc && $oldDoc['driver_id'] === $driverId) {
-                            $documentType = $oldDoc['document_type'];
-                            $uploadBaseDir = dirname(dirname(__DIR__)) . '/public/uploads/';
-                            $typeFolderMap = [
-                                'nic'             => 'nics',
-                                'driving_license' => 'licenses',
-                                'police_report'   => 'police_reports'
-                            ];
-                            
-                            $targetSubDir = $typeFolderMap[$documentType] ?? 'misc';
-                            $targetDir = $uploadBaseDir . $targetSubDir . '/';
-                            
-                            if (!is_dir($targetDir)) {
-                                mkdir($targetDir, 0755, true);
-                            }
-                            
-                            $newFileName = 'driver_' . $driverId . '_' . time() . '.' . $fileExtension;
-                            $destPath = $targetDir . $newFileName;
-                            $dbFilePath = 'uploads/' . $targetSubDir . '/' . $newFileName;
-                            
-                            if (move_uploaded_file($fileTmpPath, $destPath)) {
-                                $updateData['file_path'] = $dbFilePath;
-                                $fileUploaded = true;
-                                
-                                // Delete old physical file if exists
-                                if (!empty($oldDoc['file_path'])) {
-                                    $oldFullPath = dirname(dirname(__DIR__)) . '/public/' . $oldDoc['file_path'];
-                                    if (file_exists($oldFullPath)) {
-                                        unlink($oldFullPath);
-                                    }
-                                }
-                            } else {
-                                $error = "There was an error moving the uploaded document file.";
-                            }
-                        } else {
-                            $error = "Unauthorized document operation.";
-                        }
-                    }
-                }
-            }
-
-            if (empty($error)) {
-                $result = $driverController->editDocument($documentId, $updateData);
-                if ($result['success']) {
-                    $success = $result['message'];
-                } else {
-                    if ($fileUploaded && !empty($destPath) && file_exists($destPath)) {
-                        unlink($destPath);
-                    }
-                    $error = $result['error'];
-                }
-            }
-        }
-    }
-}
-
-// 4. Resolve edit document context if GET parameter is specified
-$editDoc = null;
-if (isset($_GET['edit_id']) && $driverId > 0) {
-    $editId = (int)$_GET['edit_id'];
-    $docModel = new DriverDocument();
-    $fetchedDoc = $docModel->getById($editId);
-    if ($fetchedDoc && $fetchedDoc['driver_id'] === $driverId && $fetchedDoc['verification_status'] !== 'approved') {
-        $editDoc = $fetchedDoc;
-    }
-}
-
-// Fetch current list of documents
+// Fetch current list of documents (ordered by version history)
 $docResult = $driverController->viewDocuments();
 $documents = $docResult['success'] ? $docResult['documents'] : [];
 
+// Extract active approved current documents
+$activeDocs = array_filter($documents, function($d) {
+    return $d['status'] === 'approved' && $d['is_current'] == 1;
+});
+
+// Page configs
 $pageTitle = "Manage Documents - Lanka Renters";
 $activePage = "documents";
 
@@ -266,7 +145,7 @@ include 'includes/navbar.php';
     <div class="welcome-container">
         <div>
             <h2 class="welcome-title">Manage Documents</h2>
-            <p class="welcome-subtitle">Upload and maintain your identity and licensing verifications.</p>
+            <p class="welcome-subtitle">Upload and maintain your identity, driving licenses, and security clearance verifications.</p>
         </div>
     </div>
 
@@ -283,118 +162,146 @@ include 'includes/navbar.php';
     <?php endif; ?>
 
     <div style="display: grid; grid-template-columns: 1.2fr 2fr; gap: 30px; align-items: flex-start;">
-        <!-- CRUD Input Card (Create or Update state) -->
+        <!-- Upload Card -->
         <div class="card" style="margin: 0;">
-            <h2 class="card-title"><?php echo $editDoc ? 'Edit / Replace Document' : 'Upload New Document'; ?></h2>
-            <form action="documents.php<?php echo $editDoc ? '?edit_id=' . $editDoc['id'] : ''; ?>" method="POST" enctype="multipart/form-data">
+            <h2 class="card-title">Upload / Replace Document</h2>
+            <p style="font-size: 13px; color: var(--text-muted); line-height: 1.4; margin: 5px 0 15px 0;">
+                To replace a document, select its type and upload the new version. The active approved version remains active in the system until administrators approve the new upload.
+            </p>
+            <form action="documents.php" method="POST" enctype="multipart/form-data">
                 <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(AuthHelper::getCsrfToken()); ?>">
-                <input type="hidden" name="action" value="<?php echo $editDoc ? 'edit_document' : 'upload_document'; ?>">
-                <?php if ($editDoc): ?>
-                    <input type="hidden" name="document_id" value="<?php echo htmlspecialchars($editDoc['id']); ?>">
-                <?php endif; ?>
+                <input type="hidden" name="action" value="upload_document">
                 
                 <div class="form-group">
                     <label for="document_type" class="form-label">Document Type</label>
-                    <?php if ($editDoc): ?>
-                        <input type="text" class="form-control" value="<?php echo htmlspecialchars(strtoupper(str_replace('_', ' ', $editDoc['document_type']))); ?>" readonly disabled>
-                        <input type="hidden" name="document_type" value="<?php echo htmlspecialchars($editDoc['document_type']); ?>">
-                    <?php else: ?>
-                        <select name="document_type" id="document_type" class="form-control" required>
-                            <option value="nic">National Identity Card (NIC)</option>
-                            <option value="driving_license">Driving License</option>
-                            <option value="police_report">Police Report</option>
-                        </select>
-                    <?php endif; ?>
+                    <select name="document_type" id="document_type" class="form-control" required style="background: white;">
+                        <option value="nic">National Identity Card (NIC)</option>
+                        <option value="driving_license">Driving License</option>
+                        <option value="police_report">Police Report</option>
+                    </select>
                 </div>
 
                 <div class="form-group">
                     <label for="document_number" class="form-label">Document Number</label>
-                    <input type="text" name="document_number" id="document_number" class="form-control" placeholder="Enter document number" value="<?php echo $editDoc ? htmlspecialchars($editDoc['document_number']) : ''; ?>" required>
+                    <input type="text" name="document_number" id="document_number" class="form-control" placeholder="Enter document number" required>
                 </div>
 
                 <div class="form-group">
                     <label for="expiry_date" class="form-label">Expiry Date</label>
-                    <input type="date" name="expiry_date" id="expiry_date" class="form-control" value="<?php echo $editDoc ? htmlspecialchars($editDoc['expiry_date']) : ''; ?>" required>
+                    <input type="date" name="expiry_date" id="expiry_date" class="form-control" required>
                 </div>
 
                 <div class="form-group">
-                    <label for="document_file" class="form-label">Document File (PDF, JPG, PNG) <?php echo $editDoc ? '(Optional, select to replace file)' : ''; ?></label>
-                    <input type="file" name="document_file" id="document_file" class="form-control" <?php echo $editDoc ? '' : 'required'; ?>>
+                    <label for="document_file" class="form-label">Document File (PDF, JPG, PNG)</label>
+                    <input type="file" name="document_file" id="document_file" class="form-control" required>
                 </div>
 
-                <div style="display: flex; gap: 10px;">
-                    <button type="submit" class="btn-blue" style="flex: 1.5;"><?php echo $editDoc ? 'Save Changes' : 'Upload Document'; ?></button>
-                    <?php if ($editDoc): ?>
-                        <a href="documents.php" class="btn-secondary" style="flex: 1; text-align: center; text-decoration: none; padding: 10px 0;">Cancel</a>
-                    <?php endif; ?>
-                </div>
+                <button type="submit" class="btn-blue" style="width: 100%; margin-top: 15px;">Upload Version</button>
             </form>
         </div>
 
-        <!-- Current Documents Registry (Read & Delete state) -->
-        <div class="card" style="margin: 0;">
-            <h2 class="card-title">Your Uploaded Documents</h2>
-            <?php if (empty($documents)): ?>
-                <p style="font-style: italic; color: var(--text-muted);">No documents uploaded yet.</p>
-            <?php else: ?>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Document Type</th>
-                            <th>Number</th>
-                            <th>Expiry</th>
-                            <th>Status</th>
-                            <th>Notes</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ($documents as $doc): ?>
-                            <tr>
-                                <td style="text-transform: capitalize; font-weight: 600;">
+        <!-- Documents Lists (Active & History) -->
+        <div style="display: flex; flex-direction: column; gap: 30px; width: 100%;">
+            <!-- Active Approved Cards -->
+            <div class="card" style="margin: 0;">
+                <h2 class="card-title">Active Approved Documents</h2>
+                <?php if (empty($activeDocs)): ?>
+                    <p style="font-style: italic; color: var(--text-muted); margin-top: 15px;">No approved documents currently active. Please complete all uploads to verify your driver profile.</p>
+                <?php else: ?>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 15px;">
+                        <?php foreach ($activeDocs as $doc): ?>
+                            <div style="padding: 15px; border: 1px solid var(--border-color); border-radius: 8px; background: #F8FAFC;">
+                                <div style="font-weight: 700; font-size: 13px; text-transform: uppercase; color: var(--primary-blue);">
                                     <?php echo htmlspecialchars(str_replace('_', ' ', $doc['document_type'])); ?>
-                                </td>
-                                <td><?php echo htmlspecialchars($doc['document_number']); ?></td>
-                                <td><?php echo htmlspecialchars($doc['expiry_date']); ?></td>
-                                <td>
-                                    <span class="status-pill status-<?php echo htmlspecialchars($doc['verification_status']); ?>">
-                                        <?php echo htmlspecialchars($doc['verification_status']); ?>
-                                    </span>
-                                </td>
-                                <td style="font-size: 11px;">
-                                    <?php 
-                                        if ($doc['verification_status'] === 'rejected' && !empty($doc['rejected_reason'])) {
-                                            echo '<span style="color: var(--danger); font-weight: bold;">Rejected: ' . htmlspecialchars($doc['rejected_reason']) . '</span>';
-                                        } else {
-                                            echo '-';
-                                        }
-                                    ?>
-                                </td>
-                                <td>
-                                    <div style="display: flex; gap: 8px;">
-                                        <!-- Edit Action (Available for pending or rejected statuses) -->
-                                        <?php if ($doc['verification_status'] !== 'approved'): ?>
-                                            <a href="documents.php?edit_id=<?php echo $doc['id']; ?>" class="btn-secondary" style="padding: 4px 8px; font-size: 11px; text-decoration: none;">Edit</a>
-                                        <?php else: ?>
-                                            <span style="color: var(--text-muted); font-size: 11px;">Locked</span>
-                                        <?php endif; ?>
-
-                                        <!-- Delete Action (Only for pending verification status) -->
-                                        <?php if ($doc['verification_status'] === 'pending'): ?>
-                                            <form action="" method="POST" style="margin:0;" onsubmit="return confirm('Are you sure you want to delete this document?');">
-                                                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(AuthHelper::getCsrfToken()); ?>">
-                                                <input type="hidden" name="action" value="delete_document">
-                                                <input type="hidden" name="document_id" value="<?php echo $doc['id']; ?>">
-                                                <button type="submit" style="padding: 4px 8px; font-size: 11px; background-color: var(--danger); color: white; border: none; border-radius: 4px; cursor: pointer;">Delete</button>
-                                            </form>
-                                        <?php endif; ?>
-                                    </div>
-                                </td>
-                            </tr>
+                                </div>
+                                <div style="font-size: 14px; font-weight: 600; margin-top: 8px; color: var(--text-main);">
+                                    No: <?php echo htmlspecialchars($doc['document_number']); ?>
+                                </div>
+                                <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">
+                                    Expires: <?php echo htmlspecialchars($doc['expiry_date']); ?>
+                                </div>
+                                <div style="margin-top: 12px; display: flex; justify-content: space-between; align-items: center;">
+                                    <span class="status-pill status-approved" style="font-size: 10px;">Approved</span>
+                                    <a href="../<?php echo htmlspecialchars($doc['file_path']); ?>" target="_blank" style="font-size: 11px; text-decoration: none; color: var(--primary-blue); font-weight: 700;">View File ↗</a>
+                                </div>
+                            </div>
                         <?php endforeach; ?>
-                    </tbody>
-                </table>
-            <?php endif; ?>
+                    </div>
+                <?php endif; ?>
+            </div>
+
+            <!-- Version History Registry -->
+            <div class="card" style="margin: 0;">
+                <h2 class="card-title">All Uploads & Version History</h2>
+                <?php if (empty($documents)): ?>
+                    <p style="font-style: italic; color: var(--text-muted); margin-top: 15px;">No document records found.</p>
+                <?php else: ?>
+                    <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
+                        <thead>
+                            <tr style="border-bottom: 2px solid var(--border-color); text-align: left;">
+                                <th style="padding: 10px;">Type</th>
+                                <th style="padding: 10px;">Version</th>
+                                <th style="padding: 10px;">No / Expiry</th>
+                                <th style="padding: 10px;">Status</th>
+                                <th style="padding: 10px;">Review Info / Reason</th>
+                                <th style="padding: 10px;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($documents as $doc): ?>
+                                <tr style="border-bottom: 1px solid var(--border-color); font-size: 13.5px;">
+                                    <td style="padding: 12px 10px; text-transform: capitalize; font-weight: 600;">
+                                        <?php echo htmlspecialchars(str_replace('_', ' ', $doc['document_type'])); ?>
+                                    </td>
+                                    <td style="padding: 12px 10px; font-weight: 700;">
+                                        v<?php echo htmlspecialchars($doc['version']); ?>
+                                        <?php if ($doc['is_current'] == 1): ?>
+                                            <span style="font-size: 9px; padding: 2px 4px; background: #DCFCE7; color: #15803D; border-radius: 4px; margin-left: 4px;">Current</span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td style="padding: 12px 10px;">
+                                        <div><?php echo htmlspecialchars($doc['document_number']); ?></div>
+                                        <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Exp: <?php echo htmlspecialchars($doc['expiry_date']); ?></div>
+                                    </td>
+                                    <td style="padding: 12px 10px;">
+                                        <span class="status-pill status-<?php echo htmlspecialchars($doc['status']); ?>">
+                                            <?php echo htmlspecialchars(ucfirst($doc['status'])); ?>
+                                        </span>
+                                    </td>
+                                    <td style="padding: 12px 10px; font-size: 11.5px; max-width: 200px;">
+                                        <?php 
+                                            if ($doc['status'] === 'rejected' && !empty($doc['rejection_reason'])) {
+                                                echo '<span style="color: var(--danger); font-weight: 600;">Reason: ' . htmlspecialchars($doc['rejection_reason']) . '</span>';
+                                            } elseif ($doc['status'] === 'superseded') {
+                                                echo '<span style="color: var(--text-muted);">Superseded by newer version</span>';
+                                            } elseif ($doc['status'] === 'approved') {
+                                                echo '<span style="color: #16A34A;">Active approved version</span>';
+                                            } else {
+                                                echo '<span style="color: var(--text-muted);">Awaiting admin review</span>';
+                                            }
+                                        ?>
+                                    </td>
+                                    <td style="padding: 12px 10px;">
+                                        <div style="display: flex; gap: 8px; align-items: center;">
+                                            <a href="../<?php echo htmlspecialchars($doc['file_path']); ?>" target="_blank" class="btn-secondary" style="padding: 4px 8px; font-size: 11px; text-decoration: none;">View</a>
+                                            
+                                            <!-- Delete Action (Only permitted for pending state) -->
+                                            <?php if ($doc['status'] === 'pending'): ?>
+                                                <form action="" method="POST" style="margin:0;" onsubmit="return confirm('Are you sure you want to delete this pending document?');">
+                                                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(AuthHelper::getCsrfToken()); ?>">
+                                                    <input type="hidden" name="action" value="delete_document">
+                                                    <input type="hidden" name="document_id" value="<?php echo $doc['id']; ?>">
+                                                    <button type="submit" style="padding: 4px 8px; font-size: 11px; background-color: var(--danger); color: white; border: none; border-radius: 4px; cursor: pointer;">Delete</button>
+                                                </form>
+                                            <?php endif; ?>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                <?php endif; ?>
+            </div>
         </div>
     </div>
 </main>

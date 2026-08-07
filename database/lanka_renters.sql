@@ -234,13 +234,78 @@ CREATE TABLE `payments` (
   `payment_status` ENUM('pending', 'completed', 'failed', 'refunded') NOT NULL DEFAULT 'pending',
   `payment_slip_path` VARCHAR(255) DEFAULT NULL,
   `transaction_reference` VARCHAR(100) DEFAULT NULL,
+  `verified_by` INT DEFAULT NULL,
+  `verified_at` TIMESTAMP NULL DEFAULT NULL,
+  `failure_reason` TEXT DEFAULT NULL,
   `paid_at` TIMESTAMP NULL DEFAULT NULL,
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   INDEX `idx_payments_booking` (`booking_id`),
   INDEX `idx_payments_status` (`payment_status`),
-  CONSTRAINT `fk_payments_booking` FOREIGN KEY (`booking_id`) REFERENCES `bookings` (`id`) ON DELETE RESTRICT
+  CONSTRAINT `fk_payments_booking` FOREIGN KEY (`booking_id`) REFERENCES `bookings` (`id`) ON DELETE RESTRICT,
+  CONSTRAINT `fk_payments_verified_by` FOREIGN KEY (`verified_by`) REFERENCES `users`(`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- invoice table
+CREATE TABLE `invoices` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+
+    `invoice_number` VARCHAR(50) NOT NULL UNIQUE,
+
+    `booking_id` INT NOT NULL,
+
+    `customer_id` INT NOT NULL,
+
+    `payment_id` INT DEFAULT NULL,
+
+    `rental_fee` DECIMAL(10,2) NOT NULL,
+
+    `driver_fee` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+
+    `additional_charges` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+
+    `discount` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+
+    `tax` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+
+    `total_amount` DECIMAL(10,2) NOT NULL,
+
+    `invoice_status`
+    ENUM(
+        'pending',
+        'paid',
+        'cancelled'
+    )
+    NOT NULL DEFAULT 'pending',
+
+    `generated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    `updated_at`
+    TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ON UPDATE CURRENT_TIMESTAMP,
+
+    INDEX `idx_invoice_booking` (`booking_id`),
+    INDEX `idx_invoice_customer` (`customer_id`),
+    INDEX `idx_invoice_status` (`invoice_status`),
+
+    CONSTRAINT `fk_invoice_booking`
+        FOREIGN KEY (`booking_id`)
+        REFERENCES `bookings`(`id`)
+        ON DELETE RESTRICT,
+
+    CONSTRAINT `fk_invoice_customer`
+        FOREIGN KEY (`customer_id`)
+        REFERENCES `customers`(`id`)
+        ON DELETE RESTRICT,
+
+    CONSTRAINT `fk_invoice_payment`
+        FOREIGN KEY (`payment_id`)
+        REFERENCES `payments`(`id`)
+        ON DELETE SET NULL
+
+) ENGINE=InnoDB
+DEFAULT CHARSET=utf8mb4
+COLLATE=utf8mb4_unicode_ci;
 
 -- 14. Incidents Table
 CREATE TABLE `incidents` (
@@ -336,6 +401,7 @@ CREATE TABLE `chat_messages` (
   `room_id` INT NOT NULL,
   `sender_id` INT NOT NULL,
   `message_text` TEXT NOT NULL,
+  `is_read` BOOLEAN NOT NULL DEFAULT FALSE,
   `sent_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   INDEX `idx_messages_room` (`room_id`),
   CONSTRAINT `fk_messages_room` FOREIGN KEY (`room_id`) REFERENCES `chat_rooms` (`id`) ON DELETE CASCADE,
@@ -350,6 +416,18 @@ CREATE TABLE `notifications` (
   `message` TEXT NOT NULL,
   `is_read` BOOLEAN NOT NULL DEFAULT FALSE,
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `notification_type`
+  ENUM(
+    'booking',
+    'payment',
+    'incident',
+    'review',
+    'chat',
+    'system'
+  )
+  DEFAULT 'system',
+
+  `related_id` INT DEFAULT NULL,
   INDEX `idx_notifications_user` (`user_id`, `is_read`),
   CONSTRAINT `fk_notifications_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -382,3 +460,4 @@ CREATE TABLE IF NOT EXISTS `driver_vehicle_checks` (
   CONSTRAINT `fk_vehicle_checks_vehicle` FOREIGN KEY (`vehicle_id`) REFERENCES `vehicles` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_vehicle_checks_booking` FOREIGN KEY (`booking_id`) REFERENCES `bookings` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+

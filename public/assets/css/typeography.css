@@ -1,0 +1,81 @@
+/*
+=========================================
+Typography
+=========================================
+*/
+
+h1{
+
+    font-size:var(--font-2xl);
+
+    font-weight:var(--fw-bold);
+
+}
+
+h2{
+
+    font-size:var(--font-xl);
+
+    font-weight:var(--fw-semibold);
+
+}
+
+h3{
+
+    font-size:var(--font-lg);
+
+    font-weight:var(--fw-semibold);
+
+}
+
+p{
+
+    color:var(--text-secondary);
+
+}
+
+small{
+
+    color:var(--text-muted);
+
+}
+
+label{
+
+    display:block;
+
+    margin-bottom:var(--space-2);
+
+    font-weight:var(--fw-medium);
+
+}
+
+.text-center{
+
+    text-align:center;
+
+}
+
+.text-right{
+
+    text-align:right;
+
+}
+
+.text-success{
+
+    color:var(--success);
+
+}
+
+.text-danger{
+
+    color:var(--danger);
+
+}
+
+.text-warning{
+
+    color:var(--warning);
+
+}

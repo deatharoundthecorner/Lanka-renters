@@ -5,7 +5,7 @@ require_once dirname(__DIR__) . '/helpers/Database.php';
 /**
  * Lanka Renters - DriverDocument Model
  * Manages database operations on the 'driver_documents' table, restricting file types,
- * handling admin verification state updates, and protecting non-pending deletions.
+ * handling versioning, current flag state settings, and transaction-driven approvals/rejections.
  */
 class DriverDocument {
     // Database connection instance
@@ -24,7 +24,7 @@ class DriverDocument {
 
     /**
      * Registers a new driver document record inside the database.
-     * Default validation state is set to 'pending'.
+     * Default validation state is set to 'pending' and determines the next version number.
      * 
      * @param array $data Contains driver_id, document_type, document_number, expiry_date, file_path
      * @return int|false The document record ID or false on failure
@@ -35,8 +35,19 @@ class DriverDocument {
             throw new InvalidArgumentException("Invalid document type: " . $data['document_type']);
         }
 
-        $sql = "INSERT INTO `driver_documents` (`driver_id`, `document_type`, `document_number`, `expiry_date`, `file_path`, `verification_status`) 
-                VALUES (:driver_id, :document_type, :document_number, :expiry_date, :file_path, 'pending')";
+        // Determine the next version for this document type
+        $sqlVer = "SELECT MAX(`version`) FROM `driver_documents` 
+                   WHERE `driver_id` = :driver_id AND `document_type` = :document_type";
+        $stmtVer = $this->db->prepare($sqlVer);
+        $stmtVer->execute([
+            'driver_id'     => $data['driver_id'],
+            'document_type' => $data['document_type']
+        ]);
+        $maxVer = (int)$stmtVer->fetchColumn();
+        $nextVer = $maxVer > 0 ? $maxVer + 1 : 1;
+
+        $sql = "INSERT INTO `driver_documents` (`driver_id`, `document_type`, `document_number`, `expiry_date`, `file_path`, `version`, `status`, `is_current`) 
+                VALUES (:driver_id, :document_type, :document_number, :expiry_date, :file_path, :version, 'pending', FALSE)";
         
         $stmt = $this->db->prepare($sql);
         
@@ -45,7 +56,8 @@ class DriverDocument {
             'document_type'   => $data['document_type'],
             'document_number' => $data['document_number'] ?? null,
             'expiry_date'     => !empty($data['expiry_date']) ? $data['expiry_date'] : null,
-            'file_path'       => $data['file_path']
+            'file_path'       => $data['file_path'],
+            'version'         => $nextVer
         ];
 
         if ($stmt->execute($params)) {
@@ -61,14 +73,15 @@ class DriverDocument {
      * @return array Array of matching document records
      */
     public function getByDriverId($driverId) {
-        $sql = "SELECT * FROM `driver_documents` WHERE `driver_id` = :driver_id ORDER BY `uploaded_at` DESC";
+        $sql = "SELECT * FROM `driver_documents` WHERE `driver_id` = :driver_id ORDER BY `version` DESC, `uploaded_at` DESC";
         $stmt = $this->db->prepare($sql);
         $stmt->execute(['driver_id' => $driverId]);
-        return $stmt->fetchAll();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     /**
-     * Returns a specific document type for a driver (e.g. their active NIC record).
+     * Returns a specific document type for a driver (gets the active/current approved document,
+     * or the latest uploaded version if no approved one exists).
      * 
      * @param int $driverId The driver primary ID
      * @param string $type The document type key ('nic', 'driving_license', 'police_report')
@@ -80,43 +93,35 @@ class DriverDocument {
             throw new InvalidArgumentException("Invalid document type: " . $type);
         }
 
+        // 1. Try to fetch the active approved document
         $sql = "SELECT * FROM `driver_documents` 
                 WHERE `driver_id` = :driver_id 
                   AND `document_type` = :document_type 
+                  AND `status` = 'approved' 
+                  AND `is_current` = TRUE 
                 LIMIT 1";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([
             'driver_id'     => $driverId,
             'document_type' => $type
         ]);
-        return $stmt->fetch();
-    }
-
-    /**
-     * Updates the admin verification status and rejection rationale for a document.
-     * 
-     * @param int $id The document record primary key ID
-     * @param string $status The verification status ('pending', 'approved', 'rejected')
-     * @param string|null $reason Detailed rejection rationale
-     * @return bool True on success, false on failure
-     * @throws InvalidArgumentException if the status value is invalid
-     */
-    public function updateVerificationStatus($id, $status, $reason = null) {
-        $allowedStatuses = ['pending', 'approved', 'rejected'];
-        if (!in_array($status, $allowedStatuses)) {
-            throw new InvalidArgumentException("Invalid verification status: " . $status);
+        $doc = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($doc) {
+            return $doc;
         }
 
-        $sql = "UPDATE `driver_documents` 
-                SET `verification_status` = :status, `rejected_reason` = :reason 
-                WHERE `id` = :id";
-        
+        // 2. Fall back to the latest uploaded version (even if pending/rejected)
+        $sql = "SELECT * FROM `driver_documents` 
+                WHERE `driver_id` = :driver_id 
+                  AND `document_type` = :document_type 
+                ORDER BY `version` DESC 
+                LIMIT 1";
         $stmt = $this->db->prepare($sql);
-        return $stmt->execute([
-            'status' => $status,
-            'reason' => $reason,
-            'id'     => $id
+        $stmt->execute([
+            'driver_id'     => $driverId,
+            'document_type' => $type
         ]);
+        return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
     /**
@@ -129,38 +134,136 @@ class DriverDocument {
         $sql = "SELECT * FROM `driver_documents` WHERE `id` = :id LIMIT 1";
         $stmt = $this->db->prepare($sql);
         $stmt->execute(['id' => $id]);
-        return $stmt->fetch();
+        return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
     /**
-     * Updates an existing driver document record.
-     * Sets verification status back to 'pending' and clears rejected_reason.
+     * Atomically approves a pending document using database transactions.
+     * Marks previous approved document as superseded and updates current flags.
      * 
-     * @param int $id The document primary key ID
-     * @param array $data Contains document_number, expiry_date, and optionally file_path
-     * @return bool True on success, false on failure
+     * @param int $id The document ID
+     * @param int $adminId The admin reviewer ID
+     * @return bool True on success
+     * @throws Exception on failures
      */
-    public function update($id, $data) {
-        $fields = [
-            "`document_number` = :document_number",
-            "`expiry_date` = :expiry_date",
-            "`verification_status` = 'pending'",
-            "`rejected_reason` = NULL"
-        ];
-        $params = [
-            'id'              => $id,
-            'document_number' => $data['document_number'] ?? null,
-            'expiry_date'     => !empty($data['expiry_date']) ? $data['expiry_date'] : null
-        ];
+    public function approveDocument($id, $adminId) {
+        $startedTransaction = false;
+        try {
+            if (!$this->db->inTransaction()) {
+                $this->db->beginTransaction();
+                $startedTransaction = true;
+            }
 
-        if (isset($data['file_path'])) {
-            $fields[] = "`file_path` = :file_path";
-            $params['file_path'] = $data['file_path'];
+            // 1. Get the pending document details
+            $doc = $this->getById($id);
+            if (!$doc || $doc['status'] !== 'pending') {
+                throw new Exception("Document not found or not in pending state.");
+            }
+
+            // 2. Mark previous approved document of this type as superseded and is_current = FALSE
+            $sqlSupersede = "UPDATE `driver_documents` 
+                             SET `status` = 'superseded', `is_current` = FALSE 
+                             WHERE `driver_id` = :driver_id 
+                               AND `document_type` = :document_type 
+                               AND `status` = 'approved'";
+            $stmtSupersede = $this->db->prepare($sqlSupersede);
+            $stmtSupersede->execute([
+                'driver_id'     => $doc['driver_id'],
+                'document_type' => $doc['document_type']
+            ]);
+
+            // 3. Mark the new document version as approved and is_current = TRUE
+            $sqlApprove = "UPDATE `driver_documents` 
+                           SET `status` = 'approved', 
+                               `is_current` = TRUE, 
+                               `reviewed_by` = :reviewed_by, 
+                               `reviewed_at` = CURRENT_TIMESTAMP 
+                           WHERE `id` = :id";
+            $stmtApprove = $this->db->prepare($sqlApprove);
+            $stmtApprove->execute([
+                'reviewed_by' => $adminId,
+                'id'          => $id
+            ]);
+
+            // 4. Record admin review log
+            $sqlReview = "INSERT INTO `admin_reviews` (`admin_id`, `request_type`, `request_id`, `action`) 
+                          VALUES (:admin_id, 'document_replacement', :request_id, 'approved')";
+            $stmtReview = $this->db->prepare($sqlReview);
+            $stmtReview->execute([
+                'admin_id'   => $adminId,
+                'request_id' => $id
+            ]);
+
+            if ($startedTransaction) {
+                $this->db->commit();
+            }
+            return true;
+        } catch (Exception $e) {
+            if ($startedTransaction && $this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+            throw $e;
         }
+    }
 
-        $sql = "UPDATE `driver_documents` SET " . implode(", ", $fields) . " WHERE `id` = :id";
-        $stmt = $this->db->prepare($sql);
-        return $stmt->execute($params);
+    /**
+     * Atomically rejects a pending document.
+     * 
+     * @param int $id The document ID
+     * @param string $reason Rejection reason comments
+     * @param int $adminId The admin reviewer ID
+     * @return bool True on success
+     * @throws Exception on failures
+     */
+    public function rejectDocument($id, $reason, $adminId) {
+        $startedTransaction = false;
+        try {
+            if (!$this->db->inTransaction()) {
+                $this->db->beginTransaction();
+                $startedTransaction = true;
+            }
+
+            // 1. Get the pending document details
+            $doc = $this->getById($id);
+            if (!$doc || $doc['status'] !== 'pending') {
+                throw new Exception("Document not found or not in pending state.");
+            }
+
+            // 2. Mark this document as rejected and is_current = FALSE
+            $sqlReject = "UPDATE `driver_documents` 
+                          SET `status` = 'rejected', 
+                              `is_current` = FALSE, 
+                              `reviewed_by` = :reviewed_by, 
+                              `reviewed_at` = CURRENT_TIMESTAMP,
+                              `rejection_reason` = :reason 
+                          WHERE `id` = :id";
+            $stmtReject = $this->db->prepare($sqlReject);
+            $stmtReject->execute([
+                'reviewed_by' => $adminId,
+                'reason'      => $reason,
+                'id'          => $id
+            ]);
+
+            // 3. Record admin review log
+            $sqlReview = "INSERT INTO `admin_reviews` (`admin_id`, `request_type`, `request_id`, `action`, `comments`) 
+                          VALUES (:admin_id, 'document_replacement', :request_id, 'rejected', :comments)";
+            $stmtReview = $this->db->prepare($sqlReview);
+            $stmtReview->execute([
+                'admin_id'   => $adminId,
+                'request_id' => $id,
+                'comments'   => $reason
+            ]);
+
+            if ($startedTransaction) {
+                $this->db->commit();
+            }
+            return true;
+        } catch (Exception $e) {
+            if ($startedTransaction && $this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+            throw $e;
+        }
     }
 
     /**
@@ -171,11 +274,9 @@ class DriverDocument {
      * @return bool True if a pending record was deleted, false otherwise
      */
     public function delete($id) {
-        $sql = "DELETE FROM `driver_documents` WHERE `id` = :id AND `verification_status` = 'pending'";
+        $sql = "DELETE FROM `driver_documents` WHERE `id` = :id AND `status` = 'pending'";
         $stmt = $this->db->prepare($sql);
         $stmt->execute(['id' => $id]);
-        
-        // Return true if at least one row was affected (deleted)
         return $stmt->rowCount() > 0;
     }
 }

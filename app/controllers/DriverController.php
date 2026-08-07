@@ -1163,7 +1163,8 @@ class DriverController {
     }
 
     /**
-     * Updates the driver's profile details.
+     * Submits driver profile change requests (phone, address, emergency contact).
+     * Creates pending request records for admin review rather than updating directly.
      * 
      * @param array $data Input profile fields (phone, address, emergency_contact)
      * @return array Response array containing status
@@ -1171,12 +1172,12 @@ class DriverController {
     public function updateProfile($data) {
         try {
             $driver = $this->getSecureDriver();
+            $userId = $driver['user_id'];
             
             $phone = trim($data['phone'] ?? '');
             $address = trim($data['address'] ?? '');
             $emergencyContact = trim($data['emergency_contact'] ?? '');
 
-            // Validate phone
             if (empty($phone)) {
                 return [
                     'success' => false,
@@ -1184,23 +1185,179 @@ class DriverController {
                 ];
             }
 
-            $driverModel = new Driver();
-            $result = $driverModel->updateProfile($driver['id'], $driver['user_id'], [
-                'phone'             => $phone,
-                'address'           => $address !== '' ? $address : null,
-                'emergency_contact' => $emergencyContact !== '' ? $emergencyContact : null
-            ]);
+            require_once dirname(__DIR__) . '/models/ProfileChangeRequest.php';
+            $pcrModel = new ProfileChangeRequest();
 
-            if ($result) {
+            $submittedCount = 0;
+
+            // Check if phone changed
+            if ($phone !== $driver['phone']) {
+                $pcrModel->create($userId, 'phone', $driver['phone'], $phone);
+                $submittedCount++;
+            }
+
+            // Check if address changed
+            $currentAddress = $driver['address'] ?? '';
+            if ($address !== $currentAddress) {
+                $pcrModel->create($userId, 'address', $currentAddress, $address !== '' ? $address : null);
+                $submittedCount++;
+            }
+
+            // Check if emergency contact changed
+            $currentEC = $driver['emergency_contact'] ?? '';
+            if ($emergencyContact !== $currentEC) {
+                $pcrModel->create($userId, 'emergency_contact', $currentEC, $emergencyContact !== '' ? $emergencyContact : null);
+                $submittedCount++;
+            }
+
+            if ($submittedCount > 0) {
                 return [
                     'success' => true,
-                    'message' => "Profile updated successfully."
+                    'message' => "Profile change requests submitted. Waiting for admin approval."
                 ];
             }
 
             return [
                 'success' => false,
-                'error'   => "Failed to update profile."
+                'error'   => "No values were changed."
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'error'   => $e->getMessage()
+            ];
+        }
+    }
+
+    /**
+     * Submits an account credentials change request (username or email).
+     * 
+     * @param array $data Contains change_type ('username' or 'email') and requested_value
+     * @return array Response array containing status
+     */
+    public function updateAccount($data) {
+        try {
+            $driver = $this->getSecureDriver();
+            $userId = $driver['user_id'];
+            
+            $type = trim($data['change_type'] ?? '');
+            $val = trim($data['requested_value'] ?? '');
+
+            if ($type !== 'username' && $type !== 'email') {
+                return [
+                    'success' => false,
+                    'error'   => "Invalid account change type."
+                ];
+            }
+
+            if (empty($val)) {
+                return [
+                    'success' => false,
+                    'error'   => "Requested value cannot be empty."
+                ];
+            }
+
+            // Check if value is different from active value
+            $oldValue = ($type === 'username') ? $driver['name'] : $driver['email'];
+            if ($val === $oldValue) {
+                return [
+                    'success' => false,
+                    'error'   => "Requested value matches current active value."
+                ];
+            }
+
+            // Validate email format if email change requested
+            if ($type === 'email' && !filter_var($val, FILTER_VALIDATE_EMAIL)) {
+                return [
+                    'success' => false,
+                    'error'   => "Invalid email address format."
+                ];
+            }
+
+            require_once dirname(__DIR__) . '/models/AccountChangeRequest.php';
+            $acrModel = new AccountChangeRequest();
+            $reqId = $acrModel->create($userId, $type, $oldValue, $val);
+
+            if ($reqId) {
+                return [
+                    'success' => true,
+                    'message' => ucfirst($type) . " change request submitted and is pending admin approval."
+                ];
+            }
+
+            return [
+                'success' => false,
+                'error'   => "Failed to submit change request."
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'error'   => $e->getMessage()
+            ];
+        }
+    }
+
+    /**
+     * Securely changes the driver's password.
+     * 
+     * @param array $data Contains current_password, new_password, and confirm_password
+     * @return array Response array containing status
+     */
+    public function changePassword($data) {
+        try {
+            $driver = $this->getSecureDriver();
+            $userId = $driver['user_id'];
+
+            $currentPass = $data['current_password'] ?? '';
+            $newPass = $data['new_password'] ?? '';
+            $confirmPass = $data['confirm_password'] ?? '';
+
+            if (empty($currentPass) || empty($newPass) || empty($confirmPass)) {
+                return [
+                    'success' => false,
+                    'error'   => "All password fields are required."
+                ];
+            }
+
+            if ($newPass !== $confirmPass) {
+                return [
+                    'success' => false,
+                    'error'   => "New password and confirmation do not match."
+                ];
+            }
+
+            if (strlen($newPass) < 8) {
+                return [
+                    'success' => false,
+                    'error'   => "New password must be at least 8 characters long."
+                ];
+            }
+
+            require_once dirname(__DIR__) . '/models/User.php';
+            $userModel = new User();
+            $user = $userModel->findById($userId);
+
+            if (!$user || !password_verify($currentPass, $user['password_hash'])) {
+                return [
+                    'success' => false,
+                    'error'   => "Incorrect current password."
+                ];
+            }
+
+            $newHash = password_hash($newPass, PASSWORD_DEFAULT);
+            $sql = "UPDATE `users` SET `password_hash` = :hash WHERE `id` = :id";
+            $db = Database::getInstance()->getConnection();
+            $stmt = $db->prepare($sql);
+            if ($stmt->execute(['hash' => $newHash, 'id' => $userId])) {
+                return [
+                    'success' => true,
+                    'message' => "Password changed successfully."
+                ];
+            }
+
+            return [
+                'success' => false,
+                'error'   => "Failed to update password."
             ];
         } catch (Exception $e) {
             return [

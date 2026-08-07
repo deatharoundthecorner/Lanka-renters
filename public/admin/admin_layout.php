@@ -1,4 +1,7 @@
 <?php
+require_once dirname(dirname(__DIR__)) . '/app/helpers/AuthHelper.php';
+AuthHelper::requireRole('admin');
+
 // Shared admin layout — include this from page wrappers.
 // Expects: $page (string, page key like 'vehicles'), $pageContent (path to content partial)
 if (!isset($page)) { $page = basename($_SERVER['PHP_SELF'], '.php'); }
@@ -7,6 +10,7 @@ $menuItems = [
     ['name' => 'Users', 'href' => 'users.php'],
     ['name' => 'Vehicle Owners', 'href' => 'owners.php'],
     ['name' => 'Drivers', 'href' => 'drivers.php'],
+    ['name' => 'Approvals', 'href' => 'approvals.php'],
     ['name' => 'Vehicles', 'href' => 'vehicles.php'],
     ['name' => 'Bookings', 'href' => 'bookings.php'],
     ['name' => 'Payments', 'href' => 'payment.php'],

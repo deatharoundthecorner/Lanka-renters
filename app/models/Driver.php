@@ -165,16 +165,16 @@ class Driver {
                             -- If no documents uploaded at all, it is pending
                             WHEN COUNT(`id`) = 0 THEN 'pending'
                             -- If any document is rejected, the overall verification is rejected
-                            WHEN SUM(CASE WHEN `verification_status` = 'rejected' THEN 1 ELSE 0 END) > 0 THEN 'rejected'
+                            WHEN SUM(CASE WHEN `status` = 'rejected' THEN 1 ELSE 0 END) > 0 THEN 'rejected'
                             -- If they do not have all 3 distinct required documents uploaded, status is pending
                             WHEN COUNT(DISTINCT `document_type`) < 3 THEN 'pending'
                             -- If any document is still pending review, status is pending
-                            WHEN SUM(CASE WHEN `verification_status` = 'pending' THEN 1 ELSE 0 END) > 0 THEN 'pending'
+                            WHEN SUM(CASE WHEN `status` = 'pending' THEN 1 ELSE 0 END) > 0 THEN 'pending'
                             -- Otherwise, all 3 are uploaded and approved
                             ELSE 'approved'
                         END as `verification_status`
                       FROM `driver_documents`
-                      WHERE `driver_id` = :driver_id";
+                      WHERE `driver_id` = :driver_id AND `is_current` = TRUE";
         $stmtStatus = $this->db->prepare($sqlStatus);
         $stmtStatus->execute(['driver_id' => $driverId]);
         $status = $stmtStatus->fetch();
@@ -291,13 +291,13 @@ class Driver {
                     SELECT 
                       CASE 
                         WHEN COUNT(dd.id) = 0 THEN 'pending'
-                        WHEN SUM(CASE WHEN dd.verification_status = 'rejected' THEN 1 ELSE 0 END) > 0 THEN 'rejected'
+                        WHEN SUM(CASE WHEN dd.status = 'rejected' THEN 1 ELSE 0 END) > 0 THEN 'rejected'
                         WHEN COUNT(DISTINCT dd.document_type) < 3 THEN 'pending'
-                        WHEN SUM(CASE WHEN dd.verification_status = 'pending' THEN 1 ELSE 0 END) > 0 THEN 'pending'
+                        WHEN SUM(CASE WHEN dd.status = 'pending' THEN 1 ELSE 0 END) > 0 THEN 'pending'
                         ELSE 'approved'
                       END
                     FROM `driver_documents` dd
-                    WHERE dd.driver_id = d.id
+                    WHERE dd.driver_id = d.id AND dd.is_current = TRUE
                   ) = 'approved'";
         $stmt = $this->db->prepare($sql);
         $stmt->execute();
