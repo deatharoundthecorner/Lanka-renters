@@ -1,12 +1,8 @@
 <?php
 
-require_once __DIR__ . '/../config/constants.php';
-
-require_once __DIR__ . '/../core/Database.php';
-
 // Lanka Renters - Database Configuration Placeholder
 return [
-    'host' => '127.0.0.1;port=3308',
+    'host' => '127.0.0.1;port=3306',
     'db'   => 'lanka_renters',
     'user' => 'root',
     'pass' => '',
