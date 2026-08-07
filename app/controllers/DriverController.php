@@ -670,6 +670,26 @@ class DriverController {
     }
 
     /**
+     * Retrieves all accepted connected vehicle owners for the driver.
+     */
+    public function viewConnectedOwners() {
+        try {
+            $driver = $this->getSecureDriver();
+            $linkModel = new DriverOwnerLink();
+            $owners = $linkModel->getLinksByDriver($driver['id'], 'accepted');
+            return [
+                'success' => true,
+                'owners'  => $owners
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'error'   => $e->getMessage()
+            ];
+        }
+    }
+
+    /**
      * Driver accepts an owner's connection request.
      */
     public function acceptOwnerRequest($linkId) {

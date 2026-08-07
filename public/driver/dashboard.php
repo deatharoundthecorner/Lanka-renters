@@ -122,17 +122,23 @@ include 'includes/navbar.php';
             <span>Based on <?php echo $totalReviews; ?> <?php echo $totalReviews === 1 ? 'review' : 'reviews'; ?></span>
         </div>
 
-        <div class="stat-card">
-            <h3>Connected Owners</h3>
+        <a href="owners.php" class="stat-card" style="text-decoration: none; color: inherit; transition: transform 0.2s, box-shadow 0.2s; cursor: pointer;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <h3>Connected Owners</h3>
+                <span style="font-size: 12px; color: var(--primary); font-weight: 600;">View &rarr;</span>
+            </div>
             <p><?php echo $stats['connected_owners']; ?> Owners</p>
             <span>Active connections</span>
-        </div>
+        </a>
 
-        <div class="stat-card">
-            <h3>Pending Requests</h3>
+        <a href="owners.php" class="stat-card" style="text-decoration: none; color: inherit; transition: transform 0.2s, box-shadow 0.2s; cursor: pointer;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <h3>Pending Requests</h3>
+                <span style="font-size: 12px; color: var(--primary); font-weight: 600;">View &rarr;</span>
+            </div>
             <p><?php echo $stats['pending_requests']; ?></p>
             <span>Connection requests</span>
-        </div>
+        </a>
 
         <div class="stat-card">
             <h3>Monthly Earnings</h3>
