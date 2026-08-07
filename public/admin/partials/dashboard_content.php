@@ -18,7 +18,7 @@
 <section class="dashboard-grid">
     <article class="stat-card">
         <div class="stat-title">Total users</div>
-        <div class="stat-number">1,284</div>
+        <div class="stat-number">1,780</div>
         <div class="stat-caption">+42 this week</div>
     </article>
     <article class="stat-card">
