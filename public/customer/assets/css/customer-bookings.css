@@ -1,0 +1,402 @@
+/* Customer booking creation, history, details, editing, and cancellation */
+.booking-form-layout,
+.booking-detail-layout {
+    display: grid;
+    grid-template-columns: minmax(17rem, 0.85fr) minmax(0, 1.6fr);
+    align-items: start;
+    gap: 1rem;
+}
+
+.booking-detail-layout {
+    grid-template-columns: minmax(0, 1.7fr) minmax(17rem, 0.8fr);
+}
+
+.booking-form-layout > aside,
+.booking-detail-layout__main {
+    display: grid;
+    gap: 1rem;
+}
+
+.booking-rule-note {
+    margin-top: 1rem;
+}
+
+.booking-vehicle-summary h3 {
+    margin-bottom: 0.8rem;
+}
+
+.booking-vehicle-summary__facts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    margin: 0 0 1rem;
+    padding: 0;
+    list-style: none;
+}
+
+.booking-vehicle-summary__facts li {
+    padding: 0.32rem 0.55rem;
+    color: #475569;
+    border-radius: 999px;
+    background: var(--color-neutral-soft);
+    font-size: 0.74rem;
+}
+
+.booking-vehicle-summary__prices {
+    display: grid;
+    gap: 0.65rem;
+    padding-top: 0.9rem;
+    border-top: 1px solid var(--color-border);
+}
+
+.booking-vehicle-summary__prices p {
+    display: flex;
+    align-items: baseline;
+    gap: 0.35rem;
+    margin: 0;
+}
+
+.booking-vehicle-summary__prices span {
+    color: var(--color-text-secondary);
+    font-size: 0.76rem;
+}
+
+.booking-form {
+    display: grid;
+    gap: 1rem;
+}
+
+.booking-form fieldset {
+    display: grid;
+    gap: 1rem;
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+.booking-form fieldset[disabled] {
+    opacity: 0.68;
+}
+
+.booking-form legend {
+    margin-bottom: 0.55rem;
+    font-size: 0.82rem;
+    font-weight: 750;
+}
+
+.booking-type-options {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+}
+
+.booking-type-option {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.65rem;
+    padding: 0.9rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-control);
+    background: var(--color-card);
+    cursor: pointer;
+}
+
+.booking-type-option:has(input:checked) {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(19, 87, 200, 0.12);
+}
+
+.booking-type-option.is-disabled {
+    color: var(--color-text-secondary);
+    background: var(--color-neutral-soft);
+    cursor: not-allowed;
+}
+
+.booking-type-option input {
+    margin-top: 0.2rem;
+    accent-color: var(--color-primary);
+}
+
+.booking-type-option strong,
+.booking-type-option small {
+    display: block;
+}
+
+.booking-type-option small {
+    margin-top: 0.2rem;
+    color: var(--color-text-secondary);
+    font-size: 0.74rem;
+}
+
+.booking-form__grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.8rem;
+}
+
+.booking-form .form-group > small,
+.booking-form .form-group label span,
+.form-hint {
+    color: var(--color-text-secondary);
+    font-size: 0.74rem;
+}
+
+.form-error {
+    margin: 0;
+    color: var(--color-error);
+    font-size: 0.76rem;
+    font-weight: 650;
+}
+
+.booking-price-summary {
+    display: grid;
+    gap: 0.65rem;
+    padding: 1rem;
+    border: 1px solid #BFDBFE;
+    border-radius: 12px;
+    background: #EFF6FF;
+}
+
+.booking-price-summary > div {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.booking-price-summary span {
+    color: var(--color-text-secondary);
+    font-size: 0.8rem;
+}
+
+.booking-price-summary strong {
+    color: var(--color-primary-dark);
+}
+
+.booking-price-summary p {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: 0.72rem;
+}
+
+.booking-history-toolbar,
+.booking-history-toolbar form,
+.booking-results-heading,
+.booking-card__header,
+.booking-card__footer,
+.booking-detail-overview__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.booking-history-toolbar h2,
+.booking-results-heading h2,
+.booking-card__header h2,
+.booking-detail-overview__header h2 {
+    margin: 0;
+}
+
+.booking-history-toolbar form {
+    align-items: flex-end;
+}
+
+.booking-history-toolbar .form-group {
+    min-width: 13rem;
+}
+
+.booking-results-heading {
+    margin-bottom: 1rem;
+}
+
+.booking-results-heading > p {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: 0.8rem;
+}
+
+.booking-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+.booking-card {
+    display: grid;
+    gap: 1rem;
+    padding: 1.2rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-card);
+    background: var(--color-card);
+    box-shadow: var(--shadow-card);
+}
+
+.booking-card__header {
+    align-items: flex-start;
+}
+
+.booking-card__header h2 {
+    font-size: 1.05rem;
+}
+
+.booking-card__facts,
+.booking-detail-list,
+.booking-record-dates {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0;
+    margin: 0;
+}
+
+.booking-card__facts div,
+.booking-detail-list div,
+.booking-record-dates div {
+    display: grid;
+    gap: 0.2rem;
+    padding: 0.7rem 0;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.booking-card__facts div:nth-child(odd),
+.booking-detail-list div:nth-child(odd),
+.booking-record-dates div:nth-child(odd) {
+    padding-right: 0.8rem;
+}
+
+.booking-card__facts div:nth-child(even),
+.booking-detail-list div:nth-child(even),
+.booking-record-dates div:nth-child(even) {
+    padding-left: 0.8rem;
+}
+
+.booking-card__facts dt,
+.booking-detail-list dt,
+.booking-record-dates dt {
+    color: var(--color-text-secondary);
+    font-size: 0.72rem;
+}
+
+.booking-card__facts dd,
+.booking-detail-list dd,
+.booking-record-dates dd {
+    margin: 0;
+    font-size: 0.84rem;
+    font-weight: 700;
+}
+
+.booking-card__driver {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: 0.8rem;
+}
+
+.booking-card__footer {
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--color-border);
+}
+
+.booking-card__footer span {
+    color: var(--color-text-secondary);
+    font-size: 0.74rem;
+}
+
+.booking-detail-overview__header {
+    align-items: flex-start;
+    margin-bottom: 1rem;
+}
+
+.booking-detail-list__wide {
+    grid-column: 1 / -1;
+    padding-right: 0 !important;
+    padding-left: 0 !important;
+}
+
+.booking-actions {
+    display: grid;
+    gap: 0.8rem;
+}
+
+.booking-actions > .button,
+.booking-cancel-form .button {
+    width: 100%;
+}
+
+.booking-actions > p,
+.booking-cancel-form + p {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: 0.78rem;
+}
+
+.booking-cancel-form {
+    display: grid;
+    gap: 0.75rem;
+    padding-top: 0.8rem;
+    border-top: 1px solid var(--color-border);
+}
+
+.booking-confirmation {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.55rem;
+    color: var(--color-text-secondary);
+    font-size: 0.76rem;
+    cursor: pointer;
+}
+
+.booking-confirmation input {
+    margin-top: 0.15rem;
+    accent-color: var(--color-error);
+}
+
+@media (max-width: 960px) {
+    .booking-form-layout,
+    .booking-detail-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 720px) {
+    .booking-list,
+    .booking-form__grid,
+    .booking-type-options,
+    .booking-card__facts,
+    .booking-detail-list,
+    .booking-record-dates {
+        grid-template-columns: 1fr;
+    }
+
+    .booking-history-toolbar,
+    .booking-history-toolbar form,
+    .booking-results-heading,
+    .booking-card__header,
+    .booking-card__footer,
+    .booking-detail-overview__header {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .booking-history-toolbar .form-group,
+    .booking-history-toolbar form .button,
+    .booking-card__footer .button {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .booking-card__facts div:nth-child(odd),
+    .booking-card__facts div:nth-child(even),
+    .booking-detail-list div:nth-child(odd),
+    .booking-detail-list div:nth-child(even),
+    .booking-record-dates div:nth-child(odd),
+    .booking-record-dates div:nth-child(even) {
+        padding-right: 0;
+        padding-left: 0;
+    }
+
+    .booking-price-summary > div {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+}

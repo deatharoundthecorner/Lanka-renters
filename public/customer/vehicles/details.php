@@ -72,7 +72,7 @@ require dirname(__DIR__) . '/components/layout/header.php';
                                 <p>Your Customer verification must be approved before you can continue to booking.</p>
                                 <a class="button button--secondary" href="<?= htmlspecialchars(customer_url('verification/index.php'), ENT_QUOTES, 'UTF-8') ?>">View verification</a>
                             <?php else: ?>
-                                <p>Continue with this vehicle. Dates, pricing confirmation, and booking creation belong to Phase 5.</p>
+                                <p>Choose your rental dates and service. Availability and pricing will be rechecked securely.</p>
                                 <a class="button button--primary" href="<?= htmlspecialchars(customer_url('bookings/create.php?vehicle_id=' . (int) $vehicle['id']), ENT_QUOTES, 'UTF-8') ?>">Continue to booking <?= customer_icon('arrow-right') ?></a>
                             <?php endif; ?>
                         </section>
