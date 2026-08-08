@@ -62,10 +62,18 @@ foreach ($requiredRoutes as $route) {
 
 $headerSource = file_get_contents($root . '/public/customer/components/layout/header.php') ?: '';
 $sidebarSource = file_get_contents($root . '/public/customer/components/layout/sidebar.php') ?: '';
-$cssSource = file_get_contents($root . '/public/customer/assets/css/customer-foundation.css') ?: '';
+$cssFiles = [
+    '/public/customer/assets/css/customer-ui.css',
+    '/public/customer/assets/css/customer-variables.css',
+    '/public/customer/assets/css/customer-base.css',
+];
+$cssSource = implode(PHP_EOL, array_map(
+    static fn (string $file): string => file_get_contents($root . $file) ?: '',
+    $cssFiles
+));
 $jsSource = file_get_contents($root . '/public/customer/assets/js/customer-ui.js') ?: '';
 
-phaseThreeCheck(str_contains($headerSource, "customer_url('assets/css/customer-foundation.css')"), 'Customer stylesheet uses the canonical URL helper.');
+phaseThreeCheck(str_contains($headerSource, "customer_url('assets/css/customer-ui.css')"), 'Customer stylesheet uses the canonical URL helper.');
 phaseThreeCheck(str_contains($headerSource, "customer_url('assets/js/customer-ui.js')"), 'Customer JavaScript uses the canonical URL helper.');
 phaseThreeCheck(str_contains($sidebarSource, 'aria-current="page"'), 'Sidebar exposes the active page to assistive technology.');
 phaseThreeCheck(str_contains($sidebarSource, "customer_url('logout.php')"), 'Logout uses the guarded Customer endpoint.');

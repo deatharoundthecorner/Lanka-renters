@@ -1,5 +1,25 @@
 <?php
-
-$customerPageTitle = 'Chat';
-$customerPageDescription = 'Customer messaging will be connected in its feature phase.';
-require dirname(__DIR__) . '/_foundation_page.php';
+require_once dirname(__DIR__) . '/_bootstrap.php';
+require_once dirname(__DIR__, 3) . '/app/controllers/CustomerPortalController.php';
+$viewData = (new CustomerPortalController())->chatPage($_GET, $_POST, strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET')));
+if (isset($viewData['redirect'])) { header('Location: ' . customer_url($viewData['redirect']), true, 303); exit; }
+require dirname(__DIR__) . '/components/layout/feature-start.php';
+?>
+<?php if ($viewData['database_error']): ?><section class="empty-state"><h2>Chat is temporarily unavailable</h2><p>Please try again later.</p></section>
+<?php else: ?>
+    <?php foreach ($viewData['errors'] as $error): ?><div class="alert alert--error" role="alert"><p><?= htmlspecialchars($error, ENT_QUOTES, 'UTF-8') ?></p></div><?php endforeach; ?>
+    <div class="chat-layout">
+        <aside class="card chat-sidebar"><h2>Booking conversations</h2>
+            <?php if ($viewData['rooms'] === []): ?><p>No conversations have been opened yet.</p><?php else: ?><ul class="chat-room-list"><?php foreach ($viewData['rooms'] as $room): ?><li><a href="<?= htmlspecialchars(customer_url('chat/index.php?room=' . (int) $room['room_id']), ENT_QUOTES, 'UTF-8') ?>" <?= is_array($viewData['room']) && (int) $viewData['room']['room_id'] === (int) $room['room_id'] ? 'aria-current="page"' : '' ?>><strong>Booking #<?= (int) $room['booking_id'] ?></strong><span><?= htmlspecialchars($room['make'] . ' ' . $room['model'], ENT_QUOTES, 'UTF-8') ?></span><small><?= htmlspecialchars($room['last_message'] ?: 'No messages yet', ENT_QUOTES, 'UTF-8') ?></small></a></li><?php endforeach; ?></ul><?php endif; ?>
+            <form class="feature-form feature-form--compact" method="post" action="<?= htmlspecialchars(customer_url('chat/index.php'), ENT_QUOTES, 'UTF-8') ?>"><?= CustomerCsrf::field() ?><input type="hidden" name="action" value="start"><label for="chat-booking">Open conversation for booking</label><select id="chat-booking" name="booking_id" required><option value="">Choose booking</option><?php foreach ($viewData['eligible_bookings'] as $booking): ?><option value="<?= (int) $booking['id'] ?>">#<?= (int) $booking['id'] ?> — <?= htmlspecialchars($booking['make'] . ' ' . $booking['model'], ENT_QUOTES, 'UTF-8') ?></option><?php endforeach; ?></select><button class="button button--secondary" type="submit" <?= $viewData['eligible_bookings'] === [] ? 'disabled' : '' ?>>Open booking chat</button><?php if ($viewData['eligible_bookings'] === []): ?><p class="form-hint">A pending-payment, confirmed, or ongoing booking is required.</p><?php endif; ?></form>
+        </aside>
+        <section class="card chat-window" aria-live="polite">
+            <?php if (!is_array($viewData['room'])): ?><div class="empty-state"><span class="empty-state__icon"><?= customer_icon('chat') ?></span><h2>Select a conversation</h2><p>Messages are stored in MySQL and limited to booking participants.</p></div>
+            <?php else: ?><div class="card__header"><div><p class="eyebrow">Booking #<?= (int) $viewData['room']['booking_id'] ?></p><h2><?= htmlspecialchars($viewData['room']['make'] . ' ' . $viewData['room']['model'], ENT_QUOTES, 'UTF-8') ?></h2></div><a class="text-link" href="<?= htmlspecialchars(customer_url('bookings/details.php?id=' . (int) $viewData['room']['booking_id']), ENT_QUOTES, 'UTF-8') ?>">Booking Details</a></div>
+                <div class="message-list" data-message-list><?php if ($viewData['messages'] === []): ?><p>No messages yet. Send a plain-text message below.</p><?php else: ?><?php foreach ($viewData['messages'] as $message): ?><article class="message-bubble <?= (int) $message['sender_id'] === (int) ($viewData['customer']['user_id'] ?? 0) ? 'is-own' : '' ?>"><strong><?= htmlspecialchars((int) $message['sender_id'] === (int) ($viewData['customer']['user_id'] ?? 0) ? 'You' : ucfirst($message['sender_role']), ENT_QUOTES, 'UTF-8') ?></strong><p><?= nl2br(htmlspecialchars($message['message_text'], ENT_QUOTES, 'UTF-8')) ?></p><time><?= htmlspecialchars(date('d M Y, h:i A', strtotime($message['sent_at'])), ENT_QUOTES, 'UTF-8') ?></time></article><?php endforeach; ?><?php endif; ?></div>
+                <form class="chat-compose" method="post" action="<?= htmlspecialchars(customer_url('chat/index.php?room=' . (int) $viewData['room']['room_id']), ENT_QUOTES, 'UTF-8') ?>" data-submit-once><?= CustomerCsrf::field() ?><input type="hidden" name="action" value="send"><input type="hidden" name="room_id" value="<?= (int) $viewData['room']['room_id'] ?>"><label for="chat-message">Message</label><textarea id="chat-message" name="message" maxlength="1000" required data-character-input><?= htmlspecialchars($viewData['form_message'], ENT_QUOTES, 'UTF-8') ?></textarea><div class="form-row"><span class="form-hint" data-character-count>0 / 1000</span><button class="button button--primary" type="submit">Send message</button></div></form>
+            <?php endif; ?>
+        </section>
+    </div>
+<?php endif; ?>
+<?php require dirname(__DIR__) . '/components/layout/feature-end.php'; ?>

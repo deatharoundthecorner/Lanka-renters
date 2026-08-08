@@ -1,0 +1,1 @@
+<section class="card"><div class="card__header"><h2>Notifications</h2><a class="text-link" href="<?= htmlspecialchars(customer_url('notifications/index.php'), ENT_QUOTES, 'UTF-8') ?>">View all</a></div><p><?= (int) ($unreadNotificationCount ?? 0) ?> unread notification(s).</p></section>

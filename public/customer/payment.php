@@ -1,5 +1,4 @@
 <?php
-
-$customerPageTitle = 'Payment';
-$customerPageDescription = 'This legacy Customer payment route is protected pending payment implementation.';
-require __DIR__ . '/_foundation_page.php';
+require_once __DIR__ . '/_bootstrap.php';
+header('Location: ' . customer_url('payments/index.php'), true, 302);
+exit;

@@ -22,13 +22,14 @@ require dirname(__DIR__) . '/components/layout/header.php';
         <main class="customer-content" id="main-content">
             <?php require dirname(__DIR__) . '/components/layout/page-header.php'; ?>
 
+            <?php $verificationStatus = (string) ($dashboard['verification_status'] ?? 'pending'); ?>
             <section class="welcome-strip" aria-labelledby="welcome-heading">
                 <div>
                     <p class="eyebrow">Good to see you</p>
                     <h2 id="welcome-heading">Welcome back, <?= htmlspecialchars($firstName, ENT_QUOTES, 'UTF-8') ?></h2>
-                    <p>Start with verification, then explore approved vehicles when you are ready.</p>
+                    <p>Your summary below uses Customer-owned database records.</p>
                 </div>
-                <span class="status-badge status-badge--warning"><?= customer_icon('clock') ?> Pending verification</span>
+                <span class="status-badge status-badge--<?= $verificationStatus === 'approved' ? 'success' : 'warning' ?>"><?= customer_icon($verificationStatus === 'approved' ? 'check' : 'clock') ?> <?= htmlspecialchars(ucfirst($verificationStatus) . ' verification', ENT_QUOTES, 'UTF-8') ?></span>
             </section>
 
             <?php $verification = is_array($dashboard['verification'] ?? null) ? $dashboard['verification'] : []; ?>
@@ -58,7 +59,8 @@ require dirname(__DIR__) . '/components/layout/header.php';
                 <section class="card" aria-labelledby="progress-heading">
                     <div class="card__header">
                         <div><p class="eyebrow">Your journey</p><h2 id="progress-heading">Rental progress</h2></div>
-                        <span class="status-badge status-badge--info">1 of 6 complete</span>
+                        <?php $completeProgress = count(array_filter($dashboard['progress'] ?? [], static fn (array $item): bool => ($item['state'] ?? '') === 'complete')); ?>
+                        <span class="status-badge status-badge--info"><?= $completeProgress ?> of 6 complete</span>
                     </div>
                     <ol class="progress-list">
                         <?php foreach (($dashboard['progress'] ?? []) as $progressItem): ?>
@@ -87,6 +89,15 @@ require dirname(__DIR__) . '/components/layout/header.php';
                                 <h3>No bookings yet</h3>
                                 <p>Your latest booking summary will appear here after you request a vehicle.</p>
                                 <a class="button button--secondary button--small" href="<?= htmlspecialchars(customer_url('vehicles/index.php'), ENT_QUOTES, 'UTF-8') ?>">Browse vehicles</a>
+                            </div>
+                        <?php else: ?>
+                            <?php $recentBooking = $dashboard['recent_booking']; ?>
+                            <div class="recent-booking-summary">
+                                <p class="eyebrow">Booking #<?= (int) $recentBooking['id'] ?></p>
+                                <h3><?= htmlspecialchars($recentBooking['make'] . ' ' . $recentBooking['model'], ENT_QUOTES, 'UTF-8') ?></h3>
+                                <p><?= htmlspecialchars(date('d M Y', strtotime($recentBooking['start_date'])) . ' – ' . date('d M Y', strtotime($recentBooking['end_date'])), ENT_QUOTES, 'UTF-8') ?></p>
+                                <span class="status-badge status-badge--info"><?= htmlspecialchars(ucwords(str_replace('_', ' ', $recentBooking['status'])), ENT_QUOTES, 'UTF-8') ?></span>
+                                <a class="button button--secondary button--small" href="<?= htmlspecialchars(customer_url('bookings/details.php?id=' . (int) $recentBooking['id']), ENT_QUOTES, 'UTF-8') ?>">View Details</a>
                             </div>
                         <?php endif; ?>
                     </section>

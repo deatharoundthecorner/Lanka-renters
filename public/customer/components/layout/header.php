@@ -10,6 +10,7 @@ require_once dirname(__DIR__) . '/icon.php';
     <title><?= htmlspecialchars($documentTitle, ENT_QUOTES, 'UTF-8') ?> | Lanka Renters</title>
     <link rel="stylesheet" href="<?= htmlspecialchars(customer_url('assets/css/customer-ui.css'), ENT_QUOTES, 'UTF-8') ?>">
     <script src="<?= htmlspecialchars(customer_url('assets/js/customer-ui.js'), ENT_QUOTES, 'UTF-8') ?>" defer></script>
+    <script src="<?= htmlspecialchars(customer_url('assets/js/customer-workflows.js'), ENT_QUOTES, 'UTF-8') ?>" defer></script>
 </head>
 <body>
 <a class="skip-link" href="#main-content">Skip to main content</a>

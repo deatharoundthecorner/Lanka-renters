@@ -10,7 +10,7 @@ $customerLinks = [
     ['key' => 'chat', 'label' => 'Chat', 'path' => 'chat/index.php', 'icon' => 'chat'],
     ['key' => 'incidents', 'label' => 'Incidents', 'path' => 'incidents/index.php', 'icon' => 'alert'],
     ['key' => 'driver-change', 'label' => 'Driver Change Request', 'path' => 'driver-change/index.php', 'icon' => 'switch'],
-    ['key' => 'return', 'label' => 'Return', 'path' => 'return/index.php', 'icon' => 'return'],
+    ['key' => 'return', 'label' => 'Return', 'path' => 'returns/index.php', 'icon' => 'return'],
     ['key' => 'reviews', 'label' => 'Reviews', 'path' => 'reviews/index.php', 'icon' => 'star'],
     ['key' => 'profile', 'label' => 'Profile', 'path' => 'profile/index.php', 'icon' => 'user'],
 ];

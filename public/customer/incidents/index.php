@@ -1,5 +1,12 @@
 <?php
-
-$customerPageTitle = 'Incidents';
-$customerPageDescription = 'Customer incident reporting will be connected in its feature phase.';
-require dirname(__DIR__) . '/_foundation_page.php';
+require_once dirname(__DIR__) . '/_bootstrap.php';
+require_once dirname(__DIR__, 3) . '/app/controllers/CustomerPortalController.php';
+$viewData = (new CustomerPortalController())->incidentsPage($_GET);
+require dirname(__DIR__) . '/components/layout/feature-start.php';
+?>
+<p class="result-count"><?= (int) $viewData['total'] ?> incident<?= (int) $viewData['total'] === 1 ? '' : 's' ?></p>
+<?php if ($viewData['database_error']): ?><section class="empty-state"><h2>Incidents are temporarily unavailable</h2><p>Please try again later.</p></section>
+<?php elseif ($viewData['incidents'] === []): ?><section class="empty-state"><span class="empty-state__icon"><?= customer_icon('alert') ?></span><h2>No incident reports</h2><p>Only an ongoing Customer-owned booking can be selected for a real database incident.</p><?php if ($viewData['eligible_bookings'] !== []): ?><a class="button button--primary" href="<?= htmlspecialchars(customer_url('incidents/create.php'), ENT_QUOTES, 'UTF-8') ?>">Report Incident</a><?php endif; ?></section>
+<?php else: ?><div class="feature-card-list"><?php foreach ($viewData['incidents'] as $incident): ?><article class="card feature-list-card"><div><p class="eyebrow">Incident #<?= (int) $incident['id'] ?> · Booking #<?= (int) $incident['booking_id'] ?></p><h2><?= htmlspecialchars($incident['make'] . ' ' . $incident['model'], ENT_QUOTES, 'UTF-8') ?></h2><p><?= htmlspecialchars($incident['description'], ENT_QUOTES, 'UTF-8') ?></p><time><?= htmlspecialchars(date('d M Y, h:i A', strtotime($incident['incident_date'])), ENT_QUOTES, 'UTF-8') ?></time></div><div class="feature-list-card__actions"><span class="status-badge status-badge--warning"><?= htmlspecialchars(ucfirst($incident['status']), ENT_QUOTES, 'UTF-8') ?></span><span>Severity: <?= htmlspecialchars(ucfirst($incident['severity']), ENT_QUOTES, 'UTF-8') ?></span><a class="button button--secondary button--small" href="<?= htmlspecialchars(customer_url('incidents/details.php?id=' . (int) $incident['id']), ENT_QUOTES, 'UTF-8') ?>">View Details</a></div></article><?php endforeach; ?></div><?php endif; ?>
+<?php if ($viewData['total_pages'] > 1): ?><nav class="pagination" aria-label="Incident pages"><?php for ($p=1;$p<=$viewData['total_pages'];$p++): ?><a href="<?= htmlspecialchars(customer_url('incidents/index.php?page=' . $p), ENT_QUOTES, 'UTF-8') ?>" <?= $p===$viewData['current_page']?'aria-current="page"':'' ?>><?= $p ?></a><?php endfor; ?></nav><?php endif; ?>
+<?php require dirname(__DIR__) . '/components/layout/feature-end.php'; ?>

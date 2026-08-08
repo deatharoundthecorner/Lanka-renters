@@ -16,9 +16,9 @@ $initials = $initials !== '' ? $initials : 'C';
     </div>
 
     <div class="navbar-actions">
-        <a class="icon-button notification-button" href="<?= htmlspecialchars(customer_url('notifications.php'), ENT_QUOTES, 'UTF-8') ?>" aria-label="View notifications">
+        <a class="icon-button notification-button" href="<?= htmlspecialchars(customer_url('notifications/index.php'), ENT_QUOTES, 'UTF-8') ?>" aria-label="View notifications">
             <?= customer_icon('bell') ?>
-            <span class="notification-dot" aria-hidden="true"></span>
+            <?php if ((int) ($viewData['dashboard']['unread_notifications'] ?? 0) > 0): ?><span class="notification-dot" aria-hidden="true"></span><?php endif; ?>
         </a>
         <div class="profile-menu" data-profile-menu>
             <button class="profile-menu__trigger" type="button" aria-expanded="false" aria-controls="customer-profile-menu" data-profile-trigger>

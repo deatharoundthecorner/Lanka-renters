@@ -1,6 +1,10 @@
 <?php
-
-$customerPageTitle = 'Verification';
-$customerPageDescription = 'Keep your Customer identity and licence evidence ready for account review.';
-$customerFeaturePhase = 'the Customer verification phase';
-require dirname(__DIR__) . '/_foundation_page.php';
+require_once dirname(__DIR__) . '/_bootstrap.php';
+require_once dirname(__DIR__, 3) . '/app/controllers/CustomerPortalController.php';
+$viewData=(new CustomerPortalController())->verificationPage($_POST,strtoupper((string)($_SERVER['REQUEST_METHOD']??'GET')));
+if(isset($viewData['redirect'])){header('Location: '.customer_url($viewData['redirect']),true,303);exit;}
+$profile=$viewData['profile']??null; require dirname(__DIR__) . '/components/layout/feature-start.php';
+?>
+<?php if($viewData['database_error']||!is_array($profile)):?><section class="empty-state"><h2>Verification details unavailable</h2><p>Please try again later.</p></section>
+<?php else:?><div class="feature-detail-grid"><form class="card feature-form" method="post" action="<?=htmlspecialchars(customer_url('verification/index.php'),ENT_QUOTES,'UTF-8')?>" data-submit-once><?=CustomerCsrf::field()?><h2>Identity details</h2><p>These database fields support Admin review. Saving them does not approve your account.</p><input type="hidden" name="name" value="<?=htmlspecialchars($viewData['form']['name'],ENT_QUOTES,'UTF-8')?>"><input type="hidden" name="phone" value="<?=htmlspecialchars($viewData['form']['phone'],ENT_QUOTES,'UTF-8')?>"><label for="verification-nic">NIC number</label><input id="verification-nic" name="nic_number" maxlength="20" value="<?=htmlspecialchars($viewData['form']['nic_number'],ENT_QUOTES,'UTF-8')?>"><label for="verification-license">Driving licence number</label><input id="verification-license" name="driving_license_number" maxlength="30" value="<?=htmlspecialchars($viewData['form']['driving_license_number'],ENT_QUOTES,'UTF-8')?>"><button class="button button--primary" type="submit">Save verification details</button></form><aside class="card"><p class="eyebrow">Admin-owned decision</p><h2><?=htmlspecialchars(ucfirst($profile['verification_status']),ENT_QUOTES,'UTF-8')?></h2><p>The Customer cannot approve, reject, or change verification status.</p><a class="button button--secondary" href="<?=htmlspecialchars(customer_url('profile/index.php'),ENT_QUOTES,'UTF-8')?>">Profile Settings</a></aside></div><?php endif;?>
+<?php require dirname(__DIR__) . '/components/layout/feature-end.php'; ?>

@@ -1,5 +1,7 @@
 <?php
-
-$customerPageTitle = 'Reviews';
-$customerPageDescription = 'Customer reviews will be connected in their feature phase.';
-require dirname(__DIR__) . '/_foundation_page.php';
+require_once dirname(__DIR__) . '/_bootstrap.php'; require_once dirname(__DIR__,3).'/app/controllers/CustomerPortalController.php';
+$viewData=(new CustomerPortalController())->reviewsPage($_GET); require dirname(__DIR__).'/components/layout/feature-start.php';
+?>
+<p class="result-count"><?=(int)$viewData['total']?> review<?= (int)$viewData['total']===1?'':'s'?></p>
+<?php if($viewData['database_error']):?><section class="empty-state"><h2>Reviews unavailable</h2><p>Please try again later.</p></section><?php elseif($viewData['reviews']===[]):?><section class="empty-state"><span class="empty-state__icon"><?=customer_icon('star')?></span><h2>No reviews yet</h2><p>A completed owned booking without an existing review is required.</p><?php if($viewData['eligible_bookings']!==[]):?><a class="button button--primary" href="<?=htmlspecialchars(customer_url('reviews/create.php'),ENT_QUOTES,'UTF-8')?>">Write Review</a><?php endif;?></section><?php else:?><div class="feature-card-list"><?php foreach($viewData['reviews'] as $review):?><article class="card feature-list-card"><div><p class="eyebrow">Review #<?=(int)$review['id']?> · Booking #<?=(int)$review['booking_id']?></p><h2><?=htmlspecialchars($review['make'].' '.$review['model'],ENT_QUOTES,'UTF-8')?></h2><p>Vehicle rating: <?=(int)$review['vehicle_rating']?> / 5<?= $review['driver_rating']!==null?' · Driver rating: '.(int)$review['driver_rating'].' / 5':''?></p><p><?=nl2br(htmlspecialchars($review['review_text']?:'No written comment.',ENT_QUOTES,'UTF-8'))?></p></div><a class="button button--secondary button--small" href="<?=htmlspecialchars(customer_url('reviews/details.php?id='.(int)$review['id']),ENT_QUOTES,'UTF-8')?>">View Details</a></article><?php endforeach;?></div><?php endif;?>
+<?php require dirname(__DIR__).'/components/layout/feature-end.php';?>
