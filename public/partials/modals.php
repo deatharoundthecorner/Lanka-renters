@@ -1,5 +1,4 @@
 <?php
-// partials/modals.php
 // Reusable Modals Component for Lanka Renters Admin Dashboard
 ?>
 
