@@ -19,7 +19,7 @@ final class CustomerPortal
     public function getContext(int $sessionUserId, bool $forUpdate = false): ?array
     {
         $sql = "SELECT u.id AS user_id, u.name, u.email, u.phone, u.status AS user_status,
-                       c.id AS customer_id, c.nic_number, c.driving_license_number,
+                       c.id AS customer_id, c.nic_number, c.driving_license_number, c.district, c.address,
                        c.verification_status
                 FROM users u
                 JOIN customers c ON c.user_id = u.id
@@ -109,12 +109,15 @@ final class CustomerPortal
 
             $customerStatement = $this->db->prepare(
                 'UPDATE customers
-                 SET nic_number = :nic_number, driving_license_number = :license_number
+                 SET nic_number = :nic_number, driving_license_number = :license_number,
+                     district = :district, address = :address
                  WHERE id = :customer_id AND user_id = :user_id'
             );
             $customerStatement->execute([
                 'nic_number' => $values['nic_number'] !== '' ? $values['nic_number'] : null,
                 'license_number' => $values['driving_license_number'] !== '' ? $values['driving_license_number'] : null,
+                'district' => $values['district'] !== '' ? $values['district'] : null,
+                'address' => $values['address'] !== '' ? $values['address'] : null,
                 'customer_id' => $context['customer_id'],
                 'user_id' => $sessionUserId,
             ]);

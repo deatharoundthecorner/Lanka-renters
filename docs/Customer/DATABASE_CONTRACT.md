@@ -2,7 +2,7 @@
 
 ## Phase 7 verification note
 
-Phase 7 made no schema change. Read-only integrity checks against the local development database found no orphan booking, payment, incident, review, chat-participant or notification relationships in the checked tables, and no duplicate `(booking_id, customer_id)` review rows. The active local configuration used port 3306; the historical Phase 1 reference to port 3308 requires repository-coordinator alignment rather than a Customer schema change.
+Phase 7 initially made no schema change. Following explicit approval for the Customer profile extension, `customers.district` and `customers.address` were added as nullable fields to the schema and local development database. Read-only integrity checks found no orphan booking, payment, incident, review, chat-participant or notification relationships in the checked tables, and no duplicate `(booking_id, customer_id)` review rows. The active local configuration used port 3306; the historical Phase 1 reference to port 3308 requires repository-coordinator alignment.
 
 ## Purpose and status
 
@@ -49,7 +49,7 @@ interchanged.
 | Requirement | Existing table and key | Existing columns and foreign keys | Missing or inconsistent parts | Owner and Customer use | Safe to use now? |
 | --- | --- | --- | --- | --- | --- |
 | Authentication user | `users`, PK `id INT` | `name`, unique `email`, `password_hash`, `phone`, role/status enums, timestamps | No Customer-specific gap in this phase | Authentication/shared. Customer reads its session user only | Yes, through existing authentication |
-| Customer profile | `customers`, PK `id INT` | Unique `user_id INT` -> `users.id` with cascade; NIC, driving licence, verification enum, timestamps | No address/profile-image fields; not required by the Phase 2 contract | Customer profile data; Admin owns verification decisions | Yes; Customer must not write `verification_status` |
+| Customer profile | `customers`, PK `id INT` | Unique `user_id INT` -> `users.id` with cascade; NIC, driving licence, nullable district/address, verification enum, timestamps | No profile-image field | Customer profile data; Admin owns verification decisions | Yes; Customer must not write `verification_status` |
 | Vehicle owner | `vehicle_owners`, PK `id INT` | Unique `user_id INT` -> `users.id`; owner type, bank data, verification enum | No Customer write requirement | Owner-owned; Customer may read public owner identity only | Read-only after Owner coordination |
 | Vehicle catalogue | `vehicles`, PK `id INT` | `owner_id` -> `vehicle_owners.id`; make/model/year/plate/type/transmission/fuel/seats, two prices, status and verification enums, timestamps | No district or pickup-location fields; no catalogue composite index | Owner writes; Customer reads approved catalogue rows | Partly |
 | Vehicle images | None | `vehicle_documents.file_path` is a private document path and must not be used as a public image | A dedicated public image table is missing | Owner writes images; Customer reads them | No, proposal required |

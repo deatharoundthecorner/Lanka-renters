@@ -55,7 +55,7 @@
 - Browser-dependent visual, responsive, console, keyboard, zoom and logout tests remain blocked by browser-controller startup failure.
 - Valid state-changing booking/payment/incident/review/demo tests and upload MIME matrix remain not run until a disposable database copy and safe non-private files are available.
 - The current configured port is 3306; the Phase 1 test's historical 3308 note should be aligned by the repository/database coordinator.
-- No Phase 7 schema change was made. Driver-change, return and replacement-decision records remain explicitly labelled server-side demo-session data because the approved schema has no Customer-owned table for them.
+- Following explicit approval after the initial Phase 7 test pass, nullable `customers.district` and `customers.address` fields were added to the schema and local development database. Driver-change, return and replacement-decision records remain explicitly labelled server-side demo-session data because the approved schema has no Customer-owned table for them.
 
 ## Safe local commands
 

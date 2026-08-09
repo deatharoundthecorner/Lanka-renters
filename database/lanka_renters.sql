@@ -47,6 +47,8 @@ CREATE TABLE `customers` (
   `user_id` INT NOT NULL UNIQUE,
   `nic_number` VARCHAR(20) UNIQUE,
   `driving_license_number` VARCHAR(30) UNIQUE,
+  `district` VARCHAR(100) DEFAULT NULL,
+  `address` VARCHAR(255) DEFAULT NULL,
   `verification_status` ENUM('pending', 'approved', 'rejected') NOT NULL DEFAULT 'pending',
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

@@ -83,6 +83,8 @@ final class CustomerPortalController
                 'phone' => (string) $context['phone'],
                 'nic_number' => (string) ($context['nic_number'] ?? ''),
                 'driving_license_number' => (string) ($context['driving_license_number'] ?? ''),
+                'district' => (string) ($context['district'] ?? ''),
+                'address' => (string) ($context['address'] ?? ''),
             ];
             if ($method === 'POST') {
                 $data['form'] = [
@@ -90,12 +92,20 @@ final class CustomerPortalController
                     'phone' => $this->text($post['phone'] ?? '', 20),
                     'nic_number' => $this->text($post['nic_number'] ?? '', 20),
                     'driving_license_number' => $this->text($post['driving_license_number'] ?? '', 30),
+                    'district' => $this->text($post['district'] ?? '', 100),
+                    'address' => $this->text($post['address'] ?? '', 255, false),
                 ];
                 if (strlen($data['form']['name']) < 2) {
                     $data['errors']['name'] = 'Enter a name with at least 2 characters.';
                 }
                 if (!preg_match('/^[0-9+() -]{7,20}$/', $data['form']['phone'])) {
                     $data['errors']['phone'] = 'Enter a valid phone number.';
+                }
+                if ($data['form']['district'] !== '' && strlen($data['form']['district']) < 2) {
+                    $data['errors']['district'] = 'Enter a district with at least 2 characters.';
+                }
+                if ($data['form']['address'] !== '' && strlen($data['form']['address']) < 5) {
+                    $data['errors']['address'] = 'Enter an address with at least 5 characters.';
                 }
                 if ($data['errors'] === []) {
                     $this->model->updateProfile($this->userId(), $data['form']);
