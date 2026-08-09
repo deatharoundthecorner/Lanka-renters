@@ -49,6 +49,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     }
 }
 
+// Handle leave delete submissions
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'delete_leave') {
+    if (!AuthHelper::validateCsrfToken($_POST['csrf_token'] ?? '')) {
+        $error = "CSRF security verification failed.";
+    } else {
+        $leaveId = (int)($_POST['leave_id'] ?? 0);
+        $result = $driverController->deleteLeave($leaveId);
+        if ($result['success']) {
+            $success = $result['message'];
+        } else {
+            $error = $result['error'];
+        }
+    }
+}
+
 // 3. Handle leave edit submissions (Update)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'edit_leave') {
     if (!AuthHelper::validateCsrfToken($_POST['csrf_token'] ?? '')) {
@@ -172,17 +187,23 @@ include 'includes/navbar.php';
                                 </td>
                                 <td><?php echo date('Y-m-d', strtotime($leave['created_at'])); ?></td>
                                 <td>
-                                    <div style="display: flex; gap: 8px;">
-                                        <!-- Edit Action (Only available if status is pending) -->
+                                    <div style="display: flex; gap: 6px; align-items: center;">
+                                        <!-- Only available if status is pending -->
                                         <?php if ($leave['status'] === 'pending'): ?>
-                                            <a href="leave.php?edit_id=<?php echo $leave['id']; ?>" class="btn-secondary" style="padding: 4px 8px; font-size: 11px; text-decoration: none;">Edit</a>
+                                            <!-- Delete Action -->
+                                            <form action="leave.php" method="POST" style="margin:0;" onsubmit="return confirm('Are you sure you want to delete this leave request?');">
+                                                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(AuthHelper::getCsrfToken()); ?>">
+                                                <input type="hidden" name="action" value="delete_leave">
+                                                <input type="hidden" name="leave_id" value="<?php echo $leave['id']; ?>">
+                                                <button type="submit" style="padding: 0; font-size: 11px; background-color: var(--danger); color: white; border: none; border-radius: 4px; cursor: pointer; width: 62px; height: 26px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box;">Delete</button>
+                                            </form>
                                             
-                                            <!-- Cancel/Delete Action -->
-                                            <form action="" method="POST" style="margin:0;" onsubmit="return confirm('Are you sure you want to cancel this leave request?');">
+                                            <!-- Cancel Action -->
+                                            <form action="leave.php" method="POST" style="margin:0;" onsubmit="return confirm('Are you sure you want to cancel this leave request?');">
                                                 <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(AuthHelper::getCsrfToken()); ?>">
                                                 <input type="hidden" name="action" value="cancel_leave">
                                                 <input type="hidden" name="leave_id" value="<?php echo $leave['id']; ?>">
-                                                <button type="submit" style="padding: 4px 8px; font-size: 11px; background-color: var(--danger); color: white; border: none; border-radius: 4px; cursor: pointer;">Cancel</button>
+                                                <button type="submit" class="btn-secondary" style="padding: 0; font-size: 11px; margin: 0; border-radius: 4px; width: 62px; height: 26px; display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box;">Cancel</button>
                                             </form>
                                         <?php else: ?>
                                             <span style="color: var(--text-muted); font-size: 11px;">Locked</span>

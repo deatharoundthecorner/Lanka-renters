@@ -5,6 +5,7 @@ require_once dirname(dirname(__DIR__)) . '/app/controllers/DriverController.php'
 
 AuthHelper::startSession();
 AuthHelper::requireRole('driver');
+$user = AuthHelper::getCurrentUser();
 
 $notificationModel = new Notification();
 $driverController = new DriverController();
