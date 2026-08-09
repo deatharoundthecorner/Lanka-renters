@@ -129,6 +129,7 @@ $activePage = $activePage ?? 'dashboard';
     </nav>
     <div class="sidebar-footer">
         <form action="dashboard.php" method="POST" style="margin: 0;">
+            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(AuthHelper::getCsrfToken()); ?>">
             <input type="hidden" name="action" value="logout">
             <button type="submit" class="btn-sidebar-logout">
                 <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="transform: rotate(180deg);">

@@ -110,8 +110,20 @@ class AccountChangeRequest {
             $val = $req['requested_value'];
 
             // 2. Overwrite the active user record depending on the change type
-            if ($type === 'username') {
+            if ($type === 'display_name') {
                 $sqlUpdate = "UPDATE `users` SET `name` = :val WHERE `id` = :user_id";
+                $stmtUpdate = $this->db->prepare($sqlUpdate);
+                $stmtUpdate->execute(['val' => $val, 'user_id' => $userId]);
+            } elseif ($type === 'username') {
+                // Check username uniqueness
+                $sqlCheck = "SELECT id FROM `users` WHERE `username` = :username AND `id` != :user_id LIMIT 1";
+                $stmtCheck = $this->db->prepare($sqlCheck);
+                $stmtCheck->execute(['username' => $val, 'user_id' => $userId]);
+                if ($stmtCheck->fetch()) {
+                    throw new Exception("Unique username constraint violation: Username is already occupied.");
+                }
+
+                $sqlUpdate = "UPDATE `users` SET `username` = :val WHERE `id` = :user_id";
                 $stmtUpdate = $this->db->prepare($sqlUpdate);
                 $stmtUpdate->execute(['val' => $val, 'user_id' => $userId]);
             } elseif ($type === 'email') {

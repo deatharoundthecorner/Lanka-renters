@@ -2,16 +2,16 @@
 
 /* CSS Variables */
 :root {
-    --bg-main: #f5f7fb;
-    --bg-card: #ffffff;
-    --primary: #0066cc;
-    --primary-hover: #0052a3;
-    --text-main: #1e293b;
-    --text-muted: #64748b;
-    --border: #e2e8f0;
-    --success: #10b981;
-    --warning: #f59e0b;
-    --danger: #ef4444;
+    --bg-main: #F8FAFC;
+    --bg-card: #FFFFFF;
+    --primary: #1357C8;
+    --primary-hover: #0B3A82;
+    --text-main: #1E293B;
+    --text-muted: #64748B;
+    --border: #E2E8F0;
+    --success: #10B981;
+    --warning: #F59E0B;
+    --danger: #EF4444;
     --sidebar-width: 240px;
     --navbar-height: 60px;
 }

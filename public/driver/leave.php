@@ -4,19 +4,7 @@ require_once dirname(dirname(__DIR__)) . '/app/helpers/AuthHelper.php';
 require_once dirname(dirname(__DIR__)) . '/app/models/DriverLeave.php';
 
 AuthHelper::startSession();
-
-// Localized driver auth check
-if (!AuthHelper::isLoggedIn()) {
-    header("Location: login.php");
-    exit();
-}
-
-$user = AuthHelper::getCurrentUser();
-if (($user['role'] ?? '') !== 'driver') {
-    AuthHelper::logout();
-    header("Location: login.php");
-    exit();
-}
+AuthHelper::requireRole('driver');
 
 $driverController = new DriverController();
 

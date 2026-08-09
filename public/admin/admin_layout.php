@@ -48,7 +48,11 @@ function isActive($href, $page) {
                     <a href="<?= $item['href'] ?>" class="nav-item <?= isActive($item['href'], $page) ?>"><?= $item['name'] ?></a>
                 <?php endforeach; ?>
             </nav>
-            <a href="#" class="logout-link">Log out</a>
+            <!-- Logout: POST with CSRF token to prevent cross-site request forgery -->
+            <form method="POST" action="logout.php" style="margin:0;">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(AuthHelper::getCsrfToken()); ?>">
+                <button type="submit" class="logout-link" style="background:none;border:none;cursor:pointer;width:100%;text-align:left;">Log out</button>
+            </form>
         </aside>
 
         <main class="admin-content">

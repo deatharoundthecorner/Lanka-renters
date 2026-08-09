@@ -34,7 +34,7 @@ CREATE TABLE `users` (
   `password_hash` VARCHAR(255) NOT NULL,
   `phone` VARCHAR(20) NOT NULL,
   `role` ENUM('customer', 'owner', 'driver', 'admin') NOT NULL,
-  `status` ENUM('active', 'inactive', 'suspended') NOT NULL DEFAULT 'active',
+  `status` ENUM('active', 'inactive', 'suspended', 'pending') NOT NULL DEFAULT 'active',
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   INDEX `idx_users_role` (`role`),
@@ -102,11 +102,11 @@ CREATE TABLE `driver_owner_links` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `driver_id` INT NOT NULL,
   `owner_id` INT NOT NULL,
-  `link_status` ENUM('pending', 'active', 'terminated') NOT NULL DEFAULT 'pending',
-  `linked_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  `terminated_at` TIMESTAMP NULL DEFAULT NULL,
+  `status` ENUM('pending', 'accepted', 'rejected', 'blocked') NOT NULL DEFAULT 'pending',
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `accepted_at` TIMESTAMP NULL DEFAULT NULL,
   UNIQUE KEY `uq_driver_owner` (`driver_id`, `owner_id`),
-  INDEX `idx_driver_owner_status` (`owner_id`, `link_status`),
+  INDEX `idx_driver_owner_status` (`owner_id`, `status`),
   CONSTRAINT `fk_owner_links_driver` FOREIGN KEY (`driver_id`) REFERENCES `drivers` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_owner_links_owner` FOREIGN KEY (`owner_id`) REFERENCES `vehicle_owners` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -381,4 +381,65 @@ CREATE TABLE IF NOT EXISTS `driver_vehicle_checks` (
   CONSTRAINT `fk_vehicle_checks_driver` FOREIGN KEY (`driver_id`) REFERENCES `drivers` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_vehicle_checks_vehicle` FOREIGN KEY (`vehicle_id`) REFERENCES `vehicles` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_vehicle_checks_booking` FOREIGN KEY (`booking_id`) REFERENCES `bookings` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 24. Profile Change Requests Table
+CREATE TABLE IF NOT EXISTS `profile_change_requests` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `user_id` INT NOT NULL,
+  `field_name` VARCHAR(50) NOT NULL,
+  `old_value` TEXT DEFAULT NULL,
+  `requested_value` TEXT DEFAULT NULL,
+  `status` ENUM('pending', 'approved', 'rejected') NOT NULL DEFAULT 'pending',
+  `reason` TEXT DEFAULT NULL,
+  `reviewed_by` INT DEFAULT NULL,
+  `reviewed_at` TIMESTAMP NULL DEFAULT NULL,
+  `rejection_reason` TEXT DEFAULT NULL,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT `fk_profile_changes_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_profile_changes_reviewer` FOREIGN KEY (`reviewed_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 25. Account Change Requests Table
+CREATE TABLE IF NOT EXISTS `account_change_requests` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `user_id` INT NOT NULL,
+  `change_type` ENUM('display_name', 'username', 'email') NOT NULL,
+  `old_value` VARCHAR(100) DEFAULT NULL,
+  `requested_value` VARCHAR(100) NOT NULL,
+  `status` ENUM('pending', 'approved', 'rejected') NOT NULL DEFAULT 'pending',
+  `reviewed_by` INT DEFAULT NULL,
+  `reviewed_at` TIMESTAMP NULL DEFAULT NULL,
+  `rejection_reason` TEXT DEFAULT NULL,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT `fk_account_changes_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_account_changes_reviewer` FOREIGN KEY (`reviewed_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 26. Admin Reviews Table
+CREATE TABLE IF NOT EXISTS `admin_reviews` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `admin_id` INT NOT NULL,
+  `request_type` ENUM('profile_change', 'account_change', 'document_replacement', 'police_report') NOT NULL,
+  `request_id` INT NOT NULL,
+  `action` ENUM('approved', 'rejected') NOT NULL,
+  `comments` TEXT DEFAULT NULL,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT `fk_admin_reviews_admin` FOREIGN KEY (`admin_id`) REFERENCES `users` (`id`) ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 27. Driver Payments Table
+CREATE TABLE IF NOT EXISTS `driver_payments` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `driver_id` INT NOT NULL,
+  `booking_id` INT NOT NULL,
+  `amount` DECIMAL(10, 2) NOT NULL,
+  `payment_status` ENUM('pending', 'paid') NOT NULL DEFAULT 'pending',
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX `idx_driver_payments_driver` (`driver_id`),
+  INDEX `idx_driver_payments_booking` (`booking_id`),
+  CONSTRAINT `fk_driver_payments_driver` FOREIGN KEY (`driver_id`) REFERENCES `drivers` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_driver_payments_booking` FOREIGN KEY (`booking_id`) REFERENCES `bookings` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

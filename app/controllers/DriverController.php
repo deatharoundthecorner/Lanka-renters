@@ -230,7 +230,7 @@ class DriverController {
                 ];
             }
 
-            if ($document['verification_status'] !== 'pending') {
+            if ($document['status'] !== 'pending') {
                 return [
                     'success' => false,
                     'error'   => "Only pending documents can be deleted."
@@ -703,6 +703,15 @@ class DriverController {
                 return [
                     'success' => false,
                     'error'   => "Security Violation: Unauthorized connection request."
+                ];
+            }
+
+            // Enforce connection limit (Max 4 accepted connections)
+            $acceptedCount = $linkModel->getLinkCountByDriver($driver['id'], 'accepted');
+            if ($acceptedCount >= 4) {
+                return [
+                    'success' => false,
+                    'error'   => "You cannot connect with more than 4 owners."
                 ];
             }
 
@@ -1263,7 +1272,7 @@ class DriverController {
             $type = trim($data['change_type'] ?? '');
             $val = trim($data['requested_value'] ?? '');
 
-            if ($type !== 'username' && $type !== 'email') {
+            if ($type !== 'display_name' && $type !== 'username' && $type !== 'email') {
                 return [
                     'success' => false,
                     'error'   => "Invalid account change type."
@@ -1278,7 +1287,14 @@ class DriverController {
             }
 
             // Check if value is different from active value
-            $oldValue = ($type === 'username') ? $driver['name'] : $driver['email'];
+            if ($type === 'display_name') {
+                $oldValue = $driver['name'];
+            } elseif ($type === 'username') {
+                $oldValue = $driver['username'] ?? '';
+            } else {
+                $oldValue = $driver['email'];
+            }
+
             if ($val === $oldValue) {
                 return [
                     'success' => false,
@@ -1286,12 +1302,35 @@ class DriverController {
                 ];
             }
 
-            // Validate email format if email change requested
-            if ($type === 'email' && !filter_var($val, FILTER_VALIDATE_EMAIL)) {
-                return [
-                    'success' => false,
-                    'error'   => "Invalid email address format."
-                ];
+            // Perform uniqueness validation for username and email
+            if ($type === 'username') {
+                $sqlCheck = "SELECT id FROM `users` WHERE `username` = :username AND `id` != :user_id LIMIT 1";
+                $stmtCheck = Database::getInstance()->getConnection()->prepare($sqlCheck);
+                $stmtCheck->execute(['username' => $val, 'user_id' => $userId]);
+                if ($stmtCheck->fetch()) {
+                    return [
+                        'success' => false,
+                        'error'   => "Username is already occupied by another user."
+                    ];
+                }
+            }
+
+            if ($type === 'email') {
+                if (!filter_var($val, FILTER_VALIDATE_EMAIL)) {
+                    return [
+                        'success' => false,
+                        'error'   => "Invalid email address format."
+                    ];
+                }
+                $sqlCheck = "SELECT id FROM `users` WHERE `email` = :email AND `id` != :user_id LIMIT 1";
+                $stmtCheck = Database::getInstance()->getConnection()->prepare($sqlCheck);
+                $stmtCheck->execute(['email' => $val, 'user_id' => $userId]);
+                if ($stmtCheck->fetch()) {
+                    return [
+                        'success' => false,
+                        'error'   => "Email is already occupied by another user."
+                    ];
+                }
             }
 
             require_once dirname(__DIR__) . '/models/AccountChangeRequest.php';
@@ -1299,9 +1338,10 @@ class DriverController {
             $reqId = $acrModel->create($userId, $type, $oldValue, $val);
 
             if ($reqId) {
+                $labelMap = ['display_name' => 'Display Name', 'username' => 'Username', 'email' => 'Email'];
                 return [
                     'success' => true,
-                    'message' => ucfirst($type) . " change request submitted and is pending admin approval."
+                    'message' => $labelMap[$type] . " change request submitted and is pending admin approval."
                 ];
             }
 

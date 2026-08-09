@@ -59,7 +59,7 @@ class Driver {
      * @return array|false The driver details or false if not found
      */
     public function findByUserId($userId) {
-        $sql = "SELECT d.*, u.name, u.email, u.phone, u.status as user_status 
+        $sql = "SELECT d.*, u.name, u.username, u.email, u.phone, u.status as user_status 
                 FROM `drivers` d 
                 JOIN `users` u ON d.user_id = u.id 
                 WHERE d.user_id = :user_id LIMIT 1";

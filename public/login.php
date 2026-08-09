@@ -20,7 +20,7 @@ if (AuthHelper::isLoggedIn()) {
             header("Location: driver/dashboard.php");
             break;
         case 'customer':
-            header("Location: customer/dashboard.php");
+            header("Location: customer/dashboard/index.php");
             break;
     }
     exit();
@@ -47,7 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 header("Location: driver/dashboard.php");
                 break;
             case 'customer':
-                header("Location: customer/dashboard.php");
+                header("Location: customer/dashboard/index.php");
                 break;
         }
         exit();
