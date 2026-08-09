@@ -21,6 +21,18 @@ $pageTitle = "Email Logs";
     <div class="main-wrapper">
         <?php include __DIR__ . '/partials/header.php'; ?>
 
+        <main class="page-container">
+            <div class="page-header-box" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;">
+                <div>
+                    <h1 class="page-title">Email Logs</h1>
+                    <p class="page-subtitle">Monitor automated system notifications, email delivery logs, and manually retry failed messages.</p>
+                </div>
+                <button class="btn btn-primary" onclick="triggerManualEmail()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                    <span>Send Email</span>
+                </button>
+            </div>
+
             <!-- TOP STATISTICS (2 CARDS) -->
             <div class="grid-2">
                 <div class="stat-card" style="border-left: 4px solid var(--success);">
