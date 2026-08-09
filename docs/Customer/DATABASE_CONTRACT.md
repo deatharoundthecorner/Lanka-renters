@@ -1,5 +1,9 @@
 # Customer Module Database Contract
 
+## Phase 7 verification note
+
+Phase 7 made no schema change. Read-only integrity checks against the local development database found no orphan booking, payment, incident, review, chat-participant or notification relationships in the checked tables, and no duplicate `(booking_id, customer_id)` review rows. The active local configuration used port 3306; the historical Phase 1 reference to port 3308 requires repository-coordinator alignment rather than a Customer schema change.
+
 ## Purpose and status
 
 This document defines the database contract that later Customer features must

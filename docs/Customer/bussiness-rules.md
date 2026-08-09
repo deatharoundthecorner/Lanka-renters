@@ -1,5 +1,12 @@
 # Customer Module Business Rules
 
+## Phase 7 regression invariants
+
+- Customer record access is tied to the authenticated session user; a database ID alone does not grant access.
+- Customer state-changing routes require a valid Customer CSRF token before controller logic runs.
+- Customer payment submission derives amount and initial status from approved server-side booking data; customers do not set payment verification outcomes.
+- Driver-change, return and replacement-decision workflows are clearly labelled session-only demos until approved database support exists.
+
 1. Only registered and verified customers can create bookings.
 
 2. Customers can only book available vehicles.
