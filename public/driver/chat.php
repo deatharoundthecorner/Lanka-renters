@@ -4,6 +4,7 @@ require_once dirname(dirname(__DIR__)) . '/app/helpers/AuthHelper.php';
 
 AuthHelper::startSession();
 AuthHelper::requireRole('driver');
+$user = AuthHelper::getCurrentUser();
 
 $chatController = new ChatController();
 $roomId = (int)($_GET['room_id'] ?? 0);

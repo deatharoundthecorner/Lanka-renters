@@ -216,15 +216,22 @@ include 'includes/navbar.php';
                                         <?php echo htmlspecialchars(str_replace('_', ' ', $doc['document_type'])); ?>
                                     </div>
                                     <div style="font-size: 13.5px; font-weight: 600; margin-top: 8px; color: var(--text-main);">
-                                        No: <?php echo htmlspecialchars($doc['document_number']); ?>
+                                        No: <?php echo htmlspecialchars($doc['document_number'] ?? ''); ?>
                                     </div>
                                     <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 2px;">
-                                        Expires: <?php echo htmlspecialchars($doc['expiry_date']); ?>
+                                        Expires: <?php echo htmlspecialchars($doc['expiry_date'] ?? ''); ?>
                                     </div>
                                 </div>
                                 <div style="margin-top: 12px; display: flex; justify-content: space-between; align-items: center;">
                                     <span class="status-pill status-approved" style="font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 4px; text-transform: uppercase;">Approved</span>
-                                    <a href="../<?php echo htmlspecialchars($doc['file_path']); ?>" target="_blank" style="font-size: 11px; text-decoration: none; color: var(--primary); font-weight: 700;">View File ↗</a>
+                                    <?php
+                                    $physicalPath = dirname(dirname(__DIR__)) . '/public/' . $doc['file_path'];
+                                    if (file_exists($physicalPath) && is_file($physicalPath)):
+                                    ?>
+                                        <a href="../<?php echo htmlspecialchars($doc['file_path']); ?>" target="_blank" style="font-size: 11px; text-decoration: none; color: var(--primary); font-weight: 700;">View File ↗</a>
+                                    <?php else: ?>
+                                        <span style="font-size: 11px; color: var(--text-muted); font-style: italic; font-weight: 600;">[File Missing]</span>
+                                    <?php endif; ?>
                                 </div>
                             </div>
                         <?php endforeach; ?>
@@ -263,18 +270,18 @@ include 'includes/navbar.php';
                                             <?php endif; ?>
                                         </td>
                                         <td style="padding: 12px 10px;">
-                                            <div><?php echo htmlspecialchars($doc['document_number']); ?></div>
-                                            <div style="font-size: 10.5px; color: var(--text-muted); margin-top: 1px;">Exp: <?php echo htmlspecialchars($doc['expiry_date']); ?></div>
+                                            <div><?php echo htmlspecialchars($doc['document_number'] ?? ''); ?></div>
+                                            <div style="font-size: 10.5px; color: var(--text-muted); margin-top: 1px;">Exp: <?php echo htmlspecialchars($doc['expiry_date'] ?? ''); ?></div>
                                         </td>
                                         <td style="padding: 12px 10px;">
-                                            <span class="status-pill status-<?php echo htmlspecialchars($doc['status']); ?>" style="font-size: 9.5px; font-weight: 700; text-transform: uppercase; padding: 2px 5px; border-radius: 4px;">
-                                                <?php echo htmlspecialchars($doc['status']); ?>
+                                            <span class="status-pill status-<?php echo htmlspecialchars($doc['status'] ?? ''); ?>" style="font-size: 9.5px; font-weight: 700; text-transform: uppercase; padding: 2px 5px; border-radius: 4px;">
+                                                <?php echo htmlspecialchars($doc['status'] ?? ''); ?>
                                             </span>
                                         </td>
                                         <td style="padding: 12px 10px; font-size: 11px; max-width: 150px; line-height: 1.3;">
                                             <?php 
                                                 if ($doc['status'] === 'rejected' && !empty($doc['rejection_reason'])) {
-                                                    echo '<span style="color: var(--danger); font-weight: 600;">Reason: ' . htmlspecialchars($doc['rejection_reason']) . '</span>';
+                                                    echo '<span style="color: var(--danger); font-weight: 600;">Reason: ' . htmlspecialchars($doc['rejection_reason'] ?? '') . '</span>';
                                                 } elseif ($doc['status'] === 'superseded') {
                                                     echo '<span style="color: var(--text-muted);">Superseded by newer version</span>';
                                                 } elseif ($doc['status'] === 'approved') {
@@ -286,7 +293,14 @@ include 'includes/navbar.php';
                                         </td>
                                         <td style="padding: 12px 10px; text-align: right;">
                                             <div style="display: flex; gap: 6px; align-items: center; justify-content: flex-end;">
-                                                <a href="../<?php echo htmlspecialchars($doc['file_path']); ?>" target="_blank" class="btn-secondary" style="padding: 4px 8px; font-size: 11px; text-decoration: none; border-radius: 4px;">View</a>
+                                                <?php
+                                                $physicalPath = dirname(dirname(__DIR__)) . '/public/' . $doc['file_path'];
+                                                if (file_exists($physicalPath) && is_file($physicalPath)):
+                                                ?>
+                                                    <a href="../<?php echo htmlspecialchars($doc['file_path']); ?>" target="_blank" class="btn-secondary" style="padding: 4px 8px; font-size: 11px; text-decoration: none; border-radius: 4px;">View</a>
+                                                <?php else: ?>
+                                                    <span class="btn-secondary" style="padding: 4px 8px; font-size: 11px; border-radius: 4px; color: var(--text-muted) !important; cursor: not-allowed; opacity: 0.6;" title="Physical file is missing from server">Missing</span>
+                                                <?php endif; ?>
                                                 
                                                 <!-- Delete Action (Only permitted for pending state) -->
                                                 <?php if ($doc['status'] === 'pending'): ?>

@@ -109,7 +109,14 @@ if (!$queuesResult['success']) {
                             <td style="padding: 15px 10px; text-align: right;">
                                 <div style="display: flex; flex-direction: column; gap: 8px; align-items: flex-end;">
                                     <div style="display: flex; gap: 8px; align-items: center;">
-                                        <a href="../<?php echo htmlspecialchars($doc['file_path']); ?>" target="_blank" style="padding: 5px 10px; background: #DBEAFE; color: #1E40AF; border-radius: 4px; text-decoration: none; font-weight: 700; font-size: 11.5px;">View File ↗</a>
+                                        <?php
+                                        $physicalPath = dirname(dirname(dirname(__DIR__))) . '/public/' . $doc['file_path'];
+                                        if (file_exists($physicalPath) && is_file($physicalPath)):
+                                        ?>
+                                            <a href="../<?php echo htmlspecialchars($doc['file_path']); ?>" target="_blank" style="padding: 5px 10px; background: #DBEAFE; color: #1E40AF; border-radius: 4px; text-decoration: none; font-weight: 700; font-size: 11.5px;">View File ↗</a>
+                                        <?php else: ?>
+                                            <span style="padding: 5px 10px; background: #F1F5F9; color: var(--text-muted); border-radius: 4px; font-weight: 700; font-size: 11.5px; cursor: not-allowed; opacity: 0.7;" title="Physical file is missing from server">File Missing</span>
+                                        <?php endif; ?>
                                         
                                         <form action="" method="POST" style="margin:0;">
                                             <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(AuthHelper::getCsrfToken()); ?>">

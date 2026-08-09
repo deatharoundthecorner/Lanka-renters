@@ -499,6 +499,55 @@ class DriverController {
         }
     }
 
+    /**
+     * Deletes an existing pending leave request.
+     *
+     * @param int $leaveId The leave ID
+     * @return array Response array containing status
+     */
+    public function deleteLeave($leaveId) {
+        try {
+            $driver = $this->getSecureDriver();
+            $driverId = $driver['id'];
+
+            $leaveModel = new DriverLeave();
+            $leave = $leaveModel->getById($leaveId);
+
+            if (!$leave || $leave['driver_id'] !== $driverId) {
+                return [
+                    'success' => false,
+                    'error'   => "Leave request not found or unauthorized."
+                ];
+            }
+
+            if ($leave['status'] !== 'pending') {
+                return [
+                    'success' => false,
+                    'error'   => "Only pending leave requests can be deleted."
+                ];
+            }
+
+            $result = $leaveModel->delete($leaveId);
+
+            if ($result) {
+                return [
+                    'success' => true,
+                    'message' => "Leave request deleted successfully."
+                ];
+            }
+
+            return [
+                'success' => false,
+                'error'   => "Failed to delete leave request."
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'error'   => $e->getMessage()
+            ];
+        }
+    }
+
 
     /**
      * Returns a list of vehicles currently assigned to the driver.
