@@ -45,6 +45,23 @@ class User {
         $stmt->execute(['id' => $id]);
         return $stmt->fetch();
     }
+    /**
+     * Updates a user's own editable contact fields (name, phone).
+     * Email/role/status are intentionally excluded from self-service edits.
+     *
+     * @param int $id
+     * @param array $data ['name' => ..., 'phone' => ...]
+     * @return bool
+     */
+    public function updateContactInfo($id, $data) {
+        $sql = "UPDATE `users` SET `name` = :name, `phone` = :phone WHERE `id` = :id";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([
+            'id'    => $id,
+            'name'  => $data['name'],
+            'phone' => $data['phone'],
+        ]);
+    }
 
     /**
      * Registers a new user inside the system.
