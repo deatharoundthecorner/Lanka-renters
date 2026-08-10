@@ -60,7 +60,7 @@ require dirname(__DIR__) . '/components/layout/header.php';
                     <div class="card__header">
                         <div><p class="eyebrow">Your journey</p><h2 id="progress-heading">Rental progress</h2></div>
                         <?php $completeProgress = count(array_filter($dashboard['progress'] ?? [], static fn (array $item): bool => ($item['state'] ?? '') === 'complete')); ?>
-                        <span class="status-badge status-badge--info"><?= $completeProgress ?> of 6 complete</span>
+                        <span class="status-badge status-badge--info"><?= $completeProgress ?> of <?= count($dashboard['progress'] ?? []) ?> complete</span>
                     </div>
                     <ol class="progress-list">
                         <?php foreach (($dashboard['progress'] ?? []) as $progressItem): ?>
