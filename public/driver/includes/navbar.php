@@ -1,7 +1,13 @@
 <?php
 require_once dirname(dirname(dirname(__DIR__))) . '/app/models/Notification.php';
-$notificationModel = new Notification();
-$unreadCount = $notificationModel->getUnreadCount($user['id']);
+require_once dirname(dirname(dirname(__DIR__))) . '/app/helpers/AuthHelper.php';
+
+$user = AuthHelper::getCurrentUser();
+$unreadCount = 0;
+if ($user && isset($user['id'])) {
+    $notificationModel = new Notification();
+    $unreadCount = $notificationModel->getUnreadCount($user['id']);
+}
 ?>
 <header class="top-navbar">
     <div class="navbar-left">
@@ -27,7 +33,7 @@ $unreadCount = $notificationModel->getUnreadCount($user['id']);
         <!-- User profile details -->
         <div class="profile-menu">
             <div class="profile-info">
-                <span class="profile-name"><?php echo htmlspecialchars($user['name'] ?? 'Driver'); ?></span>
+                <span class="profile-name"><?php echo htmlspecialchars(($user && isset($user['name'])) ? $user['name'] : 'Driver'); ?></span>
                 <span class="profile-role">Driver</span>
             </div>
             <!-- Logout button in top navbar -->

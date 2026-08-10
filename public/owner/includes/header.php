@@ -1,3 +1,7 @@
+<?php
+require_once dirname(dirname(dirname(__DIR__))) . '/app/helpers/AuthHelper.php';
+AuthHelper::requireRole('owner');
+?>
 <header class="owner-header">
   <div class="header-title">
     <h1>Owner dashboard</h1>

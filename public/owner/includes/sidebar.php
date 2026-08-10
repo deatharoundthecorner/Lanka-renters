@@ -67,10 +67,14 @@
   </nav>
 
   <div class="sidebar-footer">
-    <a href="/owner/logout.php" class="logout-link">
-      <span class="logout-icon" aria-hidden="true">↩️</span>
-      <span>Log out</span>
-    </a>
+    <!-- Logout: POST with CSRF token to prevent cross-site request forgery -->
+    <form method="POST" action="logout.php" style="margin:0;">
+      <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(AuthHelper::getCsrfToken()); ?>">
+      <button type="submit" class="logout-link" style="background:none;border:none;cursor:pointer;padding:0;width:100%;text-align:left;">
+        <span class="logout-icon" aria-hidden="true">↩️</span>
+        <span>Log out</span>
+      </button>
+    </form>
   </div>
 </aside>
 

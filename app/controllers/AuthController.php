@@ -3,6 +3,7 @@
 require_once dirname(__DIR__) . '/models/User.php';
 require_once dirname(__DIR__) . '/models/Customer.php';
 require_once dirname(__DIR__) . '/models/VehicleOwner.php';
+require_once dirname(__DIR__) . '/models/Driver.php';
 require_once dirname(__DIR__) . '/helpers/AuthHelper.php';
 require_once dirname(__DIR__) . '/helpers/Database.php';
 
@@ -42,8 +43,8 @@ class AuthController {
             }
         }
 
-        // Validate that role is valid for public registration (only customer or owner allowed)
-        $allowedRoles = ['customer', 'owner'];
+        // Validate that role is valid for public registration (customer, owner or driver allowed)
+        $allowedRoles = ['customer', 'owner', 'driver'];
         if (!in_array($data['role'], $allowedRoles)) {
             return [
                 'success' => false,
@@ -93,6 +94,12 @@ class AuthController {
                 $ownerProfileId = $ownerModel->create($userId);
                 if (!$ownerProfileId) {
                     throw new Exception("Failed to create vehicle owner profile record.");
+                }
+            } elseif ($data['role'] === 'driver') {
+                $driverModel = new Driver();
+                $driverProfileId = $driverModel->create($userId);
+                if (!$driverProfileId) {
+                    throw new Exception("Failed to create driver profile record.");
                 }
             }
 
@@ -202,7 +209,7 @@ class AuthController {
                 $this->redirect('driver/dashboard.php');
                 break;
             case 'customer':
-                $this->redirect('customer/dashboard.php');
+                $this->redirect('customer/dashboard/index.php');
                 break;
             default:
                 $this->redirect('index.php');

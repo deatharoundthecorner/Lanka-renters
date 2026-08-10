@@ -1,4 +1,7 @@
 <?php
+require_once dirname(dirname(__DIR__)) . '/app/helpers/AuthHelper.php';
+AuthHelper::requireRole('admin');
+
 // Shared admin layout — include this from page wrappers.
 // Expects: $page (string, page key like 'vehicles'), $pageContent (path to content partial)
 if (!isset($page)) { $page = basename($_SERVER['PHP_SELF'], '.php'); }
@@ -7,6 +10,7 @@ $menuItems = [
     ['name' => 'Users', 'href' => 'users.php'],
     ['name' => 'Vehicle Owners', 'href' => 'owners.php'],
     ['name' => 'Drivers', 'href' => 'drivers.php'],
+    ['name' => 'Approvals', 'href' => 'approvals.php'],
     ['name' => 'Vehicles', 'href' => 'vehicles.php'],
     ['name' => 'Bookings', 'href' => 'bookings.php'],
     ['name' => 'Payments', 'href' => 'payment.php'],
@@ -44,7 +48,11 @@ function isActive($href, $page) {
                     <a href="<?= $item['href'] ?>" class="nav-item <?= isActive($item['href'], $page) ?>"><?= $item['name'] ?></a>
                 <?php endforeach; ?>
             </nav>
-            <a href="#" class="logout-link">Log out</a>
+            <!-- Logout: POST with CSRF token to prevent cross-site request forgery -->
+            <form method="POST" action="logout.php" style="margin:0;">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(AuthHelper::getCsrfToken()); ?>">
+                <button type="submit" class="logout-link" style="background:none;border:none;cursor:pointer;width:100%;text-align:left;">Log out</button>
+            </form>
         </aside>
 
         <main class="admin-content">

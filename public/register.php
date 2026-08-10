@@ -18,7 +18,7 @@ if (AuthHelper::isLoggedIn()) {
             header("Location: driver/dashboard.php");
             break;
         case 'customer':
-            header("Location: customer/dashboard.php");
+            header("Location: customer/dashboard/index.php");
             break;
     }
     exit();
@@ -115,6 +115,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <select class="form-select" id="role" name="role" required>
                         <option value="customer" <?php echo (($_POST['role'] ?? '') === 'customer') ? 'selected' : ''; ?>>Customer (Renting Vehicles)</option>
                         <option value="owner" <?php echo (($_POST['role'] ?? '') === 'owner') ? 'selected' : ''; ?>>Vehicle Owner (Listing Vehicles)</option>
+                        <option value="driver" <?php echo (($_POST['role'] ?? '') === 'driver') ? 'selected' : ''; ?>>Driver (Freelance/Employment)</option>
                     </select>
                 </div>
                 

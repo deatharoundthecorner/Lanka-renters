@@ -4,19 +4,8 @@ require_once dirname(dirname(__DIR__)) . '/app/helpers/AuthHelper.php';
 require_once dirname(dirname(__DIR__)) . '/app/models/Notification.php';
 
 AuthHelper::startSession();
-
-// Localized driver auth check
-if (!AuthHelper::isLoggedIn()) {
-    header("Location: login.php");
-    exit();
-}
-
+AuthHelper::requireRole('driver');
 $user = AuthHelper::getCurrentUser();
-if (($user['role'] ?? '') !== 'driver') {
-    AuthHelper::logout();
-    header("Location: login.php");
-    exit();
-}
 
 $driverController = new DriverController();
 
@@ -50,9 +39,9 @@ if (!$dashboardResult['success']) {
     die("Error loading driver dashboard: " . htmlspecialchars($dashboardResult['error']));
 }
 
-$profile = $dashboardResult['profile'];
-$stats = $dashboardResult['dashboard_stats'];
-$vehicles = $dashboardResult['assigned_vehicles'];
+$profile = $dashboardResult['profile'] ?? [];
+$stats = $dashboardResult['dashboard_stats'] ?? [];
+$vehicles = $dashboardResult['assigned_vehicles'] ?? [];
 
 // Fetch advanced analytics for Overview Section via controller
 $perfResult = $driverController->viewPerformance();
@@ -84,15 +73,16 @@ include 'includes/navbar.php';
     <!-- Welcome section -->
     <div class="welcome-container">
         <div>
-            <h2 class="welcome-title">Welcome back, <?php echo htmlspecialchars($profile['name']); ?> 👋</h2>
+            <h2 class="welcome-title">Welcome back, <?php echo htmlspecialchars($profile['name'] ?? $user['name'] ?? 'Driver'); ?> 👋</h2>
             <p class="welcome-subtitle">Here's what's happening with your account today.</p>
         </div>
         <div class="card" style="margin: 0; padding: 12px 20px; display: flex; align-items: center; gap: 10px;">
             <span style="font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Current Status:</span>
-            <span class="status-pill status-<?php echo ($stats['availability_status'] === 'available' ? 'available' : ($stats['availability_status'] === 'busy' ? 'busy' : 'off_duty')); ?>">
+            <span class="status-pill status-<?php echo (($stats['availability_status'] ?? 'off_duty') === 'available' ? 'available' : (($stats['availability_status'] ?? 'off_duty') === 'busy' ? 'busy' : 'off_duty')); ?>">
                 <?php 
                     $availMap = ['available' => 'Available', 'busy' => 'Busy', 'off_duty' => 'Off Duty'];
-                    echo htmlspecialchars($availMap[$stats['availability_status']] ?? $stats['availability_status']); 
+                    $curAvail = $stats['availability_status'] ?? 'off_duty';
+                    echo htmlspecialchars($availMap[$curAvail] ?? $curAvail);
                 ?>
             </span>
         </div>
@@ -110,33 +100,39 @@ include 'includes/navbar.php';
     <section class="stats-grid">
         <div class="stat-card">
             <h3>Verification Status</h3>
-            <p style="text-transform: capitalize; color: <?php echo $stats['verification_status'] === 'approved' ? 'var(--success)' : ($stats['verification_status'] === 'rejected' ? 'var(--danger)' : 'var(--warning)'); ?>;">
-                <?php echo htmlspecialchars($stats['verification_status']); ?>
+            <p style="text-transform: capitalize; color: <?php echo ($stats['verification_status'] ?? 'pending') === 'approved' ? 'var(--success)' : (($stats['verification_status'] ?? 'pending') === 'rejected' ? 'var(--danger)' : 'var(--warning)'); ?>;">
+                <?php echo htmlspecialchars($stats['verification_status'] ?? 'pending'); ?>
             </p>
             <span>Your driver documents state</span>
         </div>
 
         <div class="stat-card">
             <h3>Average Rating</h3>
-            <p><?php echo number_format($stats['rating'], 1); ?> / 5</p>
+            <p><?php echo number_format($stats['rating'] ?? 5.0, 1); ?> / 5</p>
             <span>Based on <?php echo $totalReviews; ?> <?php echo $totalReviews === 1 ? 'review' : 'reviews'; ?></span>
         </div>
 
-        <div class="stat-card">
-            <h3>Connected Owners</h3>
-            <p><?php echo $stats['connected_owners']; ?> Owners</p>
+        <a href="owners.php" class="stat-card" style="text-decoration: none; color: inherit; transition: transform 0.2s, box-shadow 0.2s; cursor: pointer;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <h3>Connected Owners</h3>
+                <span style="font-size: 12px; color: var(--primary); font-weight: 600;">View &rarr;</span>
+            </div>
+            <p><?php echo $stats['connected_owners'] ?? 0; ?> Owners</p>
             <span>Active connections</span>
-        </div>
+        </a>
 
-        <div class="stat-card">
-            <h3>Pending Requests</h3>
-            <p><?php echo $stats['pending_requests']; ?></p>
+        <a href="owners.php" class="stat-card" style="text-decoration: none; color: inherit; transition: transform 0.2s, box-shadow 0.2s; cursor: pointer;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <h3>Pending Requests</h3>
+                <span style="font-size: 12px; color: var(--primary); font-weight: 600;">View &rarr;</span>
+            </div>
+            <p><?php echo $stats['pending_requests'] ?? 0; ?></p>
             <span>Connection requests</span>
-        </div>
+        </a>
 
         <div class="stat-card">
             <h3>Monthly Earnings</h3>
-            <p>Rs. <?php echo number_format($stats['monthly_earnings'], 2); ?></p>
+            <p>Rs. <?php echo number_format($stats['monthly_earnings'] ?? 0.0, 2); ?></p>
             <span>Current month earnings</span>
         </div>
 
@@ -298,7 +294,7 @@ include 'includes/navbar.php';
                 $cancRate = $totalT > 0 ? ($canc / $totalT) * 100 : 0.0;
             ?>
             <table style="border: none; font-size: 13px; margin: 0;">
-                <tr style="background: none;"><td style="border:none; padding:8px 0; font-weight:600;">Average Rating:</td><td style="border:none; padding:8px 0; text-align:right; font-weight:700;"><?php echo number_format($stats['rating'], 1); ?> / 5.0</td></tr>
+                <tr style="background: none;"><td style="border:none; padding:8px 0; font-weight:600;">Average Rating:</td><td style="border:none; padding:8px 0; text-align:right; font-weight:700;"><?php echo number_format($stats['rating'] ?? 5.0, 1); ?> / 5.0</td></tr>
                 <tr style="background: none;"><td style="border:none; padding:8px 0; font-weight:600;">Completed Trips:</td><td style="border:none; padding:8px 0; text-align:right; font-weight:700;"><?php echo $comp; ?></td></tr>
                 <tr style="background: none;"><td style="border:none; padding:8px 0; font-weight:600;">Cancellation Rate:</td><td style="border:none; padding:8px 0; text-align:right; color: var(--danger); font-weight:700;"><?php echo number_format($cancRate, 1); ?>%</td></tr>
             </table>
