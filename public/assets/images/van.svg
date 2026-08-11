@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ECFDF5" />
+      <stop offset="100%" stop-color="#D1FAE5" />
+    </linearGradient>
+    <linearGradient id="vanGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#10B981" />
+      <stop offset="100%" stop-color="#047857" />
+    </linearGradient>
+  </defs>
+  <rect width="100%" height="100%" rx="16" fill="url(#bgGrad)" />
+  <g transform="translate(100, 80)">
+    <line x1="0" y1="300" x2="600" y2="300" stroke="#94A3B8" stroke-width="4" stroke-linecap="round" />
+    <ellipse cx="300" cy="295" rx="250" ry="15" fill="#1E293B" opacity="0.15" />
+    
+    <!-- Van Body -->
+    <path d="M 80 110 L 440 110 C 470 110 500 120 520 150 C 535 170 540 200 540 220 L 540 280 L 80 280 Z" fill="url(#vanGrad)" />
+    
+    <!-- Windows -->
+    <path d="M 100 125 L 220 125 L 220 190 L 100 190 Z" fill="#FFFFFF" opacity="0.75" />
+    <path d="M 240 125 L 360 125 L 360 190 L 240 190 Z" fill="#FFFFFF" opacity="0.75" />
+    <path d="M 380 125 L 450 125 C 470 125 480 135 490 150 C 498 162 500 180 500 190 L 380 190 Z" fill="#FFFFFF" opacity="0.75" />
+    
+    <!-- Lights -->
+    <rect x="525" y="210" width="15" height="20" rx="3" fill="#FBBF24" />
+    <rect x="55" y="210" width="25" height="15" rx="3" fill="#EF4444" />
+    
+    <!-- Wheels -->
+    <circle cx="160" cy="280" r="40" fill="#1E293B" stroke="#64748B" stroke-width="5" />
+    <circle cx="160" cy="280" r="18" fill="#94A3B8" />
+    <circle cx="440" cy="280" r="40" fill="#1E293B" stroke="#64748B" stroke-width="5" />
+    <circle cx="440" cy="280" r="18" fill="#94A3B8" />
+  </g>
+  <text x="50%" y="450" font-family="'Outfit', sans-serif" font-size="28" font-weight="700" fill="#1E293B" text-anchor="middle">Lanka Renters - Premium Van</text>
+</svg>
