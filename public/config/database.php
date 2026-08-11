@@ -49,6 +49,39 @@ function getVehicleTypes() {
     ];
 }
 
+// Announcement Types List
+function getAnnouncementTypes() {
+    return [
+        "Maintenance",
+        "System Update",
+        "Important Notice",
+        "Payment Notice",
+        "Booking Notice",
+        "Emergency",
+        "General"
+    ];
+}
+
+// Announcement Target Audiences List
+function getTargetAudiences() {
+    return [
+        "All Users",
+        "Customers",
+        "Vehicle Owners",
+        "Drivers"
+    ];
+}
+
+// Announcement Priorities List
+function getAnnouncementPriorities() {
+    return [
+        "Normal",
+        "Important",
+        "High",
+        "Urgent"
+    ];
+}
+
 // Security Helper: Protect Admin Access
 function requireAdminLogin() {
     if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== true) {
