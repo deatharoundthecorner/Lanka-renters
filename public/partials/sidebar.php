@@ -91,6 +91,12 @@ $currentPage = basename($_SERVER['PHP_SELF']);
                     <span>Email Logs</span>
                 </a>
             </li>
+            <li class="nav-item <?php echo ($currentPage == 'announcements.php') ? 'active' : ''; ?>">
+                <a href="announcements.php">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/><line x1="2" y1="2" x2="22" y2="22" style="display:none;"/></svg>
+                    <span>Announcements</span>
+                </a>
+            </li>
         </ul>
     </div>
 
