@@ -6,6 +6,7 @@ requireAdminLogin();
 $pageTitle = "Vehicle Owners";
 $districts = getSriLankanDistricts();
 $vehicleTypes = getVehicleTypes();
+$defaultView = isset($_GET['view']) && $_GET['view'] === 'registered' ? 'registered' : 'pending';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -29,7 +30,25 @@ $vehicleTypes = getVehicleTypes();
                 <p class="page-subtitle">Review vehicle owner registrations and verify vehicle ownership documentation.</p>
             </div>
 
-            <div class="card">
+            <!-- Segmented Tab Bar -->
+            <div class="nav-tabs">
+                <button type="button" class="tab-item <?php echo $defaultView === 'pending' ? 'active' : ''; ?>" id="tabPending" onclick="switchTab('pending')">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    <span>Pending Approval (2)</span>
+                </button>
+                <button type="button" class="tab-item <?php echo $defaultView === 'registered' ? 'active' : ''; ?>" id="tabRegistered" onclick="switchTab('registered')">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                    <span>Registered Owners (3)</span>
+                </button>
+            </div>
+
+            <!-- SECTION 1: PENDING VEHICLE OWNERS -->
+            <div class="card" id="sectionPending" style="<?php echo $defaultView === 'registered' ? 'display: none;' : 'display: block;'; ?>">
+                <div class="card-header-clean">
+                    <h3 class="card-title-text">Pending Vehicle Owner Approvals</h3>
+                    <span class="badge badge-pending">2 Pending</span>
+                </div>
+
                 <div class="filter-card">
                     <div class="filter-group">
                         <label for="filterSearch">Search Owner</label>
@@ -111,6 +130,61 @@ $vehicleTypes = getVehicleTypes();
                                     </div>
                                 </td>
                             </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- SECTION 2: REGISTERED VEHICLE OWNERS -->
+            <div class="card" id="sectionRegistered" style="<?php echo $defaultView === 'registered' ? 'display: block;' : 'display: none;'; ?>">
+                <div class="card-header-clean">
+                    <h3 class="card-title-text">Registered Vehicle Owners</h3>
+                    <span class="badge badge-approved">3 Approved</span>
+                </div>
+
+                <div class="filter-card">
+                    <div class="filter-group">
+                        <label>Search Owner</label>
+                        <input type="text" class="form-control" placeholder="Search by name, ID or model...">
+                    </div>
+                    <div class="filter-group">
+                        <label>District</label>
+                        <select class="form-control">
+                            <option value="">All Districts</option>
+                            <?php foreach ($districts as $d): ?>
+                                <option value="<?php echo htmlspecialchars($d); ?>"><?php echo htmlspecialchars($d); ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Vehicle Type</label>
+                        <select class="form-control">
+                            <option value="">All Vehicle Types</option>
+                            <?php foreach ($vehicleTypes as $vt): ?>
+                                <option value="<?php echo htmlspecialchars($vt); ?>"><?php echo htmlspecialchars($vt); ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div style="display: flex; gap: 8px; align-self: flex-end;">
+                        <button class="btn btn-primary">Search</button>
+                        <button class="btn btn-secondary">Reset</button>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="custom-table">
+                        <thead>
+                            <tr>
+                                <th>Owner ID</th>
+                                <th>Name</th>
+                                <th>District</th>
+                                <th>Type</th>
+                                <th>Model Name</th>
+                                <th>Submitted Documents</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
                             <tr>
                                 <td><span class="cell-secondary-text">OWN-003</span></td>
                                 <td><div class="cell-primary-text">Rohan Jayawardena</div></td>
@@ -120,13 +194,14 @@ $vehicleTypes = getVehicleTypes();
                                 <td>
                                     <div class="btn-group">
                                         <button class="btn btn-doc" onclick="openDocModal('Rohan Jayawardena - Owner NIC', 'Owner NIC Document')">View NIC</button>
-                                        <button class="btn btn-doc" onclick="openDocModal('Rohan Jayawardena - Vehicle Registration', 'Vehicle Ownership Book')">View Vehicle Documents</button>
+                                        <button class="btn btn-doc" onclick="openDocModal('Rohan Jayawardena - Vehicle Registration', 'Vehicle Ownership Book')">View Documents</button>
                                     </div>
                                 </td>
                                 <td>
                                     <div class="btn-group">
-                                        <button class="btn btn-approve btn-sm" onclick="triggerApprove('Rohan Jayawardena', 'OWN-003')">Approve</button>
-                                        <button class="btn btn-reject btn-sm" onclick="triggerReject('Rohan Jayawardena', 'OWN-003')">Reject</button>
+                                        <button class="btn btn-doc btn-sm" onclick="openDocModal('Rohan Jayawardena Details', 'Owner Profile Voucher')">View</button>
+                                        <button class="btn btn-secondary btn-sm" onclick="showToast('Edit Owner modal opened', 'info')">Edit</button>
+                                        <button class="btn btn-reject btn-sm" onclick="triggerSuspend('Rohan Jayawardena', 'OWN-003')">Suspend</button>
                                     </div>
                                 </td>
                             </tr>
@@ -139,13 +214,34 @@ $vehicleTypes = getVehicleTypes();
                                 <td>
                                     <div class="btn-group">
                                         <button class="btn btn-doc" onclick="openDocModal('Mahesh Samarawickrama - Owner NIC', 'Owner NIC Document')">View NIC</button>
-                                        <button class="btn btn-doc" onclick="openDocModal('Mahesh Samarawickrama - Vehicle Registration', 'Vehicle Ownership Book')">View Vehicle Documents</button>
+                                        <button class="btn btn-doc" onclick="openDocModal('Mahesh Samarawickrama - Vehicle Registration', 'Vehicle Ownership Book')">View Documents</button>
                                     </div>
                                 </td>
                                 <td>
                                     <div class="btn-group">
-                                        <button class="btn btn-approve btn-sm" onclick="triggerApprove('Mahesh Samarawickrama', 'OWN-004')">Approve</button>
-                                        <button class="btn btn-reject btn-sm" onclick="triggerReject('Mahesh Samarawickrama', 'OWN-004')">Reject</button>
+                                        <button class="btn btn-doc btn-sm" onclick="openDocModal('Mahesh Samarawickrama Details', 'Owner Profile Voucher')">View</button>
+                                        <button class="btn btn-secondary btn-sm" onclick="showToast('Edit Owner modal opened', 'info')">Edit</button>
+                                        <button class="btn btn-reject btn-sm" onclick="triggerSuspend('Mahesh Samarawickrama', 'OWN-004')">Suspend</button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><span class="cell-secondary-text">OWN-005</span></td>
+                                <td><div class="cell-primary-text">Nimal Perera</div></td>
+                                <td>Kalutara</td>
+                                <td>Car (4 Seater)</td>
+                                <td>Toyota Aqua 2018</td>
+                                <td>
+                                    <div class="btn-group">
+                                        <button class="btn btn-doc" onclick="openDocModal('Nimal Perera - Owner NIC', 'Owner NIC Document')">View NIC</button>
+                                        <button class="btn btn-doc" onclick="openDocModal('Nimal Perera - Vehicle Registration', 'Vehicle Ownership Book')">View Documents</button>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="btn-group">
+                                        <button class="btn btn-doc btn-sm" onclick="openDocModal('Nimal Perera Details', 'Owner Profile Voucher')">View</button>
+                                        <button class="btn btn-secondary btn-sm" onclick="showToast('Edit Owner modal opened', 'info')">Edit</button>
+                                        <button class="btn btn-reject btn-sm" onclick="triggerSuspend('Nimal Perera', 'OWN-005')">Suspend</button>
                                     </div>
                                 </td>
                             </tr>
@@ -154,7 +250,7 @@ $vehicleTypes = getVehicleTypes();
                 </div>
 
                 <div class="pagination-wrapper">
-                    <span class="pagination-info">Showing 1 to 4 of 18 entries</span>
+                    <span class="pagination-info">Showing 1 to 3 of 18 entries</span>
                     <div class="pagination-controls">
                         <button class="page-btn" disabled>Previous</button>
                         <button class="page-btn active">1</button>
