@@ -5,6 +5,7 @@ requireAdminLogin();
 
 $pageTitle = "Users";
 $districts = getSriLankanDistricts();
+$defaultView = isset($_GET['view']) && $_GET['view'] === 'registered' ? 'registered' : 'pending';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -28,8 +29,20 @@ $districts = getSriLankanDistricts();
                 <p class="page-subtitle">Manage registered customers and review submitted documents.</p>
             </div>
 
+            <!-- Segmented Tab Bar -->
+            <div class="nav-tabs">
+                <button type="button" class="tab-item <?php echo $defaultView === 'pending' ? 'active' : ''; ?>" id="tabPending" onclick="switchTab('pending')">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    <span>Pending Approval (3)</span>
+                </button>
+                <button type="button" class="tab-item <?php echo $defaultView === 'registered' ? 'active' : ''; ?>" id="tabRegistered" onclick="switchTab('registered')">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                    <span>Registered Users (5)</span>
+                </button>
+            </div>
+
             <!-- SECTION 1: PENDING CUSTOMER REGISTRATIONS -->
-            <div class="card">
+            <div class="card" id="sectionPending" style="<?php echo $defaultView === 'registered' ? 'display: none;' : 'display: block;'; ?>">
                 <div class="card-header-clean">
                     <h3 class="card-title-text">Pending Customer Registrations</h3>
                     <span class="badge badge-pending">3 Pending</span>
@@ -139,7 +152,7 @@ $districts = getSriLankanDistricts();
             </div>
 
             <!-- SECTION 2: REGISTERED USERS -->
-            <div class="card">
+            <div class="card" id="sectionRegistered" style="<?php echo $defaultView === 'registered' ? 'display: block;' : 'display: none;'; ?>">
                 <div class="card-header-clean">
                     <h3 class="card-title-text">Registered Users</h3>
                     <span class="badge badge-approved">5 Approved</span>
