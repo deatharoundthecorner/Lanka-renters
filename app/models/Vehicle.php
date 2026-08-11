@@ -259,4 +259,39 @@ class Vehicle {
         $row = $stmt->fetch();
         return ((int)($row['cnt'] ?? 0)) > 0;
     }
+
+    /**
+     * Retrieves all approved and active vehicles for public browsing.
+     *
+     * @return array
+     */
+    public function getPublicVehicles() {
+        $sql = "SELECT v.*, u.name as owner_name, u.phone as owner_phone 
+                FROM `vehicles` v
+                JOIN `vehicle_owners` o ON v.owner_id = o.id
+                JOIN `users` u ON o.user_id = u.id
+                WHERE v.status = 'available' AND v.verification_status = 'approved'
+                ORDER BY v.created_at DESC";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute();
+        return $stmt->fetchAll();
+    }
+
+    /**
+     * Retrieves a single public vehicle by ID.
+     *
+     * @param int $id
+     * @return array|false
+     */
+    public function getPublicVehicleById($id) {
+        $sql = "SELECT v.*, u.name as owner_name, u.phone as owner_phone, u.email as owner_email
+                FROM `vehicles` v
+                JOIN `vehicle_owners` o ON v.owner_id = o.id
+                JOIN `users` u ON o.user_id = u.id
+                WHERE v.id = :id AND v.status = 'available' AND v.verification_status = 'approved'
+                LIMIT 1";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute(['id' => (int)$id]);
+        return $stmt->fetch();
+    }
 }

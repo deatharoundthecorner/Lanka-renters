@@ -47,6 +47,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 header("Location: driver/dashboard.php");
                 break;
             case 'customer':
+                if (!empty($_GET['redirect'])) {
+                    $redirectUrl = $_GET['redirect'];
+                    // Ensure the redirect is safe (local/relative path or matching host)
+                    if (strpos($redirectUrl, '://') === false || (isset($_SERVER['HTTP_HOST']) && strpos($redirectUrl, $_SERVER['HTTP_HOST']) !== false)) {
+                        header("Location: " . $redirectUrl);
+                        exit();
+                    }
+                }
                 header("Location: customer/dashboard/index.php");
                 break;
         }
@@ -260,6 +268,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <h1 class="logo-text">Lanka Renters</h1>
                 <p class="subtitle">Unified Sign In Portal</p>
             </div>
+
+            <?php if (!empty($_GET['message'])): ?>
+                <div class="alert-box" style="background-color: #EFF6FF; border: 1px solid #BFDBFE; color: #1D4ED8; margin-bottom: 20px;">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <span><?php echo htmlspecialchars($_GET['message']); ?></span>
+                </div>
+            <?php endif; ?>
 
             <?php if (!empty($error)): ?>
                 <div class="alert-box">
