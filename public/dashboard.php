@@ -23,9 +23,18 @@ $pageTitle = "Overview";
 
         <main class="page-container">
             <!-- Header Badges & Titles -->
-            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
-                <span class="badge badge-blue">Admin</span>
-                <span class="badge badge-pending">11 items need review</span>
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 12px;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span class="badge badge-blue">Admin</span>
+                    <span class="badge badge-pending">11 items need review</span>
+                </div>
+
+                <!-- System Status Indicator Card -->
+                <div style="display: flex; align-items: center; gap: 8px; background: #FFFFFF; border: 1px solid var(--border); padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600;">
+                    <span class="status-indicator-dot green"></span>
+                    <span style="color: var(--text-main);">System Status:</span>
+                    <span style="color: var(--success);">All systems operational</span>
+                </div>
             </div>
 
             <div class="page-header-box">
@@ -51,9 +60,26 @@ $pageTitle = "Overview";
                 </a>
             </div>
 
-            <!-- Top Registration Statistics Cards -->
+            <!-- Quick Actions Bar -->
+            <div class="card" style="padding: 14px 20px; margin-bottom: 24px; background: #FFFFFF;">
+                <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+                    <div style="font-size: 13px; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 8px;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                        <span>Quick Actions</span>
+                    </div>
+                    <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                        <a href="announcements.php?action=create" class="btn btn-primary btn-sm">+ Add Announcement</a>
+                        <a href="users.php" class="btn btn-secondary btn-sm">Review Users</a>
+                        <a href="vehicles.php" class="btn btn-secondary btn-sm">Review Vehicles</a>
+                        <a href="payments.php" class="btn btn-secondary btn-sm">Review Payments</a>
+                        <a href="incidents.php" class="btn btn-secondary btn-sm">View Incidents</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CLICKABLE Top Registration Statistics Cards -->
             <div class="grid-4">
-                <div class="stat-card">
+                <div class="stat-card clickable-card" onclick="window.location.href='users.php?view=registered'" title="Click to view Registered Customers">
                     <div class="stat-header">
                         <span class="stat-label">Registered Users</span>
                         <div class="stat-icon-box">
@@ -63,11 +89,11 @@ $pageTitle = "Overview";
                     <div class="stat-value">1,248</div>
                     <div class="stat-comparison">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"/></svg>
-                        <span>+12% this month</span>
+                        <span>View Registered →</span>
                     </div>
                 </div>
 
-                <div class="stat-card">
+                <div class="stat-card clickable-card" onclick="window.location.href='vehicle_owners.php?view=registered'" title="Click to view Registered Vehicle Owners">
                     <div class="stat-header">
                         <span class="stat-label">Registered Owners</span>
                         <div class="stat-icon-box green">
@@ -77,11 +103,11 @@ $pageTitle = "Overview";
                     <div class="stat-value">186</div>
                     <div class="stat-comparison">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"/></svg>
-                        <span>+5% this month</span>
+                        <span>View Registered →</span>
                     </div>
                 </div>
 
-                <div class="stat-card">
+                <div class="stat-card clickable-card" onclick="window.location.href='drivers.php?view=registered'" title="Click to view Registered Drivers">
                     <div class="stat-header">
                         <span class="stat-label">Registered Drivers</span>
                         <div class="stat-icon-box amber">
@@ -91,11 +117,11 @@ $pageTitle = "Overview";
                     <div class="stat-value">324</div>
                     <div class="stat-comparison">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"/></svg>
-                        <span>+8% this month</span>
+                        <span>View Registered →</span>
                     </div>
                 </div>
 
-                <div class="stat-card">
+                <div class="stat-card clickable-card" onclick="window.location.href='vehicles.php?view=registered'" title="Click to view Registered Vehicles">
                     <div class="stat-header">
                         <span class="stat-label">Registered Vehicles</span>
                         <div class="stat-icon-box purple">
@@ -105,7 +131,7 @@ $pageTitle = "Overview";
                     <div class="stat-value">512</div>
                     <div class="stat-comparison">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"/></svg>
-                        <span>+15% this month</span>
+                        <span>View Registered →</span>
                     </div>
                 </div>
             </div>
@@ -145,7 +171,7 @@ $pageTitle = "Overview";
                 </div>
             </div>
 
-            <!-- Review Queue Cards (Grid Matching Screenshot) -->
+            <!-- Review Queue Cards -->
             <div class="grid-2">
                 <a href="users.php" class="queue-card">
                     <div class="queue-left">
@@ -206,6 +232,27 @@ $pageTitle = "Overview";
                         <span class="badge badge-rejected">1 active</span>
                     </div>
                 </a>
+            </div>
+
+            <!-- System Services Operational Status Grid Card -->
+            <div class="card">
+                <div class="card-header-clean">
+                    <h3 class="card-title-text">System Services Operational Status</h3>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; font-size: 13px;">
+                    <div style="background: var(--bg-main); padding: 12px 16px; border-radius: 8px; display: flex; align-items: center; justify-content: space-between;">
+                        <span>Booking System</span>
+                        <span class="badge badge-approved">Operational</span>
+                    </div>
+                    <div style="background: var(--bg-main); padding: 12px 16px; border-radius: 8px; display: flex; align-items: center; justify-content: space-between;">
+                        <span>Payment System</span>
+                        <span class="badge badge-approved">Operational</span>
+                    </div>
+                    <div style="background: var(--bg-main); padding: 12px 16px; border-radius: 8px; display: flex; align-items: center; justify-content: space-between;">
+                        <span>Email Notifications</span>
+                        <span class="badge badge-approved">Operational</span>
+                    </div>
+                </div>
             </div>
 
             <!-- Charts Section -->
