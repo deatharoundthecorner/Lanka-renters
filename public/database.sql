@@ -238,3 +238,28 @@ INSERT INTO `email_logs` (`email_id`, `recipient_type`, `recipient_name`, `recip
 ('EML-105', 'Driver', 'Nuwan Bandara', 'DRV-002', 'Replacement Driver Request Approved', 'BKG-101', 'Failed'),
 ('EML-106', 'Customer', 'Kasun Perera', 'CUS-001', 'Customer Registration Approved', 'N/A', 'Sent')
 ON DUPLICATE KEY UPDATE `id`=`id`;
+
+-- Announcements Table
+CREATE TABLE IF NOT EXISTS `announcements` (
+    `announcement_id` VARCHAR(20) PRIMARY KEY,
+    `title` VARCHAR(255) NOT NULL,
+    `announcement_type` ENUM('Maintenance', 'System Update', 'Important Notice', 'Payment Notice', 'Booking Notice', 'Emergency', 'General') NOT NULL,
+    `target_audience` ENUM('All Users', 'Customers', 'Vehicle Owners', 'Drivers') NOT NULL,
+    `priority` ENUM('Normal', 'Important', 'High', 'Urgent') NOT NULL DEFAULT 'Normal',
+    `message` TEXT NOT NULL,
+    `publish_date` DATE NOT NULL,
+    `publish_time` TIME NOT NULL,
+    `expiry_date` DATE DEFAULT NULL,
+    `status` ENUM('Draft', 'Scheduled', 'Published', 'Expired') NOT NULL DEFAULT 'Draft',
+    `created_by` VARCHAR(100) DEFAULT 'Admin',
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- Seed Announcements Data
+INSERT INTO `announcements` (`announcement_id`, `title`, `announcement_type`, `target_audience`, `priority`, `message`, `publish_date`, `publish_time`, `expiry_date`, `status`, `created_by`) VALUES
+('ANN-001', 'Scheduled System Maintenance', 'Maintenance', 'All Users', 'High', 'Lanka Renters will be temporarily unavailable on Sunday from 10:00 PM to 12:00 AM due to scheduled database maintenance.', '2026-08-10', '22:00:00', '2026-08-11', 'Published', 'Admin'),
+('ANN-002', 'Payment Gateway Integration Upgrade', 'Payment Notice', 'Customers', 'Important', 'We have added new online banking options for faster payment verification on rental bookings.', '2026-08-09', '09:00:00', '2026-08-25', 'Published', 'Admin'),
+('ANN-003', 'Owner Commission Payout Guidelines', 'Important Notice', 'Vehicle Owners', 'Normal', 'Settlement calculations are processed every Monday. Please ensure bank details are up to date.', '2026-08-12', '08:00:00', '2026-08-30', 'Scheduled', 'Admin'),
+('ANN-004', 'Driver Verification Policy Update', 'System Update', 'Drivers', 'Normal', 'All drivers must submit updated commercial driving license copies before the end of the month.', '2026-08-08', '14:30:00', NULL, 'Draft', 'Admin')
+ON DUPLICATE KEY UPDATE `announcement_id`=`announcement_id`;
