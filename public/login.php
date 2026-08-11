@@ -264,8 +264,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <div class="login-container">
         <div class="login-card">
-            <div class="logo-section">
-                <h1 class="logo-text">Lanka Renters</h1>
+            <div class="logo-section" style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                <div style="display: flex; align-items: center; gap: 10px; text-decoration: none; font-size: 28px; font-weight: 800; color: #0B3A82;">
+                    <span style="width: 38px; height: 38px; background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%); color: #FFFFFF; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 800; box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);">L</span>
+                    <span>Lanka<span style="color: #2563EB;">Renters</span></span>
+                </div>
                 <p class="subtitle">Unified Sign In Portal</p>
             </div>
 

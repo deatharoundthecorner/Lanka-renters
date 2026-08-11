@@ -1226,3 +1226,82 @@ body {
     }
 }
 
+/* Vehicle Reviews & Ratings Styles */
+.reviews-section {
+    margin-top: 30px;
+}
+
+.reviews-summary-card {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    background-color: #F8FAFC;
+    border: 1px solid var(--border, #E5E7EB);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 24px;
+}
+
+.rating-huge-num {
+    font-size: 48px;
+    font-weight: 800;
+    color: #0B3A82;
+    line-height: 1;
+}
+
+.rating-stars-container {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.star-rating {
+    color: #F59E0B;
+    font-size: 20px;
+}
+
+.review-count-text {
+    font-size: 13px;
+    color: var(--text-secondary, #6B7280);
+    font-weight: 500;
+}
+
+.review-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.review-item {
+    background-color: #FFFFFF;
+    border: 1px solid var(--border, #E5E7EB);
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: var(--shadow-sm, 0 2px 6px rgba(0,0,0,.02));
+}
+
+.review-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+}
+
+.reviewer-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-primary, #111827);
+}
+
+.review-date {
+    font-size: 12px;
+    color: var(--text-secondary, #6B7280);
+}
+
+.review-text-content {
+    font-size: 14px;
+    color: var(--text-secondary, #6B7280);
+    line-height: 1.6;
+}
+
+

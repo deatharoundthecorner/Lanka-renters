@@ -172,4 +172,24 @@ class PublicVehicleController {
         }
         return $this->formatPublicVehicle($vehicle, $pathPrefix);
     }
+
+    /**
+     * Get reviews for a public vehicle.
+     *
+     * @param int $vehicleId
+     * @return array
+     */
+    public function getVehicleReviews($vehicleId) {
+        return $this->vehicleModel->getVehicleReviews($vehicleId);
+    }
+
+    /**
+     * Get average rating and count for a public vehicle.
+     *
+     * @param int $vehicleId
+     * @return array
+     */
+    public function getVehicleAverageRating($vehicleId) {
+        return $this->vehicleModel->getVehicleAverageRating($vehicleId);
+    }
 }

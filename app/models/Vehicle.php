@@ -294,4 +294,37 @@ class Vehicle {
         $stmt->execute(['id' => (int)$id]);
         return $stmt->fetch();
     }
+
+    /**
+     * Retrieves all ratings and reviews for a vehicle.
+     *
+     * @param int $vehicleId
+     * @return array
+     */
+    public function getVehicleReviews($vehicleId) {
+        $sql = "SELECT rr.vehicle_rating, rr.review_text, rr.created_at, u.name as customer_name
+                FROM `ratings_reviews` rr
+                JOIN `customers` c ON rr.customer_id = c.id
+                JOIN `users` u ON c.user_id = u.id
+                WHERE rr.vehicle_id = :vehicle_id
+                ORDER BY rr.created_at DESC";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute(['vehicle_id' => (int)$vehicleId]);
+        return $stmt->fetchAll();
+    }
+
+    /**
+     * Retrieves the average vehicle rating.
+     *
+     * @param int $vehicleId
+     * @return array
+     */
+    public function getVehicleAverageRating($vehicleId) {
+        $sql = "SELECT AVG(vehicle_rating) as avg_rating, COUNT(*) as review_count
+                FROM `ratings_reviews`
+                WHERE vehicle_id = :vehicle_id";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute(['vehicle_id' => (int)$vehicleId]);
+        return $stmt->fetch();
+    }
 }

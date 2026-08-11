@@ -16,6 +16,10 @@ if (empty($vehicleId) || !is_numeric($vehicleId)) {
 
 $vehicleController = new PublicVehicleController();
 $v = $vehicleController->getVehicleDetails((int)$vehicleId, './');
+$reviews = $vehicleController->getVehicleReviews((int)$vehicleId);
+$ratingData = $vehicleController->getVehicleAverageRating((int)$vehicleId);
+$avgRating = !empty($ratingData['avg_rating']) ? round((float)$ratingData['avg_rating'], 1) : null;
+$reviewCount = !empty($ratingData['review_count']) ? (int)$ratingData['review_count'] : 0;
 
 // Redirect if vehicle does not exist or is not approved/available
 if (!$v) {
@@ -109,7 +113,15 @@ if (!$isLoggedIn) {
             <!-- Vehicle Specs & Info -->
             <div class="details-card">
                 <div class="details-header">
-                    <h1><?php echo htmlspecialchars($v['make'] . ' ' . $v['model']); ?></h1>
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 10px;">
+                        <h1><?php echo htmlspecialchars($v['make'] . ' ' . $v['model']); ?></h1>
+                        <?php if ($avgRating): ?>
+                            <div style="display: flex; align-items: center; gap: 6px; background-color: #FEF3C7; color: #D97706; padding: 6px 12px; border-radius: 20px; font-weight: 700; font-size: 14px;">
+                                <span>★ <?php echo $avgRating; ?></span>
+                                <span style="font-weight: 500; color: #B45309; font-size: 12px;">(<?php echo $reviewCount; ?> <?php echo $reviewCount === 1 ? 'review' : 'reviews'; ?>)</span>
+                            </div>
+                        <?php endif; ?>
+                    </div>
                     <p class="subtitle">Manufactured Year: <?php echo htmlspecialchars($v['year']); ?> &bull; Verified approved Listing</p>
                 </div>
 
@@ -146,6 +158,49 @@ if (!$isLoggedIn) {
                     💡 <strong>Driver Assignment Notice:</strong><br>
                     Customer cannot directly choose a driver. If driver service is selected, the vehicle owner assigns a verified available driver.
                 </div>
+            </div>
+
+            <!-- Vehicle Reviews Section -->
+            <div class="details-card reviews-section" style="margin-top: 30px;">
+                <h3 style="font-size: 18px; font-weight: 700; color: #0B3A82; margin-bottom: 20px;">Customer Reviews & Ratings</h3>
+                
+                <?php if (empty($reviews)): ?>
+                    <p style="font-style: italic; color: #64748B;">No reviews yet for this vehicle.</p>
+                <?php else: ?>
+                    <div class="reviews-summary-card">
+                        <div class="rating-huge-num"><?php echo $avgRating; ?></div>
+                        <div class="rating-stars-container">
+                            <div class="star-rating">
+                                <?php
+                                $stars = (int)round($avgRating);
+                                for ($i = 1; $i <= 5; $i++) {
+                                    echo $i <= $stars ? '★' : '☆';
+                                }
+                                ?>
+                            </div>
+                            <div class="review-count-text">Based on <?php echo $reviewCount; ?> <?php echo $reviewCount === 1 ? 'rating' : 'ratings'; ?></div>
+                        </div>
+                    </div>
+
+                    <div class="review-list">
+                        <?php foreach ($reviews as $r): ?>
+                            <div class="review-item">
+                                <div class="review-item-header">
+                                    <span class="reviewer-name"><?php echo htmlspecialchars($r['customer_name']); ?></span>
+                                    <span class="review-date"><?php echo date('F j, Y', strtotime($r['created_at'])); ?></span>
+                                </div>
+                                <div style="color: #F59E0B; margin-bottom: 8px;">
+                                    <?php
+                                    for ($i = 1; $i <= 5; $i++) {
+                                        echo $i <= $r['vehicle_rating'] ? '★' : '☆';
+                                    }
+                                    ?>
+                                </div>
+                                <p class="review-text-content"><?php echo htmlspecialchars($r['review_text']); ?></p>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
             </div>
         </main>
 
