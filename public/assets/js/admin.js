@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', function () {
     initTableFilters();
     initSettlementCalculator();
     initCharts();
+    initSegmentedTabs();
 });
 
 /* Mobile Sidebar Drawer Toggle */
@@ -60,6 +61,8 @@ function initTableFilters() {
     const districtSelect = document.getElementById('filterDistrict');
     const typeSelect = document.getElementById('filterType');
     const incidentTypeSelect = document.getElementById('filterIncidentType');
+    const statusSelect = document.getElementById('filterStatus');
+    const prioritySelect = document.getElementById('filterPriority');
     const resetBtn = document.getElementById('filterResetBtn');
 
     function applyFilters() {
@@ -67,6 +70,8 @@ function initTableFilters() {
         const district = districtSelect ? districtSelect.value.toLowerCase() : '';
         const type = typeSelect ? typeSelect.value.toLowerCase() : '';
         const incidentType = incidentTypeSelect ? incidentTypeSelect.value.toLowerCase() : '';
+        const status = statusSelect ? statusSelect.value.toLowerCase() : '';
+        const priority = prioritySelect ? prioritySelect.value.toLowerCase() : '';
 
         // Filter Table Rows
         const tableRows = document.querySelectorAll('.custom-table tbody tr');
@@ -75,8 +80,10 @@ function initTableFilters() {
             const matchesQuery = !query || rowText.includes(query);
             const matchesDistrict = !district || rowText.includes(district);
             const matchesType = !type || rowText.includes(type);
+            const matchesStatus = !status || rowText.includes(status);
+            const matchesPriority = !priority || rowText.includes(priority);
 
-            if (matchesQuery && matchesDistrict && matchesType) {
+            if (matchesQuery && matchesDistrict && matchesType && matchesStatus && matchesPriority) {
                 row.style.display = '';
             } else {
                 row.style.display = 'none';
@@ -103,6 +110,8 @@ function initTableFilters() {
     if (districtSelect) districtSelect.addEventListener('change', applyFilters);
     if (typeSelect) typeSelect.addEventListener('change', applyFilters);
     if (incidentTypeSelect) incidentTypeSelect.addEventListener('change', applyFilters);
+    if (statusSelect) statusSelect.addEventListener('change', applyFilters);
+    if (prioritySelect) prioritySelect.addEventListener('change', applyFilters);
 
     if (resetBtn) {
         resetBtn.addEventListener('click', function () {
@@ -110,6 +119,8 @@ function initTableFilters() {
             if (districtSelect) districtSelect.value = '';
             if (typeSelect) typeSelect.value = '';
             if (incidentTypeSelect) incidentTypeSelect.value = '';
+            if (statusSelect) statusSelect.value = '';
+            if (prioritySelect) prioritySelect.value = '';
             applyFilters();
             showToast("Filters reset successfully.", "info");
         });
@@ -189,6 +200,128 @@ function sendManualEmail(e) {
     if(e) e.preventDefault();
     closeModal('manualEmailModal');
     showToast(`Email sent successfully.`, "success");
+}
+
+/* ANNOUNCEMENTS DYNAMIC LIVE PREVIEW & CRUD */
+function updateLivePreview() {
+    const title = document.getElementById('annTitle') ? document.getElementById('annTitle').value : '';
+    const type = document.getElementById('annType') ? document.getElementById('annType').value : 'Maintenance';
+    const audience = document.getElementById('annTarget') ? document.getElementById('annTarget').value : 'All Users';
+    const priority = document.getElementById('annPriority') ? document.getElementById('annPriority').value : 'Normal';
+    const message = document.getElementById('annMessage') ? document.getElementById('annMessage').value : '';
+
+    const prevTitle = document.getElementById('livePrevTitle');
+    const prevBody = document.getElementById('livePrevBody');
+    const prevType = document.getElementById('livePrevType');
+    const prevPriority = document.getElementById('livePrevPriority');
+    const prevAudience = document.getElementById('livePrevAudience');
+
+    if (prevTitle) prevTitle.innerText = title.trim() ? title : 'Scheduled System Maintenance';
+    if (prevBody) prevBody.innerText = message.trim() ? message : 'Lanka Renters will temporarily be unavailable for scheduled system maintenance.';
+    if (prevType) prevType.innerText = type;
+    if (prevPriority) {
+        prevPriority.innerText = priority + ' Priority';
+        prevPriority.className = `badge badge-${priority.toLowerCase()}`;
+    }
+    if (prevAudience) prevAudience.innerText = audience;
+}
+
+function openCreateAnnouncementModal() {
+    const form = document.getElementById('announcementForm');
+    if (form) form.reset();
+    document.getElementById('annFormId').value = '';
+    document.getElementById('annModalHeaderTitle').innerText = 'Create Announcement';
+    document.getElementById('annFormSubmitBtn').innerText = 'Create Announcement';
+    updateLivePreview();
+    openModal('announcementModal');
+}
+
+function saveAnnouncement(e) {
+    if (e) e.preventDefault();
+    const id = document.getElementById('annFormId').value;
+    closeModal('announcementModal');
+
+    if (id) {
+        showToast("Announcement updated successfully.", "success");
+    } else {
+        showToast("Announcement created successfully.", "success");
+    }
+}
+
+function openViewAnnouncement(annId, title, type, audience, priority, status, date, author, msg) {
+    document.getElementById('viewAnnId').innerText = annId;
+    document.getElementById('viewAnnTitle').innerText = title;
+    document.getElementById('viewAnnType').innerText = type;
+    document.getElementById('viewAnnAudience').innerText = audience;
+    document.getElementById('viewAnnPublish').innerText = date + ', 10:00 AM';
+    document.getElementById('viewAnnExpiry').innerText = 'N/A';
+    document.getElementById('viewAnnAuthor').innerText = author;
+    document.getElementById('viewAnnMessage').innerText = msg;
+    openModal('viewAnnouncementModal');
+}
+
+function openEditAnnouncement(annId, title, type, audience, priority, status, msg) {
+    document.getElementById('annFormId').value = annId;
+    document.getElementById('annTitle').value = title;
+    document.getElementById('annType').value = type;
+    document.getElementById('annTarget').value = audience;
+    document.getElementById('annPriority').value = priority;
+    document.getElementById('annStatus').value = status;
+    document.getElementById('annMessage').value = msg;
+
+    document.getElementById('annModalHeaderTitle').innerText = 'Edit Announcement (' + annId + ')';
+    document.getElementById('annFormSubmitBtn').innerText = 'Save Changes';
+    updateLivePreview();
+    openModal('announcementModal');
+}
+
+function openDeleteAnnouncement(annId, title) {
+    window.targetDeleteAnnId = annId;
+    document.getElementById('deleteAnnTitleText').innerText = `${title} (${annId})`;
+    openModal('deleteAnnouncementModal');
+}
+
+function confirmDeleteAnnouncement() {
+    closeModal('deleteAnnouncementModal');
+    showToast("Announcement deleted successfully.", "danger");
+}
+
+function togglePublishStatus(annId, currentStatus) {
+    if (currentStatus === 'Published') {
+        showToast(`Announcement ${annId} unpublished successfully.`, "info");
+    } else {
+        showToast(`Announcement ${annId} published. Notification delivery queued.`, "success");
+    }
+}
+
+/* SEGMENTED TAB SWITCHER & DASHBOARD NAVIGATION */
+function switchTab(tabName) {
+    const pendingSec = document.getElementById('sectionPending');
+    const registeredSec = document.getElementById('sectionRegistered');
+    const tabPending = document.getElementById('tabPending');
+    const tabRegistered = document.getElementById('tabRegistered');
+
+    if (tabName === 'registered') {
+        if (pendingSec) pendingSec.style.display = 'none';
+        if (registeredSec) registeredSec.style.display = 'block';
+        if (tabPending) tabPending.classList.remove('active');
+        if (tabRegistered) tabRegistered.classList.add('active');
+    } else {
+        if (pendingSec) pendingSec.style.display = 'block';
+        if (registeredSec) registeredSec.style.display = 'none';
+        if (tabPending) tabPending.classList.add('active');
+        if (tabRegistered) tabRegistered.classList.remove('active');
+    }
+}
+
+function initSegmentedTabs() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const view = urlParams.get('view');
+    if (view === 'registered') {
+        switchTab('registered');
+    } else {
+        switchTab('pending');
+    }
 }
 
 /* Dynamic Settlement Calculator */
