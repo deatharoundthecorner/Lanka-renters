@@ -1,9 +1,9 @@
 <?php
-// vehicles.php - Lanka Renters Vehicles Management Page
+// vehicle_owners.php - Lanka Renters Vehicle Owners Management Page
 require_once __DIR__ . '/config/database.php';
 requireAdminLogin();
 
-$pageTitle = "Vehicles";
+$pageTitle = "Vehicle Owners";
 $districts = getSriLankanDistricts();
 $vehicleTypes = getVehicleTypes();
 $defaultView = isset($_GET['view']) && $_GET['view'] === 'registered' ? 'registered' : 'pending';
@@ -13,7 +13,7 @@ $defaultView = isset($_GET['view']) && $_GET['view'] === 'registered' ? 'registe
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vehicles - Lanka Renters</title>
+    <title>Vehicle Owners - Lanka Renters</title>
     <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body>
@@ -26,8 +26,8 @@ $defaultView = isset($_GET['view']) && $_GET['view'] === 'registered' ? 'registe
 
         <main class="page-container">
             <div class="page-header-box">
-                <h1 class="page-title">Vehicles</h1>
-                <p class="page-subtitle">Inspect registered vehicle fleets and review revenue license/insurance books.</p>
+                <h1 class="page-title">Vehicle Owners</h1>
+                <p class="page-subtitle">Review vehicle owner registrations and verify vehicle ownership documentation.</p>
             </div>
 
             <!-- Segmented Tab Bar -->
@@ -38,21 +38,21 @@ $defaultView = isset($_GET['view']) && $_GET['view'] === 'registered' ? 'registe
                 </button>
                 <button type="button" class="tab-item <?php echo $defaultView === 'registered' ? 'active' : ''; ?>" id="tabRegistered" onclick="switchTab('registered')">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                    <span>Registered Vehicles (3)</span>
+                    <span>Registered Owners (3)</span>
                 </button>
             </div>
 
-            <!-- SECTION 1: PENDING VEHICLE APPROVALS -->
+            <!-- SECTION 1: PENDING VEHICLE OWNERS -->
             <div class="card" id="sectionPending" style="<?php echo $defaultView === 'registered' ? 'display: none;' : 'display: block;'; ?>">
                 <div class="card-header-clean">
-                    <h3 class="card-title-text">Pending Vehicle Approvals</h3>
+                    <h3 class="card-title-text">Pending Vehicle Owner Approvals</h3>
                     <span class="badge badge-pending">2 Pending</span>
                 </div>
 
                 <div class="filter-card">
                     <div class="filter-group">
-                        <label for="filterSearch">Search Vehicle</label>
-                        <input type="text" id="filterSearch" class="form-control" placeholder="Search vehicle ID, model or owner...">
+                        <label for="filterSearch">Search Owner</label>
+                        <input type="text" id="filterSearch" class="form-control" placeholder="Search by name, ID or model...">
                     </div>
                     <div class="filter-group">
                         <label for="filterDistrict">District</label>
@@ -82,45 +82,51 @@ $defaultView = isset($_GET['view']) && $_GET['view'] === 'registered' ? 'registe
                     <table class="custom-table">
                         <thead>
                             <tr>
-                                <th>Vehicle ID</th>
-                                <th>Vehicle Model</th>
-                                <th>Type</th>
+                                <th>Owner ID</th>
+                                <th>Name</th>
                                 <th>District</th>
+                                <th>Type</th>
+                                <th>Model Name</th>
                                 <th>Submitted Documents</th>
-                                <th>Owner Name</th>
                                 <th>Decision</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr>
-                                <td><span class="cell-secondary-text">VEH-001</span></td>
-                                <td><div class="cell-primary-text">Toyota Prius 2021</div></td>
-                                <td>Car (4 Seater)</td>
+                                <td><span class="cell-secondary-text">OWN-001</span></td>
+                                <td><div class="cell-primary-text">Sunil Wickramasinghe</div></td>
                                 <td>Colombo</td>
-                                <td>
-                                    <button class="btn btn-doc" onclick="openDocModal('Toyota Prius 2021 - Revenue License & Insurance', 'Vehicle Revenue License')">View Vehicle Documents</button>
-                                </td>
-                                <td>Sunil Wickramasinghe</td>
+                                <td>Car (4 Seater)</td>
+                                <td>Toyota Prius 2021</td>
                                 <td>
                                     <div class="btn-group">
-                                        <button class="btn btn-approve btn-sm" onclick="triggerApprove('Toyota Prius 2021', 'VEH-001')">Approve</button>
-                                        <button class="btn btn-reject btn-sm" onclick="triggerReject('Toyota Prius 2021', 'VEH-001')">Reject</button>
+                                        <button class="btn btn-doc" onclick="openDocModal('Sunil Wickramasinghe - Owner NIC', 'Owner NIC Document')">View NIC</button>
+                                        <button class="btn btn-doc" onclick="openDocModal('Sunil Wickramasinghe - Vehicle Registration', 'Vehicle Ownership Book')">View Vehicle Documents</button>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="btn-group">
+                                        <button class="btn btn-approve btn-sm" onclick="triggerApprove('Sunil Wickramasinghe', 'OWN-001')">Approve</button>
+                                        <button class="btn btn-reject btn-sm" onclick="triggerReject('Sunil Wickramasinghe', 'OWN-001')">Reject</button>
                                     </div>
                                 </td>
                             </tr>
                             <tr>
-                                <td><span class="cell-secondary-text">VEH-002</span></td>
-                                <td><div class="cell-primary-text">Honda Vezel 2020</div></td>
-                                <td>SUV (6 Seater)</td>
+                                <td><span class="cell-secondary-text">OWN-002</span></td>
+                                <td><div class="cell-primary-text">Dhanushka Ratnayake</div></td>
                                 <td>Gampaha</td>
-                                <td>
-                                    <button class="btn btn-doc" onclick="openDocModal('Honda Vezel 2020 - Revenue License & Insurance', 'Vehicle Revenue License')">View Vehicle Documents</button>
-                                </td>
-                                <td>Dhanushka Ratnayake</td>
+                                <td>SUV (6 Seater)</td>
+                                <td>Honda Vezel 2020</td>
                                 <td>
                                     <div class="btn-group">
-                                        <button class="btn btn-approve btn-sm" onclick="triggerApprove('Honda Vezel 2020', 'VEH-002')">Approve</button>
-                                        <button class="btn btn-reject btn-sm" onclick="triggerReject('Honda Vezel 2020', 'VEH-002')">Reject</button>
+                                        <button class="btn btn-doc" onclick="openDocModal('Dhanushka Ratnayake - Owner NIC', 'Owner NIC Document')">View NIC</button>
+                                        <button class="btn btn-doc" onclick="openDocModal('Dhanushka Ratnayake - Vehicle Registration', 'Vehicle Ownership Book')">View Vehicle Documents</button>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="btn-group">
+                                        <button class="btn btn-approve btn-sm" onclick="triggerApprove('Dhanushka Ratnayake', 'OWN-002')">Approve</button>
+                                        <button class="btn btn-reject btn-sm" onclick="triggerReject('Dhanushka Ratnayake', 'OWN-002')">Reject</button>
                                     </div>
                                 </td>
                             </tr>
@@ -129,17 +135,17 @@ $defaultView = isset($_GET['view']) && $_GET['view'] === 'registered' ? 'registe
                 </div>
             </div>
 
-            <!-- SECTION 2: REGISTERED VEHICLES -->
+            <!-- SECTION 2: REGISTERED VEHICLE OWNERS -->
             <div class="card" id="sectionRegistered" style="<?php echo $defaultView === 'registered' ? 'display: block;' : 'display: none;'; ?>">
                 <div class="card-header-clean">
-                    <h3 class="card-title-text">Registered Vehicles</h3>
+                    <h3 class="card-title-text">Registered Vehicle Owners</h3>
                     <span class="badge badge-approved">3 Approved</span>
                 </div>
 
                 <div class="filter-card">
                     <div class="filter-group">
-                        <label>Search Vehicle</label>
-                        <input type="text" class="form-control" placeholder="Search vehicle ID, model or owner...">
+                        <label>Search Owner</label>
+                        <input type="text" class="form-control" placeholder="Search by name, ID or model...">
                     </div>
                     <div class="filter-group">
                         <label>District</label>
@@ -169,64 +175,73 @@ $defaultView = isset($_GET['view']) && $_GET['view'] === 'registered' ? 'registe
                     <table class="custom-table">
                         <thead>
                             <tr>
-                                <th>Vehicle ID</th>
-                                <th>Vehicle Model</th>
-                                <th>Type</th>
+                                <th>Owner ID</th>
+                                <th>Name</th>
                                 <th>District</th>
+                                <th>Type</th>
+                                <th>Model Name</th>
                                 <th>Submitted Documents</th>
-                                <th>Owner Name</th>
                                 <th>Action</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr>
-                                <td><span class="cell-secondary-text">VEH-003</span></td>
-                                <td><div class="cell-primary-text">Toyota KDH Super GL</div></td>
-                                <td>Van (8 Seater)</td>
+                                <td><span class="cell-secondary-text">OWN-003</span></td>
+                                <td><div class="cell-primary-text">Rohan Jayawardena</div></td>
                                 <td>Kandy</td>
-                                <td>
-                                    <button class="btn btn-doc" onclick="openDocModal('Toyota KDH Super GL - Revenue License & Insurance', 'Vehicle Revenue License')">View Documents</button>
-                                </td>
-                                <td>Rohan Jayawardena</td>
+                                <td>Van (8 Seater)</td>
+                                <td>Toyota KDH 2019</td>
                                 <td>
                                     <div class="btn-group">
-                                        <button class="btn btn-doc btn-sm" onclick="openDocModal('Toyota KDH Details', 'Vehicle Spec Sheet')">View</button>
-                                        <button class="btn btn-secondary btn-sm" onclick="showToast('Edit Vehicle modal opened', 'info')">Edit</button>
-                                        <button class="btn btn-reject btn-sm" onclick="triggerSuspend('Toyota KDH Super GL', 'VEH-003')">Deactivate</button>
+                                        <button class="btn btn-doc" onclick="openDocModal('Rohan Jayawardena - Owner NIC', 'Owner NIC Document')">View NIC</button>
+                                        <button class="btn btn-doc" onclick="openDocModal('Rohan Jayawardena - Vehicle Registration', 'Vehicle Ownership Book')">View Documents</button>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="btn-group">
+                                        <button class="btn btn-doc btn-sm" onclick="openDocModal('Rohan Jayawardena Details', 'Owner Profile Voucher')">View</button>
+                                        <button class="btn btn-secondary btn-sm" onclick="showToast('Edit Owner modal opened', 'info')">Edit</button>
+                                        <button class="btn btn-reject btn-sm" onclick="triggerSuspend('Rohan Jayawardena', 'OWN-003')">Suspend</button>
                                     </div>
                                 </td>
                             </tr>
                             <tr>
-                                <td><span class="cell-secondary-text">VEH-004</span></td>
-                                <td><div class="cell-primary-text">Suzuki Wagon R FX</div></td>
-                                <td>Minivan (6 Seater)</td>
+                                <td><span class="cell-secondary-text">OWN-004</span></td>
+                                <td><div class="cell-primary-text">Mahesh Samarawickrama</div></td>
                                 <td>Galle</td>
-                                <td>
-                                    <button class="btn btn-doc" onclick="openDocModal('Suzuki Wagon R FX - Revenue License & Insurance', 'Vehicle Revenue License')">View Documents</button>
-                                </td>
-                                <td>Mahesh Samarawickrama</td>
+                                <td>Minivan (6 Seater)</td>
+                                <td>Suzuki Wagon R 2022</td>
                                 <td>
                                     <div class="btn-group">
-                                        <button class="btn btn-doc btn-sm" onclick="openDocModal('Suzuki Wagon R Details', 'Vehicle Spec Sheet')">View</button>
-                                        <button class="btn btn-secondary btn-sm" onclick="showToast('Edit Vehicle modal opened', 'info')">Edit</button>
-                                        <button class="btn btn-reject btn-sm" onclick="triggerSuspend('Suzuki Wagon R FX', 'VEH-004')">Deactivate</button>
+                                        <button class="btn btn-doc" onclick="openDocModal('Mahesh Samarawickrama - Owner NIC', 'Owner NIC Document')">View NIC</button>
+                                        <button class="btn btn-doc" onclick="openDocModal('Mahesh Samarawickrama - Vehicle Registration', 'Vehicle Ownership Book')">View Documents</button>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="btn-group">
+                                        <button class="btn btn-doc btn-sm" onclick="openDocModal('Mahesh Samarawickrama Details', 'Owner Profile Voucher')">View</button>
+                                        <button class="btn btn-secondary btn-sm" onclick="showToast('Edit Owner modal opened', 'info')">Edit</button>
+                                        <button class="btn btn-reject btn-sm" onclick="triggerSuspend('Mahesh Samarawickrama', 'OWN-004')">Suspend</button>
                                     </div>
                                 </td>
                             </tr>
                             <tr>
-                                <td><span class="cell-secondary-text">VEH-005</span></td>
-                                <td><div class="cell-primary-text">Toyota Aqua S Grade</div></td>
-                                <td>Car (4 Seater)</td>
+                                <td><span class="cell-secondary-text">OWN-005</span></td>
+                                <td><div class="cell-primary-text">Nimal Perera</div></td>
                                 <td>Kalutara</td>
-                                <td>
-                                    <button class="btn btn-doc" onclick="openDocModal('Toyota Aqua S Grade - Revenue License & Insurance', 'Vehicle Revenue License')">View Documents</button>
-                                </td>
-                                <td>Nimal Perera</td>
+                                <td>Car (4 Seater)</td>
+                                <td>Toyota Aqua 2018</td>
                                 <td>
                                     <div class="btn-group">
-                                        <button class="btn btn-doc btn-sm" onclick="openDocModal('Toyota Aqua Details', 'Vehicle Spec Sheet')">View</button>
-                                        <button class="btn btn-secondary btn-sm" onclick="showToast('Edit Vehicle modal opened', 'info')">Edit</button>
-                                        <button class="btn btn-reject btn-sm" onclick="triggerSuspend('Toyota Aqua S Grade', 'VEH-005')">Deactivate</button>
+                                        <button class="btn btn-doc" onclick="openDocModal('Nimal Perera - Owner NIC', 'Owner NIC Document')">View NIC</button>
+                                        <button class="btn btn-doc" onclick="openDocModal('Nimal Perera - Vehicle Registration', 'Vehicle Ownership Book')">View Documents</button>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="btn-group">
+                                        <button class="btn btn-doc btn-sm" onclick="openDocModal('Nimal Perera Details', 'Owner Profile Voucher')">View</button>
+                                        <button class="btn btn-secondary btn-sm" onclick="showToast('Edit Owner modal opened', 'info')">Edit</button>
+                                        <button class="btn btn-reject btn-sm" onclick="triggerSuspend('Nimal Perera', 'OWN-005')">Suspend</button>
                                     </div>
                                 </td>
                             </tr>
@@ -235,7 +250,7 @@ $defaultView = isset($_GET['view']) && $_GET['view'] === 'registered' ? 'registe
                 </div>
 
                 <div class="pagination-wrapper">
-                    <span class="pagination-info">Showing 1 to 3 of 24 entries</span>
+                    <span class="pagination-info">Showing 1 to 3 of 18 entries</span>
                     <div class="pagination-controls">
                         <button class="page-btn" disabled>Previous</button>
                         <button class="page-btn active">1</button>
