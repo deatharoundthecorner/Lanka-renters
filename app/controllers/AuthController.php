@@ -191,12 +191,6 @@ class AuthController {
         // 2. Redirect to login page
         $this->redirect('login.php');
     }
-
-    /**
-     * Directs the user to their role-specific dashboard page.
-     * 
-     * @param string $role User role
-     */
     private function redirectByRole($role) {
         switch ($role) {
             case 'admin':
@@ -209,6 +203,14 @@ class AuthController {
                 $this->redirect('driver/dashboard.php');
                 break;
             case 'customer':
+                if (!empty($_GET['redirect'])) {
+                    $redirectUrl = $_GET['redirect'];
+                    // Ensure the redirect is safe (local/relative path or matching host)
+                    if (strpos($redirectUrl, '://') === false || (isset($_SERVER['HTTP_HOST']) && strpos($redirectUrl, $_SERVER['HTTP_HOST']) !== false)) {
+                        $this->redirect($redirectUrl);
+                        break;
+                    }
+                }
                 $this->redirect('customer/dashboard/index.php');
                 break;
             default:
@@ -216,6 +218,7 @@ class AuthController {
                 break;
         }
     }
+
 
     /**
      * Safe redirection helper. Supports subfolder-scoped routes.

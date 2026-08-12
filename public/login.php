@@ -47,6 +47,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 header("Location: driver/dashboard.php");
                 break;
             case 'customer':
+                if (!empty($_GET['redirect'])) {
+                    $redirectUrl = $_GET['redirect'];
+                    // Ensure the redirect is safe (local/relative path or matching host)
+                    if (strpos($redirectUrl, '://') === false || (isset($_SERVER['HTTP_HOST']) && strpos($redirectUrl, $_SERVER['HTTP_HOST']) !== false)) {
+                        header("Location: " . $redirectUrl);
+                        exit();
+                    }
+                }
                 header("Location: customer/dashboard/index.php");
                 break;
         }
@@ -256,10 +264,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <div class="login-container">
         <div class="login-card">
-            <div class="logo-section">
-                <h1 class="logo-text">Lanka Renters</h1>
+            <div class="logo-section" style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                <div style="display: flex; align-items: center; gap: 10px; text-decoration: none; font-size: 28px; font-weight: 800; color: #0B3A82;">
+                    <span style="width: 38px; height: 38px; background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%); color: #FFFFFF; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 800; box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);">L</span>
+                    <span>Lanka<span style="color: #2563EB;">Renters</span></span>
+                </div>
                 <p class="subtitle">Unified Sign In Portal</p>
             </div>
+
+            <?php if (!empty($_GET['message'])): ?>
+                <div class="alert-box" style="background-color: #EFF6FF; border: 1px solid #BFDBFE; color: #1D4ED8; margin-bottom: 20px;">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <span><?php echo htmlspecialchars($_GET['message']); ?></span>
+                </div>
+            <?php endif; ?>
 
             <?php if (!empty($error)): ?>
                 <div class="alert-box">

@@ -78,8 +78,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <body>
     <div class="auth-container" style="max-width: 500px; padding: 40px 20px;">
         <div class="auth-card">
-            <div class="auth-header">
-                <h1 class="auth-logo" style="color: var(--primary);">Lanka Renters</h1>
+            <div class="auth-header" style="display: flex; flex-direction: column; align-items: center; gap: 8px; margin-bottom: 24px;">
+                <div style="display: flex; align-items: center; gap: 10px; text-decoration: none; font-size: 28px; font-weight: 800; color: #0B3A82;">
+                    <span style="width: 38px; height: 38px; background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%); color: #FFFFFF; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 800; box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);">L</span>
+                    <span>Lanka<span style="color: #2563EB;">Renters</span></span>
+                </div>
                 <p class="auth-subtitle">Create a New Account</p>
             </div>
             
