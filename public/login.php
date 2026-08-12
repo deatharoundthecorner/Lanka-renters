@@ -28,39 +28,44 @@ if (AuthHelper::isLoggedIn()) {
 
 $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $email = $_POST['email'] ?? '';
-    $password = $_POST['password'] ?? '';
-    
-    $authController = new AuthController();
-    $result = $authController->login($email, $password);
-    
-    if ($result['success']) {
-        $user = AuthHelper::getCurrentUser();
-        switch ($user['role'] ?? '') {
-            case 'admin':
-                header("Location: admin/dashboard.php");
-                break;
-            case 'owner':
-                header("Location: owner/dashboard.php");
-                break;
-            case 'driver':
-                header("Location: driver/dashboard.php");
-                break;
-            case 'customer':
-                if (!empty($_GET['redirect'])) {
-                    $redirectUrl = $_GET['redirect'];
-                    // Ensure the redirect is safe (local/relative path or matching host)
-                    if (strpos($redirectUrl, '://') === false || (isset($_SERVER['HTTP_HOST']) && strpos($redirectUrl, $_SERVER['HTTP_HOST']) !== false)) {
-                        header("Location: " . $redirectUrl);
-                        exit();
-                    }
-                }
-                header("Location: customer/dashboard/index.php");
-                break;
-        }
-        exit();
+    $csrfToken = $_POST['csrf_token'] ?? '';
+    if (!AuthHelper::validateCsrfToken($csrfToken)) {
+        $error = 'Invalid session token. Request rejected.';
     } else {
-        $error = $result['error'];
+        $email = $_POST['email'] ?? '';
+        $password = $_POST['password'] ?? '';
+
+        $authController = new AuthController();
+        $result = $authController->login($email, $password);
+
+        if ($result['success']) {
+            $user = AuthHelper::getCurrentUser();
+            switch ($user['role'] ?? '') {
+                case 'admin':
+                    header("Location: admin/dashboard.php");
+                    break;
+                case 'owner':
+                    header("Location: owner/dashboard.php");
+                    break;
+                case 'driver':
+                    header("Location: driver/dashboard.php");
+                    break;
+                case 'customer':
+                    if (!empty($_GET['redirect'])) {
+                        $redirectUrl = $_GET['redirect'];
+                        // Ensure the redirect is safe (local/relative path or matching host)
+                        if (strpos($redirectUrl, '://') === false || (isset($_SERVER['HTTP_HOST']) && strpos($redirectUrl, $_SERVER['HTTP_HOST']) !== false)) {
+                            header("Location: " . $redirectUrl);
+                            exit();
+                        }
+                    }
+                    header("Location: customer/dashboard/index.php");
+                    break;
+            }
+            exit();
+        } else {
+            $error = $result['error'];
+        }
     }
 }
 ?>
@@ -291,6 +296,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <?php endif; ?>
 
             <form action="" method="POST">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(AuthHelper::getCsrfToken()); ?>">
                 <div class="form-group">
                     <label class="form-label" for="email">Email Address</label>
                     <input class="form-input" type="email" id="email" name="email" required placeholder="name@example.com" autofocus>
