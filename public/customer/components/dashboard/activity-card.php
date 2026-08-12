@@ -1,0 +1,1 @@
+<article class="card"><p class="eyebrow"><?= htmlspecialchars((string) ($activity['label'] ?? 'Activity'), ENT_QUOTES, 'UTF-8') ?></p><h3><?= htmlspecialchars((string) ($activity['title'] ?? 'Customer activity'), ENT_QUOTES, 'UTF-8') ?></h3><p><?= htmlspecialchars((string) ($activity['description'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p></article>
