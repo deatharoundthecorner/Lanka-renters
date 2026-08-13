@@ -7,10 +7,10 @@ $currentPage = basename($_SERVER['PHP_SELF']);
 <aside class="sidebar" id="adminSidebar">
     <div class="sidebar-header">
         <div class="brand-container">
-            <div class="brand-logo">LR</div>
+            <div class="brand-logo" style="width: 38px; height: 38px; background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%); color: #FFFFFF; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 800; box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);">L</div>
             <div class="brand-info">
-                <h1>Lanka Renters</h1>
-                <span>Workspace</span>
+                <h1 style="font-size: 18px; font-weight: 800; color: #0B3A82; margin: 0; letter-spacing: -0.5px;">Lanka<span style="color: #2563EB;">Renters</span></h1>
+                <span style="font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Admin Workspace</span>
             </div>
         </div>
         <button class="sidebar-close-btn" id="sidebarCloseBtn" aria-label="Close Sidebar">&times;</button>
@@ -108,7 +108,7 @@ $currentPage = basename($_SERVER['PHP_SELF']);
                 <p>Admin workspace</p>
             </div>
         </div>
-        <a href="logout.php" class="btn-logout">
+        <a href="../logout.php" class="btn-logout">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
             <span>Logout</span>
         </a>
