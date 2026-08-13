@@ -257,6 +257,56 @@ class Vehicle {
     }
 
     /**
+     * Retrieves a specific document record by vehicle ID and document type.
+     *
+     * @param int $vehicleId
+     * @param string $docType
+     * @return array|false
+     */
+    public function getDocumentByType($vehicleId, $docType) {
+        $sql = "SELECT * FROM `vehicle_documents` WHERE `vehicle_id` = :vehicle_id AND `document_type` = :doc_type ORDER BY `uploaded_at` DESC LIMIT 1";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([
+            'vehicle_id' => (int)$vehicleId,
+            'doc_type'   => $docType
+        ]);
+        return $stmt->fetch();
+    }
+
+    /**
+     * Replaces or updates a vehicle document record in `vehicle_documents`.
+     *
+     * @param int $vehicleId
+     * @param string $docType
+     * @param string $filePath
+     * @param string|null $docNumber
+     * @param string|null $expiryDate
+     * @return bool
+     */
+    public function replaceDocument($vehicleId, $docType, $filePath, $docNumber = null, $expiryDate = null) {
+        $existingDoc = $this->getDocumentByType($vehicleId, $docType);
+        
+        if ($existingDoc) {
+            $sql = "UPDATE `vehicle_documents` 
+                    SET `file_path` = :file_path, 
+                        `verification_status` = 'pending',
+                        `document_number` = COALESCE(:doc_number, `document_number`),
+                        `expiry_date` = COALESCE(:expiry_date, `expiry_date`),
+                        `updated_at` = CURRENT_TIMESTAMP
+                    WHERE `id` = :id";
+            $stmt = $this->db->prepare($sql);
+            return $stmt->execute([
+                'file_path'  => $filePath,
+                'doc_number' => $docNumber ? trim($docNumber) : null,
+                'expiry_date'=> $expiryDate ? trim($expiryDate) : null,
+                'id'         => (int)$existingDoc['id']
+            ]);
+        } else {
+            return (bool)$this->addDocument($vehicleId, $docType, $filePath, $docNumber, $expiryDate);
+        }
+    }
+
+    /**
      * Checks whether a vehicle currently has an active/ongoing booking.
      *
      * @param int $vehicleId

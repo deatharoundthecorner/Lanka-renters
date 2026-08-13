@@ -244,7 +244,46 @@ class VehicleController {
                 return ['success' => false, 'error' => 'Failed to update vehicle record.'];
             }
 
-            return ['success' => true, 'message' => 'Vehicle details updated successfully!'];
+            // 7. Handle Verification Document Updates if provided
+            $docTypes = [
+                'document_registration' => 'registration',
+                'document_insurance'    => 'insurance',
+                'document_emission'     => 'emission_test',
+                'document_fitness'      => 'fitness_certificate'
+            ];
+
+            $updatedDocsCount = 0;
+            foreach ($docTypes as $fileInputKey => $docType) {
+                if (isset($files[$fileInputKey]) && $files[$fileInputKey]['error'] === UPLOAD_ERR_OK) {
+                    $uploadResult = $this->handleDocumentUpload($files[$fileInputKey], $docType, $vehicleId);
+                    if ($uploadResult['success']) {
+                        // Unlink old document file if present
+                        $oldDoc = $this->vehicleModel->getDocumentByType($vehicleId, $docType);
+                        if ($oldDoc && !empty($oldDoc['file_path'])) {
+                            $oldFilePath = dirname(dirname(__DIR__)) . '/public/' . ltrim($oldDoc['file_path'], '/');
+                            if (file_exists($oldFilePath) && is_file($oldFilePath)) {
+                                @unlink($oldFilePath);
+                            }
+                        }
+
+                        $this->vehicleModel->replaceDocument(
+                            $vehicleId,
+                            $docType,
+                            $uploadResult['file_path'],
+                            $data[$fileInputKey . '_number'] ?? null,
+                            $data[$fileInputKey . '_expiry'] ?? null
+                        );
+                        $updatedDocsCount++;
+                    }
+                }
+            }
+
+            $msg = 'Vehicle details updated successfully!';
+            if ($updatedDocsCount > 0) {
+                $msg .= " ({$updatedDocsCount} verification document(s) updated).";
+            }
+
+            return ['success' => true, 'message' => $msg];
 
         } catch (Exception $e) {
             return ['success' => false, 'error' => 'Update failed: ' . $e->getMessage()];

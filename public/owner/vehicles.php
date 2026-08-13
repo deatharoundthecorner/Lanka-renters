@@ -52,7 +52,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Check if edit parameter is passed via GET
+$editVehicleDocsMap = [];
 if (isset($_GET['edit_id'])) {
     $editId = (int)$_GET['edit_id'];
     $auth = AuthHelper::getCurrentUser();
@@ -62,9 +62,14 @@ if (isset($_GET['edit_id'])) {
     $owner = $ownerModel->findByUserId($auth['id']);
     if ($owner) {
         $editVehicleData = $vModel->getById($editId, $owner['id']);
+        if ($editVehicleData) {
+            $docs = $vModel->getDocuments($editId);
+            foreach ($docs as $d) {
+                $editVehicleDocsMap[$d['document_type']] = $d;
+            }
+        }
     }
 }
-
 // Fetch Owner's Vehicles from Database
 $dataResult = $vehicleController->getOwnerVehicles();
 $vehicles = $dataResult['success'] ? $dataResult['vehicles'] : [];
@@ -455,7 +460,84 @@ $csrfToken = AuthHelper::getCsrfToken();
                                 </label>
                             </div>
 
-                            <div class="form-actions" style="margin-top: 20px; display: flex; gap: 12px; justify-content: flex-end;">
+                            <div style="margin-top: 20px; border-top: 1px solid #e2e8f0; padding-top: 16px;">
+                                <h4 style="margin: 0 0 6px; font-size: 1rem; color: #0f172a;">Update Verification Documents (PDF, PNG, JPG - Max 5MB)</h4>
+                                <p style="font-size: 0.84rem; color: #64748b; margin: 0 0 14px;">
+                                    Upload a file only if you wish to replace the existing document for that category.
+                                </p>
+
+                                <div class="document-grid">
+                                    <label class="upload-zone" style="<?php echo isset($editVehicleDocsMap['registration']) ? 'border-color: #a7f3d0; background-color: #f0fdf4;' : ''; ?>">
+                                        <div style="display: flex; flex-direction: column; gap: 4px; margin-bottom: 6px;">
+                                            <span style="font-weight: 600; color: #1e293b;">Registration Certificate</span>
+                                            <?php if (isset($editVehicleDocsMap['registration'])): ?>
+                                                <div style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.82rem; color: #166534; font-weight: 600;">
+                                                    <span>✅ Attached</span>
+                                                    <a href="/<?php echo htmlspecialchars(ltrim($editVehicleDocsMap['registration']['file_path'], '/')); ?>" target="_blank" style="color: #2563eb; text-decoration: underline; font-weight: 500;" onclick="event.stopPropagation();">
+                                                        View Current
+                                                    </a>
+                                                </div>
+                                            <?php else: ?>
+                                                <span style="font-size: 0.8rem; color: #94a3b8;">No file attached yet</span>
+                                            <?php endif; ?>
+                                        </div>
+                                        <input type="file" name="document_registration" accept=".pdf,.png,.jpg,.jpeg" onchange="this.parentElement.style.borderColor='#2563eb';" />
+                                    </label>
+
+                                    <label class="upload-zone" style="<?php echo isset($editVehicleDocsMap['insurance']) ? 'border-color: #a7f3d0; background-color: #f0fdf4;' : ''; ?>">
+                                        <div style="display: flex; flex-direction: column; gap: 4px; margin-bottom: 6px;">
+                                            <span style="font-weight: 600; color: #1e293b;">Insurance Policy</span>
+                                            <?php if (isset($editVehicleDocsMap['insurance'])): ?>
+                                                <div style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.82rem; color: #166534; font-weight: 600;">
+                                                    <span>✅ Attached</span>
+                                                    <a href="/<?php echo htmlspecialchars(ltrim($editVehicleDocsMap['insurance']['file_path'], '/')); ?>" target="_blank" style="color: #2563eb; text-decoration: underline; font-weight: 500;" onclick="event.stopPropagation();">
+                                                        View Current
+                                                    </a>
+                                                </div>
+                                            <?php else: ?>
+                                                <span style="font-size: 0.8rem; color: #94a3b8;">No file attached yet</span>
+                                            <?php endif; ?>
+                                        </div>
+                                        <input type="file" name="document_insurance" accept=".pdf,.png,.jpg,.jpeg" onchange="this.parentElement.style.borderColor='#2563eb';" />
+                                    </label>
+
+                                    <label class="upload-zone" style="<?php echo isset($editVehicleDocsMap['emission_test']) ? 'border-color: #a7f3d0; background-color: #f0fdf4;' : ''; ?>">
+                                        <div style="display: flex; flex-direction: column; gap: 4px; margin-bottom: 6px;">
+                                            <span style="font-weight: 600; color: #1e293b;">Emission Test Report</span>
+                                            <?php if (isset($editVehicleDocsMap['emission_test'])): ?>
+                                                <div style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.82rem; color: #166534; font-weight: 600;">
+                                                    <span>✅ Attached</span>
+                                                    <a href="/<?php echo htmlspecialchars(ltrim($editVehicleDocsMap['emission_test']['file_path'], '/')); ?>" target="_blank" style="color: #2563eb; text-decoration: underline; font-weight: 500;" onclick="event.stopPropagation();">
+                                                        View Current
+                                                    </a>
+                                                </div>
+                                            <?php else: ?>
+                                                <span style="font-size: 0.8rem; color: #94a3b8;">No file attached yet</span>
+                                            <?php endif; ?>
+                                        </div>
+                                        <input type="file" name="document_emission" accept=".pdf,.png,.jpg,.jpeg" onchange="this.parentElement.style.borderColor='#2563eb';" />
+                                    </label>
+
+                                    <label class="upload-zone" style="<?php echo isset($editVehicleDocsMap['fitness_certificate']) ? 'border-color: #a7f3d0; background-color: #f0fdf4;' : ''; ?>">
+                                        <div style="display: flex; flex-direction: column; gap: 4px; margin-bottom: 6px;">
+                                            <span style="font-weight: 600; color: #1e293b;">Fitness Certificate</span>
+                                            <?php if (isset($editVehicleDocsMap['fitness_certificate'])): ?>
+                                                <div style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.82rem; color: #166534; font-weight: 600;">
+                                                    <span>✅ Attached</span>
+                                                    <a href="/<?php echo htmlspecialchars(ltrim($editVehicleDocsMap['fitness_certificate']['file_path'], '/')); ?>" target="_blank" style="color: #2563eb; text-decoration: underline; font-weight: 500;" onclick="event.stopPropagation();">
+                                                        View Current
+                                                    </a>
+                                                </div>
+                                            <?php else: ?>
+                                                <span style="font-size: 0.8rem; color: #94a3b8;">No file attached yet</span>
+                                            <?php endif; ?>
+                                        </div>
+                                        <input type="file" name="document_fitness" accept=".pdf,.png,.jpg,.jpeg" onchange="this.parentElement.style.borderColor='#2563eb';" />
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="form-actions" style="margin-top: 24px; display: flex; gap: 12px; justify-content: flex-end;">
                                 <a href="vehicles.php" class="button button-outline">Cancel</a>
                                 <button type="submit" class="button button-primary">Save Changes</button>
                             </div>

@@ -84,6 +84,42 @@ function ownerNavActive(string $page, string $current): string {
         </a>
       </li>
 
+      <li class="nav-item<?php echo ownerNavActive('inspection', $_ownerCurrentPage); ?>">
+        <a href="/owner/inspection.php">
+          <span class="nav-icon" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 11l3 3L22 4"></path>
+              <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+            </svg>
+          </span>
+          <span class="nav-label">Inspections</span>
+        </a>
+      </li>
+
+      <li class="nav-item<?php echo ownerNavActive('chat', $_ownerCurrentPage); ?>">
+        <a href="/owner/chat.php">
+          <span class="nav-icon" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+            </svg>
+          </span>
+          <span class="nav-label">Chat</span>
+        </a>
+      </li>
+
+      <li class="nav-item<?php echo ownerNavActive('replacement-requests', $_ownerCurrentPage); ?>">
+        <a href="/owner/replacement-requests.php">
+          <span class="nav-icon" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="23 4 23 10 17 10"></polyline>
+              <polyline points="1 20 1 14 7 14"></polyline>
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+            </svg>
+          </span>
+          <span class="nav-label">Replacement Requests</span>
+        </a>
+      </li>
+
       <li class="nav-item<?php echo ownerNavActive('profile', $_ownerCurrentPage); ?>">
         <a href="/owner/profile.php">
           <span class="nav-icon" aria-hidden="true">
