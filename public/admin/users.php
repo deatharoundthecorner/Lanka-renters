@@ -1,11 +1,29 @@
 <?php
-// users.php - Lanka Renters Customer Management Page
-require_once __DIR__ . '/config/database.php';
-requireAdminLogin();
 
-$pageTitle = "Users";
-$districts = getSriLankanDistricts();
-$defaultView = isset($_GET['view']) && $_GET['view'] === 'registered' ? 'registered' : 'pending';
+require_once dirname(__DIR__, 2) . '/app/helpers/AuthHelper.php';
+require_once dirname(__DIR__, 2) . '/app/models/AdminCustomerVerification.php';
+
+AuthHelper::startSession();
+AuthHelper::requireRole('admin');
+
+$pageTitle = 'Users';
+$defaultView = ($_GET['view'] ?? '') === 'registered' ? 'registered' : 'pending';
+$flash = $_SESSION['admin_customer_verification_flash'] ?? null;
+unset($_SESSION['admin_customer_verification_flash']);
+
+try {
+    $verification = new AdminCustomerVerification();
+    $pendingCustomers = $verification->pendingCustomers();
+    $reviewedCustomers = $verification->reviewedCustomers();
+    $databaseError = false;
+} catch (Throwable $exception) {
+    error_log(sprintf('Admin Customer list error [%s]: %s', get_class($exception), $exception->getMessage()));
+    $pendingCustomers = [];
+    $reviewedCustomers = [];
+    $databaseError = true;
+}
+
+$escape = static fn (mixed $value): string => htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -16,262 +34,77 @@ $defaultView = isset($_GET['view']) && $_GET['view'] === 'registered' ? 'registe
     <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body>
-
 <div class="admin-layout">
     <?php include __DIR__ . '/partials/sidebar.php'; ?>
-
     <div class="main-wrapper">
         <?php include __DIR__ . '/partials/header.php'; ?>
-
         <main class="page-container">
             <div class="page-header-box">
                 <h1 class="page-title">Users</h1>
-                <p class="page-subtitle">Manage registered customers and review submitted documents.</p>
+                <p class="page-subtitle">Review Customer verification details and record an approval decision.</p>
             </div>
 
-            <!-- Segmented Tab Bar -->
-            <div class="nav-tabs">
-                <button type="button" class="tab-item <?php echo $defaultView === 'pending' ? 'active' : ''; ?>" id="tabPending" onclick="switchTab('pending')">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                    <span>Pending Approval (3)</span>
-                </button>
-                <button type="button" class="tab-item <?php echo $defaultView === 'registered' ? 'active' : ''; ?>" id="tabRegistered" onclick="switchTab('registered')">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                    <span>Registered Users (5)</span>
-                </button>
-            </div>
+            <?php if (is_array($flash)): ?>
+                <div class="alert-box" role="alert" style="margin-bottom: 16px;">
+                    <?= $escape($flash['message'] ?? 'The request has been processed.') ?>
+                </div>
+            <?php endif; ?>
 
-            <!-- SECTION 1: PENDING CUSTOMER REGISTRATIONS -->
-            <div class="card" id="sectionPending" style="<?php echo $defaultView === 'registered' ? 'display: none;' : 'display: block;'; ?>">
-                <div class="card-header-clean">
-                    <h3 class="card-title-text">Pending Customer Registrations</h3>
-                    <span class="badge badge-pending">3 Pending</span>
+            <?php if ($databaseError): ?>
+                <div class="card"><p>Customer verification records are temporarily unavailable. Please try again later.</p></div>
+            <?php else: ?>
+                <div class="nav-tabs">
+                    <a class="tab-item <?= $defaultView === 'pending' ? 'active' : '' ?>" href="users.php">
+                        <span>Pending Approval (<?= count($pendingCustomers) ?>)</span>
+                    </a>
+                    <a class="tab-item <?= $defaultView === 'registered' ? 'active' : '' ?>" href="users.php?view=registered">
+                        <span>Reviewed Customers (<?= count($reviewedCustomers) ?>)</span>
+                    </a>
                 </div>
 
-                <div class="filter-card">
-                    <div class="filter-group">
-                        <label for="filterSearch">Search Customer</label>
-                        <input type="text" id="filterSearch" class="form-control" placeholder="Search by name, ID or email...">
-                    </div>
-                    <div class="filter-group">
-                        <label for="filterDistrict">District (All 25 Districts)</label>
-                        <select id="filterDistrict" class="form-control">
-                            <option value="">All Districts</option>
-                            <?php foreach ($districts as $d): ?>
-                                <option value="<?php echo htmlspecialchars($d); ?>"><?php echo htmlspecialchars($d); ?></option>
+                <?php if ($defaultView === 'pending'): ?>
+                    <div class="card">
+                        <div class="card-header-clean">
+                            <h3 class="card-title-text">Pending Customer Registrations</h3>
+                            <span class="badge badge-pending"><?= count($pendingCustomers) ?> Pending</span>
+                        </div>
+                        <?php if ($pendingCustomers === []): ?>
+                            <p>No Customer verification requests are waiting for review.</p>
+                        <?php else: ?>
+                            <div class="table-responsive"><table class="custom-table"><thead><tr>
+                                <th>Customer ID</th><th>Customer</th><th>Contact</th><th>Verification details</th><th>Decision</th>
+                            </tr></thead><tbody>
+                            <?php foreach ($pendingCustomers as $customer): ?>
+                                <tr>
+                                    <td><span class="cell-secondary-text">CUS-<?= (int) $customer['id'] ?></span></td>
+                                    <td><div class="cell-primary-text"><?= $escape($customer['name']) ?></div></td>
+                                    <td><div class="cell-stacked"><span class="cell-secondary-text"><?= $escape($customer['email']) ?></span><span class="cell-secondary-text"><?= $escape($customer['phone']) ?></span></div></td>
+                                    <td><div class="cell-stacked"><span class="cell-secondary-text">NIC: <?= $escape($customer['nic_number'] ?: 'Not provided') ?></span><span class="cell-secondary-text">Licence: <?= $escape($customer['driving_license_number'] ?: 'Not provided') ?></span><span class="cell-secondary-text">District: <?= $escape($customer['district'] ?: 'Not provided') ?></span></div></td>
+                                    <td><div class="btn-group">
+                                        <form method="post" action="customer_verification.php"><input type="hidden" name="csrf_token" value="<?= $escape(AuthHelper::getCsrfToken()) ?>"><input type="hidden" name="customer_id" value="<?= (int) $customer['id'] ?>"><input type="hidden" name="verification_status" value="approved"><button class="btn btn-approve btn-sm" type="submit">Approve</button></form>
+                                        <form method="post" action="customer_verification.php"><input type="hidden" name="csrf_token" value="<?= $escape(AuthHelper::getCsrfToken()) ?>"><input type="hidden" name="customer_id" value="<?= (int) $customer['id'] ?>"><input type="hidden" name="verification_status" value="rejected"><button class="btn btn-reject btn-sm" type="submit">Reject</button></form>
+                                    </div></td>
+                                </tr>
                             <?php endforeach; ?>
-                        </select>
+                            </tbody></table></div>
+                        <?php endif; ?>
                     </div>
-                    <div style="display: flex; gap: 8px; align-self: flex-end;">
-                        <button class="btn btn-primary" onclick="initTableFilters()">Search</button>
-                        <button class="btn btn-secondary" id="filterResetBtn">Reset</button>
-                    </div>
-                </div>
-
-                <div class="table-responsive">
-                    <table class="custom-table">
-                        <thead>
-                            <tr>
-                                <th>Customer ID</th>
-                                <th>Customer Name</th>
-                                <th>Contact Details</th>
-                                <th>Submitted Documents</th>
-                                <th>Decision</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td><span class="cell-secondary-text">CUS-001</span></td>
-                                <td><div class="cell-primary-text">Kasun Perera</div></td>
-                                <td>
-                                    <div class="cell-stacked">
-                                        <span class="cell-secondary-text">kasun.perera@gmail.com</span>
-                                        <span class="cell-secondary-text">071 234 5678</span>
-                                    </div>
-                                </td>
-                                <td>
-                                    <div class="btn-group">
-                                        <button class="btn btn-doc" onclick="openDocModal('Kasun Perera - NIC Document', 'National Identity Card')">View NIC</button>
-                                        <button class="btn btn-doc" onclick="openDocModal('Kasun Perera - Driving License', 'Driving License')">View License</button>
-                                    </div>
-                                </td>
-                                <td>
-                                    <div class="btn-group">
-                                        <button class="btn btn-approve btn-sm" onclick="triggerApprove('Kasun Perera', 'CUS-001')">Approve</button>
-                                        <button class="btn btn-reject btn-sm" onclick="triggerReject('Kasun Perera', 'CUS-001')">Reject</button>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td><span class="cell-secondary-text">CUS-002</span></td>
-                                <td><div class="cell-primary-text">Nimal Silva</div></td>
-                                <td>
-                                    <div class="cell-stacked">
-                                        <span class="cell-secondary-text">nimal.silva@yahoo.com</span>
-                                        <span class="cell-secondary-text">077 456 7890</span>
-                                    </div>
-                                </td>
-                                <td>
-                                    <div class="btn-group">
-                                        <button class="btn btn-doc" onclick="openDocModal('Nimal Silva - NIC Document', 'National Identity Card')">View NIC</button>
-                                        <button class="btn btn-doc" onclick="openDocModal('Nimal Silva - Driving License', 'Driving License')">View License</button>
-                                    </div>
-                                </td>
-                                <td>
-                                    <div class="btn-group">
-                                        <button class="btn btn-approve btn-sm" onclick="triggerApprove('Nimal Silva', 'CUS-002')">Approve</button>
-                                        <button class="btn btn-reject btn-sm" onclick="triggerReject('Nimal Silva', 'CUS-002')">Reject</button>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td><span class="cell-secondary-text">CUS-003</span></td>
-                                <td><div class="cell-primary-text">Tharindu Fernando</div></td>
-                                <td>
-                                    <div class="cell-stacked">
-                                        <span class="cell-secondary-text">tharindu.f@hotmail.com</span>
-                                        <span class="cell-secondary-text">076 321 4567</span>
-                                    </div>
-                                </td>
-                                <td>
-                                    <div class="btn-group">
-                                        <button class="btn btn-doc" onclick="openDocModal('Tharindu Fernando - NIC Document', 'National Identity Card')">View NIC</button>
-                                        <button class="btn btn-doc" onclick="openDocModal('Tharindu Fernando - Driving License', 'Driving License')">View License</button>
-                                    </div>
-                                </td>
-                                <td>
-                                    <div class="btn-group">
-                                        <button class="btn btn-approve btn-sm" onclick="triggerApprove('Tharindu Fernando', 'CUS-003')">Approve</button>
-                                        <button class="btn btn-reject btn-sm" onclick="triggerReject('Tharindu Fernando', 'CUS-003')">Reject</button>
-                                    </div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- SECTION 2: REGISTERED USERS -->
-            <div class="card" id="sectionRegistered" style="<?php echo $defaultView === 'registered' ? 'display: block;' : 'display: none;'; ?>">
-                <div class="card-header-clean">
-                    <h3 class="card-title-text">Registered Users</h3>
-                    <span class="badge badge-approved">5 Approved</span>
-                </div>
-
-                <div class="filter-card">
-                    <div class="filter-group">
-                        <label>Search Users</label>
-                        <input type="text" class="form-control" placeholder="Search by name, ID...">
-                    </div>
-                    <div class="filter-group">
-                        <label>District</label>
-                        <select class="form-control">
-                            <option value="">All Districts</option>
-                            <?php foreach ($districts as $d): ?>
-                                <option value="<?php echo htmlspecialchars($d); ?>"><?php echo htmlspecialchars($d); ?></option>
+                <?php else: ?>
+                    <div class="card">
+                        <div class="card-header-clean"><h3 class="card-title-text">Reviewed Customers</h3></div>
+                        <?php if ($reviewedCustomers === []): ?>
+                            <p>No Customer verification decisions have been recorded.</p>
+                        <?php else: ?>
+                            <div class="table-responsive"><table class="custom-table"><thead><tr><th>Customer ID</th><th>Customer</th><th>Contact</th><th>Decision</th><th>Registered</th></tr></thead><tbody>
+                            <?php foreach ($reviewedCustomers as $customer): ?>
+                                <tr><td><span class="cell-secondary-text">CUS-<?= (int) $customer['id'] ?></span></td><td><div class="cell-primary-text"><?= $escape($customer['name']) ?></div></td><td><div class="cell-stacked"><span class="cell-secondary-text"><?= $escape($customer['email']) ?></span><span class="cell-secondary-text"><?= $escape($customer['phone']) ?></span></div></td><td><span class="badge <?= $customer['verification_status'] === 'approved' ? 'badge-approved' : 'badge-pending' ?>"><?= $escape(ucfirst($customer['verification_status'])) ?></span></td><td><?= $escape($customer['created_at']) ?></td></tr>
                             <?php endforeach; ?>
-                        </select>
+                            </tbody></table></div>
+                        <?php endif; ?>
                     </div>
-                    <div class="filter-group">
-                        <label>Search by Date</label>
-                        <input type="date" class="form-control">
-                    </div>
-                    <div style="display: flex; gap: 8px; align-self: flex-end;">
-                        <button class="btn btn-primary">Search</button>
-                        <button class="btn btn-secondary">Reset</button>
-                    </div>
-                </div>
-
-                <div class="table-responsive">
-                    <table class="custom-table">
-                        <thead>
-                            <tr>
-                                <th>Customer ID</th>
-                                <th>Customer Name</th>
-                                <th>Registered Date</th>
-                                <th>Contact Details</th>
-                                <th>Submitted Documents</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td><span class="cell-secondary-text">CUS-004</span></td>
-                                <td><div class="cell-primary-text">Chamara Jayasinghe</div></td>
-                                <td>15 Jul 2026</td>
-                                <td>
-                                    <div class="cell-stacked">
-                                        <span class="cell-secondary-text">chamara.j@gmail.com</span>
-                                        <span class="cell-secondary-text">075 654 3210</span>
-                                    </div>
-                                </td>
-                                <td>
-                                    <div class="btn-group">
-                                        <button class="btn btn-doc" onclick="openDocModal('Chamara Jayasinghe - NIC Document', 'National Identity Card')">View NIC</button>
-                                        <button class="btn btn-doc" onclick="openDocModal('Chamara Jayasinghe - Driving License', 'Driving License')">View License</button>
-                                    </div>
-                                </td>
-                                <td>
-                                    <button class="btn btn-reject btn-sm" onclick="triggerSuspend('Chamara Jayasinghe', 'CUS-004')">Suspend</button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td><span class="cell-secondary-text">CUS-005</span></td>
-                                <td><div class="cell-primary-text">Sanduni Perera</div></td>
-                                <td>18 Jul 2026</td>
-                                <td>
-                                    <div class="cell-stacked">
-                                        <span class="cell-secondary-text">sanduni.p@gmail.com</span>
-                                        <span class="cell-secondary-text">071 987 6543</span>
-                                    </div>
-                                </td>
-                                <td>
-                                    <div class="btn-group">
-                                        <button class="btn btn-doc" onclick="openDocModal('Sanduni Perera - NIC Document', 'National Identity Card')">View NIC</button>
-                                        <button class="btn btn-doc" onclick="openDocModal('Sanduni Perera - Driving License', 'Driving License')">View License</button>
-                                    </div>
-                                </td>
-                                <td>
-                                    <button class="btn btn-reject btn-sm" onclick="triggerSuspend('Sanduni Perera', 'CUS-005')">Suspend</button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td><span class="cell-secondary-text">CUS-006</span></td>
-                                <td><div class="cell-primary-text">Dilshan Kumara</div></td>
-                                <td>20 Jul 2026</td>
-                                <td>
-                                    <div class="cell-stacked">
-                                        <span class="cell-secondary-text">dilshan.k@outlook.com</span>
-                                        <span class="cell-secondary-text">077 123 9876</span>
-                                    </div>
-                                </td>
-                                <td>
-                                    <div class="btn-group">
-                                        <button class="btn btn-doc" onclick="openDocModal('Dilshan Kumara - NIC Document', 'National Identity Card')">View NIC</button>
-                                        <button class="btn btn-doc" onclick="openDocModal('Dilshan Kumara - Driving License', 'Driving License')">View License</button>
-                                    </div>
-                                </td>
-                                <td>
-                                    <button class="btn btn-reject btn-sm" onclick="triggerSuspend('Dilshan Kumara', 'CUS-006')">Suspend</button>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <div class="pagination-wrapper">
-                    <span class="pagination-info">Showing 1 to 3 of 5 entries</span>
-                    <div class="pagination-controls">
-                        <button class="page-btn" disabled>Previous</button>
-                        <button class="page-btn active">1</button>
-                        <button class="page-btn">2</button>
-                        <button class="page-btn">Next</button>
-                    </div>
-                </div>
-            </div>
+                <?php endif; ?>
+            <?php endif; ?>
         </main>
     </div>
 </div>
-
-<?php include __DIR__ . '/partials/modals.php'; ?>
 <?php include __DIR__ . '/partials/footer.php'; ?>
