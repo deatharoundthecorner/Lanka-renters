@@ -61,12 +61,7 @@ class CustomerBookingController
             }
             $data['vehicle'] = $vehicle;
 
-            $lookupDates = $this->driverLookupDates($data['form']);
-            $data['drivers'] = $this->bookingModel->getEligibleDrivers(
-                (int) $vehicle['owner_id'],
-                $lookupDates['start'],
-                $lookupDates['end']
-            );
+            $data['drivers'] = $this->eligibleDriversForForm($vehicle, $data['form']);
             $data['estimate'] = $this->estimate($vehicle, $data['form']);
 
             if ($requestMethod !== 'POST') {
@@ -241,13 +236,7 @@ class CustomerBookingController
                 ];
             }
 
-            $lookupDates = $this->driverLookupDates($data['form']);
-            $data['drivers'] = $this->bookingModel->getEligibleDrivers(
-                (int) $booking['owner_id'],
-                $lookupDates['start'],
-                $lookupDates['end'],
-                $bookingId
-            );
+            $data['drivers'] = $this->eligibleDriversForForm($booking, $data['form'], $bookingId);
             $data['estimate'] = $this->estimate($booking, $data['form']);
 
             if ($requestMethod !== 'POST') {
@@ -432,6 +421,24 @@ class CustomerBookingController
             'start' => $start->format('Y-m-d 00:00:00'),
             'end' => $end->format('Y-m-d 00:00:00'),
         ];
+    }
+
+    private function eligibleDriversForForm(array $vehicle, array $form, int $excludeBookingId = 0): array
+    {
+        $lookupDates = $this->driverLookupDates($form);
+
+        try {
+            return $this->bookingModel->getEligibleDrivers(
+                (int) $vehicle['owner_id'],
+                $lookupDates['start'],
+                $lookupDates['end'],
+                $excludeBookingId
+            );
+        } catch (Throwable $exception) {
+            $this->recordDatabaseError('eligible Driver lookup', $exception);
+
+            return [];
+        }
     }
 
     private function estimate(array $vehicle, array $form): ?array
