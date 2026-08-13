@@ -2,24 +2,47 @@
 // config/database.php
 // Lanka Renters Admin Dashboard - Database Connection & Data Provider Helper
 
-session_start();
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
-define('DB_HOST', '3308');
-define('DB_USER', 'root');
-define('DB_PASS', '');
-define('DB_NAME', 'lanka_renters');
+if (!defined('DB_HOST')) define('DB_HOST', '127.0.0.1');
+if (!defined('DB_PORT')) define('DB_PORT', '3308');
+if (!defined('DB_USER')) define('DB_USER', 'root');
+if (!defined('DB_PASS')) define('DB_PASS', '');
+if (!defined('DB_NAME')) define('DB_NAME', 'lanka_renters');
 
 function getDBConnection() {
     static $pdo = null;
     if ($pdo === null) {
+        // Try utilizing the central Database helper if available
+        $centralDbFile = dirname(__DIR__, 2) . '/app/helpers/Database.php';
+        if (file_exists($centralDbFile)) {
+            require_once $centralDbFile;
+            try {
+                $pdo = Database::getInstance()->getConnection();
+                if ($pdo !== null) {
+                    return $pdo;
+                }
+            } catch (Throwable $e) {
+                // Fall back to direct PDO connection below if central helper throws
+            }
+        }
+
         try {
-            $dsn = "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=utf8mb4";
+            $host = (defined('DB_HOST') && DB_HOST !== '3308') ? DB_HOST : '127.0.0.1';
+            $port = defined('DB_PORT') ? DB_PORT : '3308';
+            $user = defined('DB_USER') ? DB_USER : 'root';
+            $pass = defined('DB_PASS') ? DB_PASS : '';
+            $dbname = defined('DB_NAME') ? DB_NAME : 'lanka_renters';
+
+            $dsn = "mysql:host={$host};port={$port};dbname={$dbname};charset=utf8mb4";
             $options = [
                 PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
                 PDO::ATTR_EMULATE_PREPARES => false,
             ];
-            $pdo = new PDO($dsn, DB_USER, DB_PASS, $options);
+            $pdo = new PDO($dsn, $user, $pass, $options);
         } catch (PDOException $e) {
             // Fallback gracefully to dummy mode if DB connection fails
             return null;

@@ -1,9 +1,96 @@
 <?php
 // dashboard.php - Lanka Renters Admin Dashboard Page
+require_once dirname(__DIR__, 2) . '/app/helpers/AuthHelper.php';
 require_once __DIR__ . '/config/database.php';
-requireAdminLogin();
+
+AuthHelper::startSession();
+AuthHelper::requireRole('admin');
 
 $pageTitle = "Overview";
+
+// Fetch live database counts & metrics
+$db = getDBConnection();
+
+$stats = [
+    'users' => 0,
+    'owners' => 0,
+    'drivers' => 0,
+    'vehicles' => 0,
+    'pending_customers' => 0,
+    'pending_vehicles' => 0,
+    'pending_payments' => 0,
+    'active_incidents' => 0,
+    'total_bookings' => 0,
+    'bookings_today' => 0,
+    'commission_earned' => 0.00,
+    'pending_payments_amount' => 0.00
+];
+
+if ($db) {
+    try {
+        $stmt = $db->query("SELECT COUNT(*) FROM users WHERE role = 'customer'");
+        $stats['users'] = (int) $stmt->fetchColumn();
+    } catch (Throwable $e) {}
+
+    try {
+        $stmt = $db->query("SELECT COUNT(*) FROM vehicle_owners");
+        $stats['owners'] = (int) $stmt->fetchColumn();
+    } catch (Throwable $e) {}
+
+    try {
+        $stmt = $db->query("SELECT COUNT(*) FROM drivers");
+        $stats['drivers'] = (int) $stmt->fetchColumn();
+    } catch (Throwable $e) {}
+
+    try {
+        $stmt = $db->query("SELECT COUNT(*) FROM vehicles");
+        $stats['vehicles'] = (int) $stmt->fetchColumn();
+    } catch (Throwable $e) {}
+
+    try {
+        $stmt = $db->query("SELECT COUNT(*) FROM customers WHERE verification_status = 'pending'");
+        $stats['pending_customers'] = (int) $stmt->fetchColumn();
+    } catch (Throwable $e) {}
+
+    try {
+        $stmt = $db->query("SELECT COUNT(*) FROM vehicles WHERE verification_status = 'pending'");
+        $stats['pending_vehicles'] = (int) $stmt->fetchColumn();
+    } catch (Throwable $e) {}
+
+    try {
+        $stmt = $db->query("SELECT COUNT(*) FROM payments WHERE payment_status = 'pending'");
+        $stats['pending_payments'] = (int) $stmt->fetchColumn();
+    } catch (Throwable $e) {}
+
+    try {
+        $stmt = $db->query("SELECT COUNT(*) FROM incidents WHERE status IN ('reported', 'investigating')");
+        $stats['active_incidents'] = (int) $stmt->fetchColumn();
+    } catch (Throwable $e) {}
+
+    try {
+        $stmt = $db->query("SELECT COUNT(*) FROM bookings");
+        $stats['total_bookings'] = (int) $stmt->fetchColumn();
+    } catch (Throwable $e) {}
+
+    try {
+        $stmt = $db->query("SELECT COUNT(*) FROM bookings WHERE DATE(created_at) = CURDATE()");
+        $stats['bookings_today'] = (int) $stmt->fetchColumn();
+    } catch (Throwable $e) {}
+
+    try {
+        $stmt = $db->query("SELECT SUM(total_price * 0.10) FROM bookings WHERE status = 'completed'");
+        $val = $stmt->fetchColumn();
+        $stats['commission_earned'] = $val ? (float)$val : 0.00;
+    } catch (Throwable $e) {}
+
+    try {
+        $stmt = $db->query("SELECT SUM(amount) FROM payments WHERE payment_status = 'pending'");
+        $val = $stmt->fetchColumn();
+        $stats['pending_payments_amount'] = $val ? (float)$val : 0.00;
+    } catch (Throwable $e) {}
+}
+
+$totalReviewItems = $stats['pending_customers'] + $stats['pending_vehicles'] + $stats['pending_payments'] + $stats['active_incidents'];
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -26,7 +113,7 @@ $pageTitle = "Overview";
             <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 12px;">
                 <div style="display: flex; align-items: center; gap: 10px;">
                     <span class="badge badge-blue">Admin</span>
-                    <span class="badge badge-pending">11 items need review</span>
+                    <span class="badge badge-pending"><?= $totalReviewItems ?> item<?= $totalReviewItems === 1 ? '' : 's' ?> need review</span>
                 </div>
 
                 <!-- System Status Indicator Card -->
@@ -38,7 +125,7 @@ $pageTitle = "Overview";
             </div>
 
             <div class="page-header-box">
-                <h1 class="page-title">Admin dashboard</h1>
+                <h1 class="page-title">Admin Dashboard</h1>
                 <p class="page-subtitle">Keep approvals, payments, incidents, and settlements moving clearly.</p>
             </div>
 
@@ -50,7 +137,7 @@ $pageTitle = "Overview";
                     </div>
                     <div class="do-next-content">
                         <span class="do-next-tag">Do this next</span>
-                        <h3>Three customer approvals are waiting for review.</h3>
+                        <h3><?= $stats['pending_customers'] ?> customer approval<?= $stats['pending_customers'] === 1 ? '' : 's' ?> waiting for review.</h3>
                         <p>Clear identity checks to keep safe customers moving.</p>
                     </div>
                 </div>
@@ -86,7 +173,7 @@ $pageTitle = "Overview";
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
                         </div>
                     </div>
-                    <div class="stat-value">1,248</div>
+                    <div class="stat-value"><?= number_format($stats['users']) ?></div>
                     <div class="stat-comparison">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"/></svg>
                         <span>View Registered →</span>
@@ -100,7 +187,7 @@ $pageTitle = "Overview";
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 11l-3-3m0 0l-3 3m3-3v12"/></svg>
                         </div>
                     </div>
-                    <div class="stat-value">186</div>
+                    <div class="stat-value"><?= number_format($stats['owners']) ?></div>
                     <div class="stat-comparison">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"/></svg>
                         <span>View Registered →</span>
@@ -114,7 +201,7 @@ $pageTitle = "Overview";
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                         </div>
                     </div>
-                    <div class="stat-value">324</div>
+                    <div class="stat-value"><?= number_format($stats['drivers']) ?></div>
                     <div class="stat-comparison">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"/></svg>
                         <span>View Registered →</span>
@@ -128,7 +215,7 @@ $pageTitle = "Overview";
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="7" rx="2"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/><path d="M5 11l2-5h10l2 5"/></svg>
                         </div>
                     </div>
-                    <div class="stat-value">512</div>
+                    <div class="stat-value"><?= number_format($stats['vehicles']) ?></div>
                     <div class="stat-comparison">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"/></svg>
                         <span>View Registered →</span>
@@ -142,7 +229,7 @@ $pageTitle = "Overview";
                     <div class="stat-header">
                         <span class="stat-label">Total Commission Earned</span>
                     </div>
-                    <div class="stat-value" style="font-size: 22px;">Rs. 1,245,800.00</div>
+                    <div class="stat-value" style="font-size: 22px;">Rs. <?= number_format($stats['commission_earned'], 2) ?></div>
                     <div class="stat-comparison">Platform Commission</div>
                 </div>
 
@@ -150,7 +237,7 @@ $pageTitle = "Overview";
                     <div class="stat-header">
                         <span class="stat-label">Total Bookings</span>
                     </div>
-                    <div class="stat-value">2,486</div>
+                    <div class="stat-value"><?= number_format($stats['total_bookings']) ?></div>
                     <div class="stat-comparison">All Completed Trips</div>
                 </div>
 
@@ -158,7 +245,7 @@ $pageTitle = "Overview";
                     <div class="stat-header">
                         <span class="stat-label">Bookings Today</span>
                     </div>
-                    <div class="stat-value">38</div>
+                    <div class="stat-value"><?= number_format($stats['bookings_today']) ?></div>
                     <div class="stat-comparison">Active Reservations</div>
                 </div>
 
@@ -166,7 +253,7 @@ $pageTitle = "Overview";
                     <div class="stat-header">
                         <span class="stat-label">Payments Pending</span>
                     </div>
-                    <div class="stat-value" style="font-size: 22px;">Rs. 285,400.00</div>
+                    <div class="stat-value" style="font-size: 22px;">Rs. <?= number_format($stats['pending_payments_amount'], 2) ?></div>
                     <div class="stat-comparison neutral">Awaiting Verification</div>
                 </div>
             </div>
@@ -184,7 +271,7 @@ $pageTitle = "Overview";
                         </div>
                     </div>
                     <div class="queue-right">
-                        <span class="badge badge-pending">5 waiting</span>
+                        <span class="badge badge-pending"><?= $stats['pending_customers'] ?> waiting</span>
                     </div>
                 </a>
 
@@ -199,7 +286,7 @@ $pageTitle = "Overview";
                         </div>
                     </div>
                     <div class="queue-right">
-                        <span class="badge badge-pending">3 waiting</span>
+                        <span class="badge badge-pending"><?= $stats['pending_vehicles'] ?> waiting</span>
                     </div>
                 </a>
 
@@ -214,7 +301,7 @@ $pageTitle = "Overview";
                         </div>
                     </div>
                     <div class="queue-right">
-                        <span class="badge badge-blue">2 waiting</span>
+                        <span class="badge badge-blue"><?= $stats['pending_payments'] ?> waiting</span>
                     </div>
                 </a>
 
@@ -229,7 +316,7 @@ $pageTitle = "Overview";
                         </div>
                     </div>
                     <div class="queue-right">
-                        <span class="badge badge-rejected">1 active</span>
+                        <span class="badge badge-rejected"><?= $stats['active_incidents'] ?> active</span>
                     </div>
                 </a>
             </div>
@@ -255,50 +342,11 @@ $pageTitle = "Overview";
                 </div>
             </div>
 
-            <!-- Charts Section -->
-            <div class="grid-3">
-                <div class="card">
-                    <div class="card-header-clean">
-                        <div>
-                            <h3 class="card-title-text">Monthly Revenue (LKR)</h3>
-                            <p class="card-subtitle-text">Total rental revenue by month</p>
-                        </div>
-                    </div>
-                    <div class="chart-container">
-                        <canvas id="revenueChartCanvas"></canvas>
-                    </div>
-                </div>
-
-                <div class="card">
-                    <div class="card-header-clean">
-                        <div>
-                            <h3 class="card-title-text">Booking Overview</h3>
-                            <p class="card-subtitle-text">Distribution of rental bookings</p>
-                        </div>
-                    </div>
-                    <div class="chart-container">
-                        <canvas id="bookingChartCanvas"></canvas>
-                    </div>
-                </div>
-
-                <div class="card">
-                    <div class="card-header-clean">
-                        <div>
-                            <h3 class="card-title-text">Registration Overview</h3>
-                            <p class="card-subtitle-text">Entities registered on platform</p>
-                        </div>
-                    </div>
-                    <div class="chart-container">
-                        <canvas id="registrationChartCanvas"></canvas>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Admin Essentials Card & Activity -->
+            <!-- Admin Essentials Card & Guidance -->
             <div class="grid-2">
                 <div class="card">
                     <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
-                        <div style="width: 36px; height: 36px; background: #EAF3FF; color: var(--primary); border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                        <div style="width: 36px; height: 36px; background: #EFF6FF; color: var(--primary); border-radius: 8px; display: flex; align-items: center; justify-content: center;">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
                         </div>
                         <div>
@@ -309,15 +357,15 @@ $pageTitle = "Overview";
 
                     <div style="display: flex; flex-direction: column; gap: 12px; font-size: 14px; color: var(--text-secondary);">
                         <div style="display: flex; align-items: center; gap: 10px;">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" color="#16A34A"><polyline points="20 6 9 17 4 12"/></svg>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" color="#059669"><polyline points="20 6 9 17 4 12"/></svg>
                             <span>Verify users, drivers, and vehicles.</span>
                         </div>
                         <div style="display: flex; align-items: center; gap: 10px;">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" color="#16A34A"><polyline points="20 6 9 17 4 12"/></svg>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" color="#059669"><polyline points="20 6 9 17 4 12"/></svg>
                             <span>Verify payment after owner confirmation.</span>
                         </div>
                         <div style="display: flex; align-items: center; gap: 10px;">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" color="#16A34A"><polyline points="20 6 9 17 4 12"/></svg>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" color="#059669"><polyline points="20 6 9 17 4 12"/></svg>
                             <span>Manage incidents and replacements.</span>
                         </div>
                     </div>
@@ -326,36 +374,29 @@ $pageTitle = "Overview";
                 <!-- Recent Activity Feed -->
                 <div class="card">
                     <div class="card-header-clean">
-                        <h3 class="card-title-text">Recent Activity</h3>
+                        <h3 class="card-title-text">Platform Overview Summary</h3>
                     </div>
                     <div style="display: flex; flex-direction: column; gap: 14px; font-size: 13px;">
                         <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-light); padding-bottom: 8px;">
                             <div>
-                                <strong style="color: var(--text-main);">New customer registration</strong>
-                                <p style="color: var(--text-muted);">Kasun Perera submitted NIC for verification.</p>
+                                <strong style="color: var(--text-main);">Customer registrations</strong>
+                                <p style="color: var(--text-muted);"><?= number_format($stats['users']) ?> total registered customers</p>
                             </div>
-                            <span style="font-size: 11px; color: var(--text-light); white-space: nowrap;">5 minutes ago</span>
+                            <span class="badge badge-approved"><?= number_format($stats['pending_customers']) ?> pending</span>
                         </div>
                         <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-light); padding-bottom: 8px;">
                             <div>
-                                <strong style="color: var(--text-main);">Vehicle owner submitted documents</strong>
-                                <p style="color: var(--text-muted);">Sunil Wickramasinghe uploaded vehicle book.</p>
+                                <strong style="color: var(--text-main);">Fleet vehicles</strong>
+                                <p style="color: var(--text-muted);"><?= number_format($stats['vehicles']) ?> total registered vehicles</p>
                             </div>
-                            <span style="font-size: 11px; color: var(--text-light); white-space: nowrap;">1 hour ago</span>
+                            <span class="badge badge-approved"><?= number_format($stats['pending_vehicles']) ?> pending</span>
                         </div>
                         <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-light); padding-bottom: 8px;">
                             <div>
-                                <strong style="color: var(--text-main);">Payment received</strong>
-                                <p style="color: var(--text-muted);">Rs. 45,000.00 confirmed for booking BKG-101.</p>
+                                <strong style="color: var(--text-main);">Payment queue</strong>
+                                <p style="color: var(--text-muted);"><?= number_format($stats['pending_payments']) ?> payments awaiting review</p>
                             </div>
-                            <span style="font-size: 11px; color: var(--text-light); white-space: nowrap;">2 hours ago</span>
-                        </div>
-                        <div style="display: flex; justify-content: space-between;">
-                            <div>
-                                <strong style="color: var(--text-main);">Incident reported</strong>
-                                <p style="color: var(--text-muted);">INC-001 filed for Toyota Prius (Colombo).</p>
-                            </div>
-                            <span style="font-size: 11px; color: var(--text-light); white-space: nowrap;">3 hours ago</span>
+                            <span class="badge badge-blue">Rs. <?= number_format($stats['pending_payments_amount'], 2) ?></span>
                         </div>
                     </div>
                 </div>
@@ -372,3 +413,6 @@ $pageTitle = "Overview";
 
 <?php include __DIR__ . '/partials/modals.php'; ?>
 <?php include __DIR__ . '/partials/footer.php'; ?>
+
+</body>
+</html>
