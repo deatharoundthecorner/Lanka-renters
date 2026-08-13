@@ -1,10 +1,14 @@
+<?php
+require_once dirname(dirname(__DIR__)) . '/app/helpers/AuthHelper.php';
+AuthHelper::startSession();
+AuthHelper::requireRole('owner');
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Replacement Requests - LankaRenters</title>
-    <!-- Link CSS File -->
     <link rel="stylesheet" href="includes/assets/css/owner-style.css">
 </head>
 <body>

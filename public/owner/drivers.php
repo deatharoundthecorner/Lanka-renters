@@ -1,88 +1,37 @@
 <?php
+require_once dirname(dirname(__DIR__)) . '/app/controllers/OwnerDriverController.php';
 require_once dirname(dirname(__DIR__)) . '/app/helpers/AuthHelper.php';
-require_once dirname(dirname(__DIR__)) . '/app/helpers/Database.php';
-require_once dirname(dirname(__DIR__)) . '/app/models/VehicleOwner.php';
-require_once dirname(dirname(__DIR__)) . '/app/models/DriverOwnerLink.php';
-require_once dirname(dirname(__DIR__)) . '/app/models/Driver.php';
 
 AuthHelper::startSession();
 AuthHelper::requireRole('owner');
 
-$currentUser = AuthHelper::getCurrentUser();
-$ownerModel = new VehicleOwner();
-$owner = $ownerModel->findByUserId($currentUser['id']);
+$driverController = new OwnerDriverController();
 
-if (!$owner) {
-    die("Vehicle Owner profile not found.");
-}
-
-$linkModel = new DriverOwnerLink();
-$driverModel = new Driver();
-
-$error = '';
+$error   = '';
 $success = '';
 
-// Handle connection request submissions
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'request_driver') {
-    if (!AuthHelper::validateCsrfToken($_POST['csrf_token'] ?? '')) {
-        $error = "CSRF security verification failed.";
+// Handle POST: request a driver connection
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'request_driver') {
+    $result = $driverController->requestDriverConnection($_POST);
+    if ($result['success']) {
+        $success = $result['message'];
     } else {
-        $driverId = isset($_POST['driver_id']) ? (int)$_POST['driver_id'] : 0;
-        
-        // Validate selected driver exists, is active and is verified/available
-        $availableDrivers = $driverModel->getAvailableVerifiedDrivers();
-        $isValid = false;
-        foreach ($availableDrivers as $d) {
-            if ((int)$d['id'] === $driverId) {
-                $isValid = true;
-                break;
-            }
-        }
-
-        if (!$isValid) {
-            $error = "Selected driver is not eligible or available.";
-        } else {
-            // Check if there is already an active or pending link to prevent duplicate requests
-            $db = Database::getInstance()->getConnection();
-            $stmtCheck = $db->prepare("SELECT status FROM `driver_owner_links` WHERE `driver_id` = ? AND `owner_id` = ? LIMIT 1");
-            $stmtCheck->execute([$driverId, $owner['id']]);
-            $existingStatus = $stmtCheck->fetchColumn();
-
-            if ($existingStatus === 'accepted') {
-                $error = "You are already connected with this driver.";
-            } elseif ($existingStatus === 'pending') {
-                $error = "A connection request is already pending with this driver.";
-            } else {
-                $linkModel->requestLink($driverId, $owner['id']);
-                $success = "Connection request sent successfully.";
-            }
-        }
+        $error = $result['error'];
     }
 }
 
-// Retrieve active/accepted drivers linked to this owner
-$acceptedDrivers = $linkModel->getAcceptedDriversByOwner($owner['id']);
+// Fetch all driver data
+$data             = $driverController->getDriverData();
+$acceptedDrivers  = $data['accepted_drivers']  ?? [];
+$pendingRequests  = $data['pending_requests']   ?? [];
+$availableDrivers = $data['available_drivers']  ?? [];
 
-// Retrieve pending requests sent from this owner
-$db = Database::getInstance()->getConnection();
-$stmtPending = $db->prepare("
-    SELECT dol.*, d.rating_avg as rating, u.name, u.email, u.phone 
-    FROM `driver_owner_links` dol
-    JOIN `drivers` d ON dol.driver_id = d.id
-    JOIN `users` u ON d.user_id = u.id
-    WHERE dol.owner_id = :owner_id AND dol.status = 'pending'
-    ORDER BY dol.created_at DESC
-");
-$stmtPending->execute(['owner_id' => $owner['id']]);
-$pendingRequests = $stmtPending->fetchAll(PDO::FETCH_ASSOC);
-
-// Retrieve verified and available drivers for discovery
-$availableDrivers = $driverModel->getAvailableVerifiedDrivers();
+$csrfToken = AuthHelper::getCsrfToken();
 
 $availabilityMap = [
-    'available' => ['class' => 'status-linked', 'label' => 'Available'],
-    'busy'      => ['class' => 'status-pending', 'label' => 'Busy'],
-    'off_duty'  => ['class' => 'status-outline', 'label' => 'Off Duty']
+    'available' => ['class' => 'status-linked',   'label' => 'Available'],
+    'busy'      => ['class' => 'status-pending',   'label' => 'Busy'],
+    'off_duty'  => ['class' => 'status-outline',   'label' => 'Off Duty'],
 ];
 ?>
 <!DOCTYPE html>
@@ -91,58 +40,60 @@ $availabilityMap = [
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Driver Management - LankaRenters</title>
-    <!-- Link CSS File - Corrected stylesheet path link reference -->
+    <meta name="description" content="Search, request and manage verified drivers for your vehicle fleet on LankaRenters.">
     <link rel="stylesheet" href="includes/assets/css/owner-style.css">
 </head>
 <body>
 
-    <!-- Include Header -->
     <?php include 'includes/header.php'; ?>
 
     <div class="dashboard-layout">
-        <!-- Include Sidebar -->
         <?php include 'includes/sidebar.php'; ?>
 
-        <!-- Main Content Area -->
         <main class="main-content">
+            <!-- Page Header -->
             <section class="drivers-header">
                 <div class="drivers-heading">
-                    <h1>Driver management</h1>
-                    <p>Search, request and manage verified drivers.</p>
+                    <h1>Driver Management</h1>
+                    <p>Search, request and manage verified drivers for your vehicles.</p>
                 </div>
             </section>
 
             <!-- Alert Messages -->
             <?php if (!empty($error)): ?>
-                <div style="background-color: #FEF2F2; border: 1px solid #FCA5A5; color: #EF4444; padding: 12px; border-radius: 6px; margin-bottom: 20px;">
-                    <?php echo htmlspecialchars($error); ?>
+                <div style="background-color:#fef2f2; border:1px solid #fca5a5; color:#991b1b; padding:14px 18px; border-radius:12px; margin-bottom:20px; font-weight:600;">
+                    ⚠️ <?php echo htmlspecialchars($error); ?>
                 </div>
             <?php endif; ?>
 
             <?php if (!empty($success)): ?>
-                <div style="background-color: #F0FDF4; border: 1px solid #BBF7D0; color: #15803D; padding: 12px; border-radius: 6px; margin-bottom: 20px;">
-                    <?php echo htmlspecialchars($success); ?>
+                <div style="background-color:#f0fdf4; border:1px solid #86efac; color:#166534; padding:14px 18px; border-radius:12px; margin-bottom:20px; font-weight:600;">
+                    ✅ <?php echo htmlspecialchars($success); ?>
                 </div>
             <?php endif; ?>
 
             <section class="drivers-layout">
+                <!-- Left: Accepted Drivers -->
                 <div class="accepted-drivers">
-                    <h2>Accepted drivers</h2>
+                    <h2>Accepted Drivers (<?php echo count($acceptedDrivers); ?>)</h2>
 
                     <div class="driver-list">
                         <?php if (empty($acceptedDrivers)): ?>
-                            <p class="no-data" style="color: var(--text-muted); font-style: italic; padding: 20px 0;">No connected drivers found.</p>
+                            <p style="color:#64748b; font-style:italic; padding:20px 0;">No accepted drivers yet. Send a connection request to get started.</p>
                         <?php else: ?>
                             <?php foreach ($acceptedDrivers as $d): ?>
                                 <?php
-                                $initial = htmlspecialchars(substr($d['name'] ?? 'D', 0, 1));
-                                $avail = $availabilityMap[$d['availability_status']] ?? ['class' => 'status-pending', 'label' => ucfirst($d['availability_status'])];
+                                    $initial = htmlspecialchars(strtoupper(mb_substr($d['name'] ?? 'D', 0, 1)));
+                                    $avail   = $availabilityMap[$d['availability_status']] ?? ['class' => 'status-pending', 'label' => ucfirst($d['availability_status'])];
                                 ?>
                                 <article class="driver-card">
-                                    <div class="driver-avatar"><?php echo $initial; ?></div>
+                                    <div class="driver-avatar" aria-hidden="true"><?php echo $initial; ?></div>
                                     <div class="driver-text">
                                         <p class="driver-name"><?php echo htmlspecialchars($d['name']); ?></p>
-                                        <p class="driver-details">★ <?php echo number_format($d['rating_avg'], 1); ?> · <?php echo htmlspecialchars($d['phone']); ?></p>
+                                        <p class="driver-details">
+                                            ★ <?php echo number_format($d['rating_avg'], 1); ?>
+                                            · <?php echo htmlspecialchars($d['phone']); ?>
+                                        </p>
                                     </div>
                                     <span class="status-badge <?php echo $avail['class']; ?>"><?php echo $avail['label']; ?></span>
                                 </article>
@@ -151,45 +102,57 @@ $availabilityMap = [
                     </div>
                 </div>
 
+                <!-- Right Panels -->
                 <div class="driver-panels">
-                    <!-- Send Connection Request Section -->
-                    <article class="request-panel" style="margin-bottom: 20px;">
-                        <h2>Request Connection</h2>
-                        <form method="POST" action="">
-                            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(AuthHelper::getCsrfToken()); ?>">
-                            <input type="hidden" name="action" value="request_driver">
-                            
-                            <div style="margin-bottom: 15px;">
-                                <label for="driver_id" style="display: block; font-size: 13px; font-weight: 600; color: var(--dark-blue); margin-bottom: 8px; text-transform: uppercase;">Select Driver</label>
-                                <select id="driver_id" name="driver_id" required style="width: 100%; padding: 10px; border: 1px solid #CBD5E1; border-radius: 6px; outline: none; font-size: 14px; background-color: white;">
-                                    <option value="">-- Select Verified Available Driver --</option>
-                                    <?php foreach ($availableDrivers as $d): ?>
-                                        <option value="<?php echo $d['id']; ?>">
-                                            <?php echo htmlspecialchars($d['name']); ?> (Rating: <?php echo number_format($d['rating'], 1); ?> ★)
-                                        </option>
-                                    <?php endforeach; ?>
-                                </select>
-                            </div>
-                            
-                            <button type="submit" class="button button-primary" style="width: 100%; border: none; padding: 10px; font-weight: 600; border-radius: 6px; cursor: pointer;">Send Request</button>
-                        </form>
+                    <!-- Send Connection Request -->
+                    <article class="request-panel">
+                        <h2>Request a Driver</h2>
+
+                        <?php if (empty($availableDrivers)): ?>
+                            <p style="color:#64748b; font-size:0.95rem;">No verified drivers are currently available for new connections.</p>
+                        <?php else: ?>
+                            <form method="POST" action="">
+                                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken); ?>">
+                                <input type="hidden" name="action"     value="request_driver">
+
+                                <div style="margin-bottom:16px;">
+                                    <label for="driver_id" style="display:block; font-size:12px; font-weight:700; color:#0b3a82; margin-bottom:8px; text-transform:uppercase; letter-spacing:0.04em;">Select Verified Driver</label>
+                                    <select id="driver_id" name="driver_id" required style="width:100%; padding:12px 14px; border:2px solid #e5e7eb; border-radius:8px; font-size:14px; background-color:#f8fafc; color:#0f172a; outline:none;">
+                                        <option value="">— Select a verified, available driver —</option>
+                                        <?php foreach ($availableDrivers as $d): ?>
+                                            <option value="<?php echo (int)$d['id']; ?>">
+                                                <?php echo htmlspecialchars($d['name']); ?>
+                                                (★ <?php echo number_format($d['rating'], 1); ?> · <?php echo (int)$d['completed_trips']; ?> trips)
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+
+                                <button type="submit" class="button button-primary" style="width:100%; border:none; padding:12px; font-weight:700; border-radius:8px; cursor:pointer;">
+                                    Send Connection Request
+                                </button>
+                            </form>
+                        <?php endif; ?>
                     </article>
 
-                    <!-- Pending Connection Requests Section -->
+                    <!-- Pending Requests -->
                     <article class="request-panel">
-                        <h2>Pending requests</h2>
-                        
-                        <div class="request-list" style="display: flex; flex-direction: column; gap: 15px;">
+                        <h2>Pending Requests (<?php echo count($pendingRequests); ?>)</h2>
+
+                        <div style="display:flex; flex-direction:column; gap:12px;">
                             <?php if (empty($pendingRequests)): ?>
-                                <p class="no-data" style="color: var(--text-muted); font-style: italic; padding: 10px 0;">No pending connection requests.</p>
+                                <p style="color:#64748b; font-style:italic; font-size:0.92rem;">No pending connection requests.</p>
                             <?php else: ?>
                                 <?php foreach ($pendingRequests as $r): ?>
-                                    <div class="request-item" style="border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 10px;">
-                                        <div class="request-info">
-                                            <p class="request-name" style="font-weight: 600; color: var(--text-main); margin-bottom: 4px;"><?php echo htmlspecialchars($r['name']); ?></p>
-                                            <p class="request-meta" style="font-size: 12px; color: var(--text-muted);"><?php echo date('M d, Y', strtotime($r['created_at'])); ?></p>
+                                    <div style="display:flex; align-items:center; justify-content:space-between; padding-bottom:12px; border-bottom:1px solid #f1f5f9;">
+                                        <div>
+                                            <p style="font-weight:700; color:#0f172a; margin:0 0 2px;"><?php echo htmlspecialchars($r['name']); ?></p>
+                                            <p style="font-size:0.82rem; color:#64748b; margin:0;">
+                                                ★ <?php echo number_format($r['rating'], 1); ?>
+                                                · Sent <?php echo date('d M Y', strtotime($r['created_at'])); ?>
+                                            </p>
                                         </div>
-                                        <span class="status-badge status-pending" style="margin-left: auto;">Pending</span>
+                                        <span class="status-badge status-pending">Pending</span>
                                     </div>
                                 <?php endforeach; ?>
                             <?php endif; ?>
