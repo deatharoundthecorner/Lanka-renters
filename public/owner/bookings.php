@@ -47,25 +47,69 @@ $statusMap = [
 
             <!-- Booking Summary Stats -->
             <?php if (!empty($summary)): ?>
-            <div class="stats-grid" style="margin-bottom: 24px;">
+            <div class="stats-grid" style="margin-bottom: 28px;">
                 <article class="stat-card">
-                    <p class="stat-label">Total Bookings</p>
-                    <p class="stat-value"><?php echo (int)($summary['total'] ?? 0); ?></p>
-                    <p class="stat-meta">All time</p>
+                    <div class="stat-card-header">
+                        <div>
+                            <p class="stat-label">Total Bookings</p>
+                            <p class="stat-value"><?php echo (int)($summary['total'] ?? 0); ?></p>
+                        </div>
+                        <div class="stat-icon-bubble bubble-blue">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                <line x1="16" y1="2" x2="16" y2="6"></line>
+                                <line x1="8" y1="2" x2="8" y2="6"></line>
+                                <line x1="3" y1="10" x2="21" y2="10"></line>
+                            </svg>
+                        </div>
+                    </div>
+                    <p class="stat-meta">All time total</p>
                 </article>
+
                 <article class="stat-card">
-                    <p class="stat-label">Confirmed</p>
-                    <p class="stat-value"><?php echo (int)($summary['confirmed'] ?? 0); ?></p>
+                    <div class="stat-card-header">
+                        <div>
+                            <p class="stat-label">Confirmed</p>
+                            <p class="stat-value"><?php echo (int)($summary['confirmed'] ?? 0); ?></p>
+                        </div>
+                        <div class="stat-icon-bubble bubble-yellow">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="12 6 12 12 16 14"></polyline>
+                            </svg>
+                        </div>
+                    </div>
                     <p class="stat-meta">Awaiting pickup</p>
                 </article>
+
                 <article class="stat-card">
-                    <p class="stat-label">Ongoing</p>
-                    <p class="stat-value"><?php echo (int)($summary['ongoing'] ?? 0); ?></p>
+                    <div class="stat-card-header">
+                        <div>
+                            <p class="stat-label">Ongoing</p>
+                            <p class="stat-value"><?php echo (int)($summary['ongoing'] ?? 0); ?></p>
+                        </div>
+                        <div class="stat-icon-bubble bubble-teal">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                            </svg>
+                        </div>
+                    </div>
                     <p class="stat-meta">Currently active</p>
                 </article>
+
                 <article class="stat-card">
-                    <p class="stat-label">Completed</p>
-                    <p class="stat-value"><?php echo (int)($summary['completed'] ?? 0); ?></p>
+                    <div class="stat-card-header">
+                        <div>
+                            <p class="stat-label">Completed</p>
+                            <p class="stat-value"><?php echo (int)($summary['completed'] ?? 0); ?></p>
+                        </div>
+                        <div class="stat-icon-bubble bubble-green">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                            </svg>
+                        </div>
+                    </div>
                     <p class="stat-meta">Finished rentals</p>
                 </article>
             </div>

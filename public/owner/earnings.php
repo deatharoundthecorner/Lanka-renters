@@ -41,20 +41,51 @@ $vehicleBreakdown   = $data['vehicle_breakdown']  ?? [];
             <section class="earnings-stats" aria-label="Earnings summary">
                 <div class="stats-grid" style="margin-bottom: 28px; grid-template-columns: repeat(3, minmax(0, 1fr));">
                     <article class="stat-card">
-                        <p class="stat-label">Completed Earnings</p>
-                        <p class="stat-value">LKR <?php echo number_format($totalCompleted, 0); ?></p>
+                        <div class="stat-card-header">
+                            <div>
+                                <p class="stat-label">Completed Earnings</p>
+                                <p class="stat-value">LKR <?php echo number_format($totalCompleted, 0); ?></p>
+                            </div>
+                            <div class="stat-icon-bubble bubble-green">
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"></path>
+                                    <path d="M3 5v14a2 2 0 0 0 2 2h16v-5"></path>
+                                    <path d="M18 12a2 2 0 0 0 0 4h4v-4z"></path>
+                                </svg>
+                            </div>
+                        </div>
                         <p class="stat-meta">From settled bookings</p>
                     </article>
 
                     <article class="stat-card">
-                        <p class="stat-label">Pending Earnings</p>
-                        <p class="stat-value">LKR <?php echo number_format($totalPending, 0); ?></p>
+                        <div class="stat-card-header">
+                            <div>
+                                <p class="stat-label">Pending Earnings</p>
+                                <p class="stat-value">LKR <?php echo number_format($totalPending, 0); ?></p>
+                            </div>
+                            <div class="stat-icon-bubble bubble-yellow">
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <polyline points="12 6 12 12 16 14"></polyline>
+                                </svg>
+                            </div>
+                        </div>
                         <p class="stat-meta">Awaiting booking completion</p>
                     </article>
 
                     <article class="stat-card">
-                        <p class="stat-label">Total Gross</p>
-                        <p class="stat-value">LKR <?php echo number_format($totalCompleted + $totalPending, 0); ?></p>
+                        <div class="stat-card-header">
+                            <div>
+                                <p class="stat-label">Total Gross</p>
+                                <p class="stat-value">LKR <?php echo number_format($totalCompleted + $totalPending, 0); ?></p>
+                            </div>
+                            <div class="stat-icon-bubble bubble-blue">
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                                    <polyline points="17 6 23 6 23 12"></polyline>
+                                </svg>
+                            </div>
+                        </div>
                         <p class="stat-meta">All time combined</p>
                     </article>
                 </div>

@@ -103,27 +103,71 @@ $csrfToken = AuthHelper::getCsrfToken();
             <!-- Statistics Cards -->
             <section class="overview-stats" aria-label="Summary statistics">
                 <div class="stats-grid">
-                    <article class="stat-card stat-earnings">
-                        <p class="stat-label">Total Earnings</p>
-                        <p class="stat-value">LKR <?php echo number_format($totalEarnings, 0); ?></p>
+                    <article class="stat-card">
+                        <div class="stat-card-header">
+                            <div>
+                                <p class="stat-label">Total Earnings</p>
+                                <p class="stat-value">LKR <?php echo number_format($totalEarnings, 0); ?></p>
+                            </div>
+                            <div class="stat-icon-bubble bubble-green">
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"></path>
+                                    <path d="M3 5v14a2 2 0 0 0 2 2h16v-5"></path>
+                                    <path d="M18 12a2 2 0 0 0 0 4h4v-4z"></path>
+                                </svg>
+                            </div>
+                        </div>
                         <p class="stat-meta">From completed rentals</p>
                     </article>
 
-                    <article class="stat-card stat-vehicles">
-                        <p class="stat-label">Active Vehicles</p>
-                        <p class="stat-value"><?php echo $totalVehicles; ?></p>
+                    <article class="stat-card">
+                        <div class="stat-card-header">
+                            <div>
+                                <p class="stat-label">Active Vehicles</p>
+                                <p class="stat-value"><?php echo $totalVehicles; ?></p>
+                            </div>
+                            <div class="stat-icon-bubble bubble-blue">
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H7c-.7 0-1.3.3-1.8.7C4.3 8.6 3 10 3 10s-2.7.6-4.5 1.1C.7 11.3 0 12.1 0 13v3c0 .6.4 1 1 1h2"></path>
+                                    <circle cx="7" cy="17" r="2"></circle>
+                                    <circle cx="17" cy="17" r="2"></circle>
+                                </svg>
+                            </div>
+                        </div>
                         <p class="stat-meta"><?php echo $verifiedVehicles; ?> verified</p>
                     </article>
 
-                    <article class="stat-card stat-bookings">
-                        <p class="stat-label">Pending Bookings</p>
-                        <p class="stat-value"><?php echo $pendingBookings; ?></p>
+                    <article class="stat-card">
+                        <div class="stat-card-header">
+                            <div>
+                                <p class="stat-label">Pending Bookings</p>
+                                <p class="stat-value"><?php echo $pendingBookings; ?></p>
+                            </div>
+                            <div class="stat-icon-bubble bubble-yellow">
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <polyline points="12 6 12 12 16 14"></polyline>
+                                </svg>
+                            </div>
+                        </div>
                         <p class="stat-meta"><?php echo $pendingBookings > 0 ? 'Needs attention' : 'All clear'; ?></p>
                     </article>
 
-                    <article class="stat-card stat-drivers">
-                        <p class="stat-label">Linked Drivers</p>
-                        <p class="stat-value"><?php echo $linkedDrivers; ?></p>
+                    <article class="stat-card">
+                        <div class="stat-card-header">
+                            <div>
+                                <p class="stat-label">Linked Drivers</p>
+                                <p class="stat-value"><?php echo $linkedDrivers; ?></p>
+                            </div>
+                            <div class="stat-icon-bubble bubble-purple">
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="9" cy="7" r="4"></circle>
+                                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                                </svg>
+                            </div>
+                        </div>
                         <p class="stat-meta">Accepted connections</p>
                     </article>
                 </div>
