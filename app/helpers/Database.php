@@ -25,7 +25,7 @@ class Database {
         
         $config = require $configPath;
         
-        $host = $config['host'] ?? 'localhost';
+        $host = $config['host'] ?? '127.0.0.1';
         $db   = $config['db'] ?? 'lanka_renters';
         $user = $config['user'] ?? 'root';
         $pass = $config['pass'] ?? '';
@@ -43,14 +43,14 @@ class Database {
             // Disable emulated prepared statements for security and native data types
             PDO::ATTR_EMULATE_PREPARES   => false,
         ];
-
+         
         try {
             $this->connection = new PDO($dsn, $user, $pass, $options);
         } catch (PDOException $e) {
             throw new PDOException("Database connection failed: " . $e->getMessage(), (int)$e->getCode());
         }
     }
-
+       
     /**
      * Returns the single instance of this class.
      * 
