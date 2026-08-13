@@ -24,7 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     } elseif ($action === 'update_vehicle') {
         $vehicleId = (int)($_POST['vehicle_id'] ?? 0);
-        $result = $vehicleController->updateVehicle($vehicleId, $_POST);
+        $result = $vehicleController->updateVehicle($vehicleId, $_POST, $_FILES);
         if ($result['success']) {
             $successMessage = $result['message'];
         } else {
@@ -255,18 +255,26 @@ $csrfToken = AuthHelper::getCsrfToken();
                     <div class="vehicle-grid">
                         <?php foreach ($vehicles as $v): ?>
                             <article class="vehicle-card">
-                                <div class="vehicle-image" style="background-color: #eef2ff; display: flex; align-items: center; justify-content: center; height: 160px;">
-                                    <span style="font-size: 3.5rem;" aria-hidden="true">
-                                        <?php 
-                                            switch($v['vehicle_type']) {
-                                                case 'van': echo '🚐'; break;
-                                                case 'suv': echo '🚙'; break;
-                                                case 'lorry': echo '🚛'; break;
-                                                case 'motorbike': echo '🏍️'; break;
-                                                default: echo '🚗'; break;
-                                            }
-                                        ?>
-                                    </span>
+                                <div class="vehicle-image" style="height: 150px; overflow: hidden; background-color: #f1f5f9; border-radius: 8px 8px 0 0;">
+                                    <?php if (!empty($v['image_url'])): ?>
+                                        <img src="/<?php echo htmlspecialchars(ltrim($v['image_url'], '/')); ?>" 
+                                             alt="<?php echo htmlspecialchars($v['make'] . ' ' . $v['model']); ?>" 
+                                             style="object-fit: cover; height: 150px; width: 100%; border-radius: 8px 8px 0 0;" />
+                                    <?php else: ?>
+                                        <div style="display: flex; align-items: center; justify-content: center; height: 150px; background-color: #eef2ff;">
+                                            <span style="font-size: 3.5rem;" aria-hidden="true">
+                                                <?php 
+                                                    switch($v['vehicle_type']) {
+                                                        case 'van': echo '🚐'; break;
+                                                        case 'suv': echo '🚙'; break;
+                                                        case 'lorry': echo '🚛'; break;
+                                                        case 'motorbike': echo '🏍️'; break;
+                                                        default: echo '🚗'; break;
+                                                    }
+                                                ?>
+                                            </span>
+                                        </div>
+                                    <?php endif; ?>
                                 </div>
 
                                 <div class="vehicle-card-body">
@@ -358,7 +366,7 @@ $csrfToken = AuthHelper::getCsrfToken();
                             <a href="vehicles.php" style="text-decoration: none; font-size: 1.5rem; color: #64748b; font-weight: 700;">✕</a>
                         </div>
 
-                        <form class="vehicle-form" method="POST" action="vehicles.php">
+                        <form class="vehicle-form" method="POST" action="vehicles.php" enctype="multipart/form-data">
                             <input type="hidden" name="action" value="update_vehicle">
                             <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken); ?>">
                             <input type="hidden" name="vehicle_id" value="<?php echo (int)$editVehicleData['id']; ?>">
@@ -429,6 +437,21 @@ $csrfToken = AuthHelper::getCsrfToken();
                                 <label class="form-field">
                                     <span>Daily Price (With Driver LKR)</span>
                                     <input type="number" step="0.01" name="price_with_driver_per_day" value="<?php echo htmlspecialchars($editVehicleData['price_with_driver_per_day'] ?? ''); ?>" placeholder="Optional" />
+                                </label>
+                            </div>
+
+                            <div style="margin-top: 16px; margin-bottom: 16px;">
+                                <label class="form-field">
+                                    <span>Main Vehicle Image (.jpg, .png, .webp - Max 5MB)</span>
+                                    <?php if (!empty($editVehicleData['image_url'])): ?>
+                                        <div style="margin-bottom: 8px; display: flex; align-items: center; gap: 12px;">
+                                            <img src="/<?php echo htmlspecialchars(ltrim($editVehicleData['image_url'], '/')); ?>" 
+                                                 alt="Currently saved main image" 
+                                                 style="width: 100px; height: 75px; object-fit: cover; border-radius: 8px; border: 1px solid #cbd5e1;" />
+                                            <span style="font-size: 0.85rem; color: #64748b;">Currently saved main image</span>
+                                        </div>
+                                    <?php endif; ?>
+                                    <input type="file" name="vehicle_image" accept=".jpg,.jpeg,.png,.webp" style="padding: 8px; border: 1px solid #d1d5db; border-radius: 10px; background-color: #f8fafc;" />
                                 </label>
                             </div>
 
@@ -519,6 +542,13 @@ $csrfToken = AuthHelper::getCsrfToken();
                             <label class="form-field">
                                 <span>Price Per Day (With Driver LKR)</span>
                                 <input type="number" step="0.01" name="price_with_driver_per_day" placeholder="Optional (e.g. 12500.00)" />
+                            </label>
+                        </div>
+
+                        <div class="form-row" style="margin-top: 8px;">
+                            <label class="form-field" style="grid-column: span 2;">
+                                <span>Main Vehicle Image (.jpg, .png, .webp - Max 5MB)</span>
+                                <input type="file" name="vehicle_image" accept=".jpg,.jpeg,.png,.webp" style="padding: 10px; border: 1px solid #d1d5db; border-radius: 12px; background-color: #f8fafc;" />
                             </label>
                         </div>
 

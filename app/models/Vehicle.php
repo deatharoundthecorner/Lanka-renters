@@ -24,11 +24,11 @@ class Vehicle {
         $sql = "INSERT INTO `vehicles` (
                     `owner_id`, `make`, `model`, `year`, `license_plate`, 
                     `vehicle_type`, `transmission`, `fuel_type`, `seating_capacity`, 
-                    `price_per_day`, `price_with_driver_per_day`, `status`, `verification_status`
+                    `price_per_day`, `price_with_driver_per_day`, `image_url`, `status`, `verification_status`
                 ) VALUES (
                     :owner_id, :make, :model, :year, :license_plate, 
                     :vehicle_type, :transmission, :fuel_type, :seating_capacity, 
-                    :price_per_day, :price_with_driver_per_day, :status, :verification_status
+                    :price_per_day, :price_with_driver_per_day, :image_url, :status, :verification_status
                 )";
 
         $stmt = $this->db->prepare($sql);
@@ -49,6 +49,7 @@ class Vehicle {
             'seating_capacity'          => (int)$data['seating_capacity'],
             'price_per_day'             => (float)$data['price_per_day'],
             'price_with_driver_per_day' => $priceWithDriver,
+            'image_url'                 => !empty($data['image_url']) ? trim($data['image_url']) : null,
             'status'                    => $data['status'] ?? 'unavailable',
             'verification_status'       => $data['verification_status'] ?? 'pending'
         ];
@@ -107,6 +108,8 @@ class Vehicle {
             ? (float)$data['price_with_driver_per_day']
             : null;
 
+        $imageSql = array_key_exists('image_url', $data) ? ", `image_url` = :image_url" : "";
+
         $sql = "UPDATE `vehicles` 
                 SET `make` = :make,
                     `model` = :model,
@@ -118,10 +121,11 @@ class Vehicle {
                     `seating_capacity` = :seating_capacity,
                     `price_per_day` = :price_per_day,
                     `price_with_driver_per_day` = :price_with_driver_per_day
+                    {$imageSql}
                 WHERE `id` = :id AND `owner_id` = :owner_id";
 
         $stmt = $this->db->prepare($sql);
-        $success = $stmt->execute([
+        $params = [
             'make'                      => trim($data['make']),
             'model'                     => trim($data['model']),
             'year'                      => (int)$data['year'],
@@ -134,9 +138,15 @@ class Vehicle {
             'price_with_driver_per_day' => $priceWithDriver,
             'id'                        => (int)$id,
             'owner_id'                  => (int)$ownerId
-        ]);
+        ];
 
-        return $success && ($stmt->rowCount() > 0);
+        if (array_key_exists('image_url', $data)) {
+            $params['image_url'] = $data['image_url'];
+        }
+
+        $success = $stmt->execute($params);
+
+        return $success && ($stmt->rowCount() > 0 || $stmt->errorCode() === '00000');
     }
 
     /**

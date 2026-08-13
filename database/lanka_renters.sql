@@ -144,6 +144,7 @@ CREATE TABLE `vehicles` (
   `seating_capacity` INT NOT NULL,
   `price_per_day` DECIMAL(10, 2) NOT NULL,
   `price_with_driver_per_day` DECIMAL(10, 2) DEFAULT NULL,
+  `image_url` VARCHAR(255) DEFAULT NULL,
   `status` ENUM('available', 'rented', 'maintenance', 'unavailable') NOT NULL DEFAULT 'unavailable',
   `verification_status` ENUM('pending', 'approved', 'rejected') NOT NULL DEFAULT 'pending',
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

@@ -114,18 +114,33 @@ body {
 .nav-item.active a {
   background-color: #eff6ff;
   color: #1d4ed8;
+  font-weight: 600;
 }
 
 .nav-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
   border-radius: 12px;
   background-color: #ffffff;
   color: #2563eb;
-  font-size: 1rem;
+  transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
+}
+
+.nav-icon svg {
+  width: 20px;
+  height: 20px;
+  stroke: currentColor;
+}
+
+.nav-item a:hover .nav-icon,
+.nav-item.active .nav-icon {
+  background-color: #2563eb;
+  color: #ffffff;
+  transform: scale(1.05);
 }
 
 .sidebar-footer {
@@ -135,19 +150,38 @@ body {
 .logout-link {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   padding: 12px 16px;
   width: 100%;
   border-radius: 14px;
   text-decoration: none;
   color: #475569;
+  font-size: 0.95rem;
+  font-weight: 600;
   background-color: #ffffff;
   border: 1px solid #e2e8f0;
-  transition: background-color 0.2s ease;
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 }
 
 .logout-link:hover {
-  background-color: #f1f5f9;
+  background-color: #fef2f2;
+  color: #dc2626;
+  border-color: #fca5a5;
+}
+
+.logout-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  color: currentColor;
+}
+
+.logout-icon svg {
+  width: 20px;
+  height: 20px;
+  stroke: currentColor;
 }
 
 /* Header */

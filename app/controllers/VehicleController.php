@@ -102,7 +102,14 @@ class VehicleController {
                 return ['success' => false, 'error' => "A vehicle with license plate '{$licensePlate}' is already registered in the system."];
             }
 
-            // 4. Construct DB Insert payload
+            // 4. Handle Main Image Upload if provided
+            $mainImageFile = $files['vehicle_image'] ?? ($files['main_image'] ?? null);
+            $mainImageResult = $this->handleMainImageUpload($mainImageFile);
+            if (!$mainImageResult['success']) {
+                return ['success' => false, 'error' => $mainImageResult['error']];
+            }
+
+            // 5. Construct DB Insert payload
             $vehiclePayload = [
                 'owner_id'                  => $ownerId,
                 'make'                      => trim($data['make']),
@@ -115,6 +122,7 @@ class VehicleController {
                 'seating_capacity'          => (int)$data['seating_capacity'],
                 'price_per_day'             => (float)$data['price_per_day'],
                 'price_with_driver_per_day' => !empty($data['price_with_driver_per_day']) ? (float)$data['price_with_driver_per_day'] : null,
+                'image_url'                 => $mainImageResult['image_url'],
                 'status'                    => 'unavailable', // Initial status before verification/activation
                 'verification_status'       => 'pending'
             ];
@@ -124,7 +132,7 @@ class VehicleController {
                 return ['success' => false, 'error' => 'Failed to save vehicle details to database.'];
             }
 
-            // 5. Handle Document Uploads if provided
+            // 6. Handle Document Uploads if provided
             $docTypes = [
                 'document_registration' => 'registration',
                 'document_insurance'    => 'insurance',
@@ -166,9 +174,10 @@ class VehicleController {
      *
      * @param int $vehicleId
      * @param array $data Input POST data
+     * @param array $files Uploaded FILES array
      * @return array
      */
-    public function updateVehicle($vehicleId, $data) {
+    public function updateVehicle($vehicleId, $data, $files = []) {
         try {
             $auth = $this->getAuthenticatedOwner();
             $ownerId = $auth['owner']['id'];
@@ -197,7 +206,14 @@ class VehicleController {
                 return ['success' => false, 'error' => "A vehicle with license plate '{$licensePlate}' is already registered."];
             }
 
-            // 5. Perform Update
+            // 5. Handle Main Image Upload if a new file was uploaded
+            $mainImageFile = $files['vehicle_image'] ?? ($files['main_image'] ?? null);
+            $mainImageResult = $this->handleMainImageUpload($mainImageFile);
+            if (!$mainImageResult['success']) {
+                return ['success' => false, 'error' => $mainImageResult['error']];
+            }
+
+            // 6. Perform Update
             $updatePayload = [
                 'make'                      => trim($data['make']),
                 'model'                     => trim($data['model']),
@@ -210,6 +226,18 @@ class VehicleController {
                 'price_per_day'             => (float)$data['price_per_day'],
                 'price_with_driver_per_day' => !empty($data['price_with_driver_per_day']) ? (float)$data['price_with_driver_per_day'] : null
             ];
+
+            if ($mainImageResult['image_url'] !== null) {
+                $updatePayload['image_url'] = $mainImageResult['image_url'];
+
+                // Delete old image file if exists
+                if (!empty($existingVehicle['image_url'])) {
+                    $oldPath = dirname(dirname(__DIR__)) . '/public/' . ltrim($existingVehicle['image_url'], '/');
+                    if (file_exists($oldPath) && is_file($oldPath)) {
+                        @unlink($oldPath);
+                    }
+                }
+            }
 
             $updated = $this->vehicleModel->update($vehicleId, $ownerId, $updatePayload);
             if (!$updated) {
@@ -402,5 +430,66 @@ class VehicleController {
         }
 
         return ['success' => false, 'error' => 'Failed to save uploaded document to server.'];
+    }
+
+    /**
+     * Handles Main Vehicle Image upload.
+     * Allowed formats: .jpg, .jpeg, .png, .webp. Max size: 5MB.
+     * Saves to 'public/assets/uploads/vehicles/'. Creates directory if missing.
+     *
+     * @param array|null $file Single element from $_FILES
+     * @return array ['success' => bool, 'image_url' => string|null, 'error' => string|null]
+     */
+    private function handleMainImageUpload($file) {
+        if (!$file || !isset($file['error']) || $file['error'] === UPLOAD_ERR_NO_FILE) {
+            return ['success' => true, 'image_url' => null];
+        }
+
+        if ($file['error'] !== UPLOAD_ERR_OK) {
+            return ['success' => false, 'error' => 'Vehicle image upload error (code ' . $file['error'] . ').'];
+        }
+
+        $allowedExtensions = ['jpg', 'jpeg', 'png', 'webp'];
+        $maxSizeBytes = 5 * 1024 * 1024; // 5 MB
+
+        $originalName = basename($file['name']);
+        $fileSize     = $file['size'];
+        $tmpName      = $file['tmp_name'];
+
+        $ext = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
+
+        if (!in_array($ext, $allowedExtensions, true)) {
+            return ['success' => false, 'error' => "Invalid image extension '.{$ext}'. Allowed formats: .jpg, .jpeg, .png, .webp."];
+        }
+
+        if ($fileSize > $maxSizeBytes) {
+            return ['success' => false, 'error' => 'Vehicle image size exceeds maximum allowed limit of 5MB.'];
+        }
+
+        if (function_exists('finfo_open')) {
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+            $mime = finfo_file($finfo, $tmpName);
+            finfo_close($finfo);
+
+            $allowedMimes = ['image/jpeg', 'image/png', 'image/webp', 'image/pjpeg'];
+            if (!in_array($mime, $allowedMimes, true)) {
+                return ['success' => false, 'error' => 'Invalid file type. Please upload a valid JPG, PNG, or WebP image.'];
+            }
+        }
+
+        $uploadDir = dirname(dirname(__DIR__)) . '/public/assets/uploads/vehicles/';
+        if (!file_exists($uploadDir)) {
+            mkdir($uploadDir, 0755, true);
+        }
+
+        $safeFilename = 'veh_' . uniqid() . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
+        $targetPath   = $uploadDir . $safeFilename;
+        $dbPath       = 'assets/uploads/vehicles/' . $safeFilename;
+
+        if (move_uploaded_file($tmpName, $targetPath)) {
+            return ['success' => true, 'image_url' => $dbPath];
+        }
+
+        return ['success' => false, 'error' => 'Failed to save vehicle image to server.'];
     }
 }
