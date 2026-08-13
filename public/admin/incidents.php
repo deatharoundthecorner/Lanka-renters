@@ -1,10 +1,27 @@
 <?php
-// incidents.php - Lanka Renters Incident Management Page
+
+require_once dirname(__DIR__, 2) . '/app/helpers/AuthHelper.php';
+require_once dirname(__DIR__, 2) . '/app/models/AdminIncidentManagement.php';
 require_once __DIR__ . '/config/database.php';
-requireAdminLogin();
+
+AuthHelper::startSession();
+AuthHelper::requireRole('admin');
 
 $pageTitle = "Incident Management";
-$districts = getSriLankanDistricts();
+$flash = $_SESSION['admin_incident_flash'] ?? null;
+unset($_SESSION['admin_incident_flash']);
+
+$statusFilter = trim($_GET['status'] ?? '');
+
+try {
+    $model = new AdminIncidentManagement();
+    $incidents = $model->getIncidents(['status' => $statusFilter]);
+} catch (Throwable $e) {
+    error_log("Incidents Page Error: " . $e->getMessage());
+    $incidents = [];
+}
+
+$escape = static fn(mixed $val): string => htmlspecialchars((string)$val, ENT_QUOTES, 'UTF-8');
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -25,111 +42,83 @@ $districts = getSriLankanDistricts();
         <main class="page-container">
             <div class="page-header-box">
                 <h1 class="page-title">Incident Management</h1>
-                <p class="page-subtitle">Track accidents, vehicle damage reports, driver issues, and emergency replacements.</p>
+                <p class="page-subtitle">Track reported vehicle accidents, damages, driver issues, and investigation logs.</p>
             </div>
 
-            <!-- Filters -->
-            <div class="filter-card">
-                <div class="filter-group">
-                    <label for="filterSearch">Search Incident</label>
-                    <input type="text" id="filterSearch" class="form-control" placeholder="Search incident ID, customer or owner...">
+            <?php if (is_array($flash)): ?>
+                <div class="alert-box" role="alert" style="margin-bottom: 16px;">
+                    <?= $escape($flash['message'] ?? 'Action completed.') ?>
                 </div>
-                <div class="filter-group">
-                    <label for="filterDistrict">District</label>
-                    <select id="filterDistrict" class="form-control">
-                        <option value="">All Districts</option>
-                        <?php foreach ($districts as $d): ?>
-                            <option value="<?php echo htmlspecialchars($d); ?>"><?php echo htmlspecialchars($d); ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <div class="filter-group">
-                    <label for="filterIncidentType">Incident Type</label>
-                    <select id="filterIncidentType" class="form-control">
-                        <option value="">All Incident Types</option>
-                        <option value="Accident">Accident</option>
-                        <option value="Vehicle Damage">Vehicle Damage</option>
-                        <option value="Driver Issue">Driver Issue</option>
-                        <option value="Customer Issue">Customer Issue</option>
-                        <option value="Late Return">Late Return</option>
-                        <option value="Other">Other</option>
-                    </select>
-                </div>
-                <div style="display: flex; gap: 8px; align-self: flex-end;">
-                    <button class="btn btn-primary" onclick="initTableFilters()">Search</button>
-                    <button class="btn btn-secondary" id="filterResetBtn">Reset</button>
-                </div>
-            </div>
+            <?php endif; ?>
 
-            <!-- Incidents Cards Layout -->
-            <div class="incident-grid">
-                <!-- Incident Card 1 -->
-                <div class="incident-card">
-                    <div class="incident-card-header">
-                        <div class="incident-id-badge">
-                            <span class="incident-id">INC-001</span>
-                            <h3 class="incident-type-title">Accident</h3>
-                        </div>
-                        <span class="badge badge-rejected">Action Required</span>
-                    </div>
-
-                    <div class="incident-subline">
-                        Customer ID = CUS-102 | Vehicle Name = Toyota Prius | Booking ID = BKG-203 | Owner = Nimal Perera | Reported = 08 Aug 2026, 10:30 AM
-                    </div>
-
-                    <div class="incident-actions">
-                        <button class="btn btn-doc" onclick="openDocModal('INC-001 Evidence Image', 'Accident Scene Photo')">View Evidence</button>
-                        <button class="btn btn-secondary" onclick="alert('Contacting Owner Nimal Perera at 071 777 6666')">Contact Vehicle Owner</button>
-                        <button class="btn btn-secondary" onclick="openDocModal('INC-001 Police Report', 'Official Traffic Police Statement')">View Additional Details</button>
-                        <button class="btn btn-primary" onclick="alert('Redirecting to Assign Replacement Vehicle interface for BKG-203')">Assign Replacement Vehicle</button>
-                        <button class="btn btn-reject" onclick="triggerReject('Incident INC-001', 'INC-001')">Reject</button>
-                    </div>
+            <div class="card">
+                <div class="card-header-clean">
+                    <h3 class="card-title-text">Reported Incidents Log</h3>
+                    <span class="badge badge-pending"><?= count($incidents) ?> Total Incidents</span>
                 </div>
 
-                <!-- Incident Card 2 -->
-                <div class="incident-card">
-                    <div class="incident-card-header">
-                        <div class="incident-id-badge">
-                            <span class="incident-id">INC-002</span>
-                            <h3 class="incident-type-title">Vehicle Damage</h3>
-                        </div>
-                        <span class="badge badge-pending">Under Review</span>
-                    </div>
-
-                    <div class="incident-subline">
-                        Customer ID = CUS-005 | Vehicle Name = Honda Vezel | Booking ID = BKG-102 | Owner = Dhanushka Ratnayake | Reported = 07 Aug 2026, 04:15 PM
-                    </div>
-
-                    <div class="incident-actions">
-                        <button class="btn btn-doc" onclick="openDocModal('INC-002 Scratch Photo', 'Bumper Damage Image')">View Evidence</button>
-                        <button class="btn btn-secondary" onclick="alert('Contacting Owner Dhanushka Ratnayake at 077 333 4444')">Contact Vehicle Owner</button>
-                        <button class="btn btn-secondary" onclick="openDocModal('INC-002 Damage Appraisal', 'Garage Repair Quote')">View Additional Details</button>
-                        <button class="btn btn-primary" onclick="alert('Assigning replacement driver or vehicle for BKG-102')">Assign Replacement Vehicle</button>
-                        <button class="btn btn-reject" onclick="triggerReject('Incident INC-002', 'INC-002')">Reject</button>
-                    </div>
-                </div>
-
-                <!-- Incident Card 3 -->
-                <div class="incident-card">
-                    <div class="incident-card-header">
-                        <div class="incident-id-badge">
-                            <span class="incident-id">INC-003</span>
-                            <h3 class="incident-type-title">Driver Issue</h3>
-                        </div>
-                        <span class="badge badge-active">Assigned</span>
-                    </div>
-
-                    <div class="incident-subline">
-                        Customer ID = CUS-006 | Vehicle Name = Toyota KDH Super GL | Booking ID = BKG-103 | Owner = Rohan Jayawardena | Reported = 06 Aug 2026, 08:45 AM
-                    </div>
-
-                    <div class="incident-actions">
-                        <button class="btn btn-doc" onclick="openDocModal('INC-003 Communication Log', 'Customer Complaint Slip')">View Evidence</button>
-                        <button class="btn btn-secondary" onclick="alert('Contacting Owner Rohan Jayawardena at 076 222 1111')">Contact Vehicle Owner</button>
-                        <button class="btn btn-secondary" onclick="openDocModal('INC-003 Driver History', 'Driver Behavior Log')">View Additional Details</button>
-                        <button class="btn btn-primary" onclick="alert('Assigning Replacement Driver for BKG-103')">Assign Replacement Vehicle</button>
-                        <button class="btn btn-reject" onclick="triggerReject('Incident INC-003', 'INC-003')">Reject</button>
-                    </div>
+                <div class="table-responsive">
+                    <table class="custom-table">
+                        <thead>
+                            <tr>
+                                <th>Incident ID</th>
+                                <th>Booking / Vehicle</th>
+                                <th>Reported By</th>
+                                <th>Severity</th>
+                                <th>Description</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if (empty($incidents)): ?>
+                                <tr>
+                                    <td colspan="7" style="text-align: center; color: var(--text-secondary); padding: 24px;">No incident records found.</td>
+                                </tr>
+                            <?php else: ?>
+                                <?php foreach ($incidents as $inc): ?>
+                                    <tr>
+                                        <td><span class="cell-secondary-text">INC-<?= (int)$inc['id'] ?></span></td>
+                                        <td>
+                                            <div class="cell-stacked">
+                                                <span class="cell-primary-text">BKG-<?= (int)$inc['booking_id'] ?></span>
+                                                <span class="cell-secondary-text"><?= $escape($inc['make'] . ' ' . $inc['model'] . ' (' . $inc['license_plate'] . ')') ?></span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="cell-stacked">
+                                                <span class="cell-primary-text"><?= $escape($inc['reporter_name']) ?></span>
+                                                <span class="cell-secondary-text"><?= $escape(ucfirst($inc['reporter_role'])) ?></span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="badge <?= $inc['severity'] === 'major' ? 'badge-rejected' : ($inc['severity'] === 'moderate' ? 'badge-pending' : 'badge-blue') ?>">
+                                                <?= $escape(ucfirst($inc['severity'])) ?>
+                                            </span>
+                                        </td>
+                                        <td><div style="max-width: 260px; font-size: 13px; color: var(--text-secondary);"><?= $escape($inc['description']) ?></div></td>
+                                        <td>
+                                            <span class="badge <?= $inc['status'] === 'resolved' ? 'badge-approved' : ($inc['status'] === 'investigating' ? 'badge-blue' : 'badge-pending') ?>">
+                                                <?= $escape(ucfirst($inc['status'])) ?>
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <form method="post" action="incident_handler.php" style="display: flex; gap: 6px;">
+                                                <input type="hidden" name="csrf_token" value="<?= $escape(AuthHelper::getCsrfToken()) ?>">
+                                                <input type="hidden" name="incident_id" value="<?= (int)$inc['id'] ?>">
+                                                <select name="status" class="form-control" style="padding: 4px 8px; font-size: 12px; height: auto;">
+                                                    <option value="reported" <?= $inc['status'] === 'reported' ? 'selected' : '' ?>>Reported</option>
+                                                    <option value="investigating" <?= $inc['status'] === 'investigating' ? 'selected' : '' ?>>Investigating</option>
+                                                    <option value="resolved" <?= $inc['status'] === 'resolved' ? 'selected' : '' ?>>Resolved</option>
+                                                </select>
+                                                <button type="submit" class="btn btn-primary btn-sm">Update</button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </main>
@@ -138,3 +127,6 @@ $districts = getSriLankanDistricts();
 
 <?php include __DIR__ . '/partials/modals.php'; ?>
 <?php include __DIR__ . '/partials/footer.php'; ?>
+
+</body>
+</html>

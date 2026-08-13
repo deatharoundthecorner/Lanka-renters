@@ -453,3 +453,57 @@ CREATE TABLE IF NOT EXISTS `driver_payments` (
   CONSTRAINT `fk_driver_payments_driver` FOREIGN KEY (`driver_id`) REFERENCES `drivers` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_driver_payments_booking` FOREIGN KEY (`booking_id`) REFERENCES `bookings` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 28. Settlements Table
+CREATE TABLE IF NOT EXISTS `settlements` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `owner_id` INT NOT NULL,
+  `booking_id` INT NOT NULL,
+  `gross_amount` DECIMAL(10, 2) NOT NULL,
+  `commission_amount` DECIMAL(10, 2) NOT NULL,
+  `net_amount` DECIMAL(10, 2) NOT NULL,
+  `settlement_date` DATE DEFAULT NULL,
+  `status` ENUM('pending', 'completed') NOT NULL DEFAULT 'pending',
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX `idx_settlements_owner` (`owner_id`),
+  INDEX `idx_settlements_booking` (`booking_id`),
+  INDEX `idx_settlements_status` (`status`),
+  CONSTRAINT `fk_settlements_owner` FOREIGN KEY (`owner_id`) REFERENCES `vehicle_owners` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_settlements_booking` FOREIGN KEY (`booking_id`) REFERENCES `bookings` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 29. Email Logs Table
+CREATE TABLE IF NOT EXISTS `email_logs` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `recipient_type` ENUM('customer', 'driver', 'owner', 'all') NOT NULL,
+  `recipient_name` VARCHAR(100) NOT NULL,
+  `recipient_email` VARCHAR(150) NOT NULL,
+  `subject` VARCHAR(255) NOT NULL,
+  `booking_id` INT DEFAULT NULL,
+  `status` ENUM('sent', 'failed') NOT NULL DEFAULT 'sent',
+  `failure_reason` TEXT DEFAULT NULL,
+  `sent_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX `idx_email_logs_status` (`status`),
+  INDEX `idx_email_logs_recipient` (`recipient_email`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 30. Announcements Table
+CREATE TABLE IF NOT EXISTS `announcements` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `title` VARCHAR(255) NOT NULL,
+  `announcement_type` ENUM('maintenance', 'system_update', 'important_notice', 'payment_notice', 'booking_notice', 'emergency', 'general') NOT NULL DEFAULT 'general',
+  `target_audience` ENUM('all', 'customers', 'owners', 'drivers') NOT NULL DEFAULT 'all',
+  `priority` ENUM('normal', 'important', 'high', 'urgent') NOT NULL DEFAULT 'normal',
+  `message` TEXT NOT NULL,
+  `publish_date` DATE DEFAULT NULL,
+  `publish_time` TIME DEFAULT NULL,
+  `expiry_date` DATE DEFAULT NULL,
+  `status` ENUM('draft', 'scheduled', 'published', 'expired') NOT NULL DEFAULT 'draft',
+  `created_by` INT DEFAULT NULL,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX `idx_announcements_status` (`status`),
+  INDEX `idx_announcements_target` (`target_audience`),
+  CONSTRAINT `fk_announcements_creator` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

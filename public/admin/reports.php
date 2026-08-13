@@ -1,10 +1,28 @@
 <?php
-// reports.php - Lanka Renters Reports & Analytics Page
+
+require_once dirname(__DIR__, 2) . '/app/helpers/AuthHelper.php';
+require_once dirname(__DIR__, 2) . '/app/models/Report.php';
 require_once __DIR__ . '/config/database.php';
-requireAdminLogin();
+
+AuthHelper::startSession();
+AuthHelper::requireRole('admin');
 
 $pageTitle = "Reports & Analytics";
 $districts = getSriLankanDistricts();
+
+try {
+    $reportModel = new Report();
+    $financialSummary = $reportModel->getFinancialSummary();
+    $statusBreakdown = $reportModel->getBookingsByStatus();
+    $categoryPopularity = $reportModel->getVehicleCategoryPopularity();
+} catch (Throwable $e) {
+    error_log("Reports Error: " . $e->getMessage());
+    $financialSummary = ['gross_revenue' => 0, 'total_commission' => 0, 'total_payouts' => 0, 'total_bookings' => 0];
+    $statusBreakdown = [];
+    $categoryPopularity = [];
+}
+
+$escape = static fn(mixed $val): string => htmlspecialchars((string)$val, ENT_QUOTES, 'UTF-8');
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -28,162 +46,78 @@ $districts = getSriLankanDistricts();
                 <p class="page-subtitle">Generate custom analytical summaries and export system performance metrics.</p>
             </div>
 
-            <!-- REPORT CARDS GRID (6 CARDS) -->
-            <div class="report-grid">
-                <div class="report-card">
-                    <div class="report-card-top">
-                        <div class="report-icon">
-                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                        </div>
-                        <div class="report-info">
-                            <h3>Monthly Revenue Report</h3>
-                            <p>View revenue and commission performance by month.</p>
-                        </div>
-                    </div>
-                    <button class="btn btn-primary" onclick="downloadCSVReport('Monthly Revenue Report')">Download Report</button>
+            <!-- Financial Summary Cards -->
+            <div class="grid-4">
+                <div class="stat-card" style="border-left: 4px solid var(--primary);">
+                    <span class="stat-label">Gross Completed Rental Revenue</span>
+                    <div class="stat-value" style="font-size: 22px;">Rs. <?= number_format((float)$financialSummary['gross_revenue'], 2) ?></div>
+                    <span class="stat-comparison">Total Completed Trips</span>
                 </div>
-
-                <div class="report-card">
-                    <div class="report-card-top">
-                        <div class="report-icon">
-                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                        </div>
-                        <div class="report-info">
-                            <h3>Booking Summary</h3>
-                            <p>View booking activity and completion statistics.</p>
-                        </div>
-                    </div>
-                    <button class="btn btn-primary" onclick="downloadCSVReport('Booking Summary Report')">Download Report</button>
+                <div class="stat-card" style="border-left: 4px solid var(--success);">
+                    <span class="stat-label">Platform Commission (10%)</span>
+                    <div class="stat-value" style="font-size: 22px;">Rs. <?= number_format((float)$financialSummary['total_commission'], 2) ?></div>
+                    <span class="stat-comparison">Platform Revenue</span>
                 </div>
-
-                <div class="report-card">
-                    <div class="report-card-top">
-                        <div class="report-icon">
-                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
-                        </div>
-                        <div class="report-info">
-                            <h3>User Registration Report</h3>
-                            <p>Customer, driver and owner registration metrics.</p>
-                        </div>
-                    </div>
-                    <button class="btn btn-primary" onclick="downloadCSVReport('User Registration Report')">Download Report</button>
+                <div class="stat-card" style="border-left: 4px solid var(--info);">
+                    <span class="stat-label">Owner Payouts (90%)</span>
+                    <div class="stat-value" style="font-size: 22px;">Rs. <?= number_format((float)$financialSummary['total_payouts'], 2) ?></div>
+                    <span class="stat-comparison">Paid to Vehicle Owners</span>
                 </div>
-
-                <div class="report-card">
-                    <div class="report-card-top">
-                        <div class="report-icon">
-                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="7" rx="2"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/></svg>
-                        </div>
-                        <div class="report-info">
-                            <h3>Vehicle Performance Report</h3>
-                            <p>Fleet utilization, trip counts and owner payouts.</p>
-                        </div>
-                    </div>
-                    <button class="btn btn-primary" onclick="downloadCSVReport('Vehicle Performance Report')">Download Report</button>
-                </div>
-
-                <div class="report-card">
-                    <div class="report-card-top">
-                        <div class="report-icon">
-                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
-                        </div>
-                        <div class="report-info">
-                            <h3>Payment Report</h3>
-                            <p>Bank transfer verification trails and pending claims.</p>
-                        </div>
-                    </div>
-                    <button class="btn btn-primary" onclick="downloadCSVReport('Payment Report')">Download Report</button>
-                </div>
-
-                <div class="report-card">
-                    <div class="report-card-top">
-                        <div class="report-icon">
-                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                        </div>
-                        <div class="report-info">
-                            <h3>Incident Report</h3>
-                            <p>Accident, damage and emergency driver swap logs.</p>
-                        </div>
-                    </div>
-                    <button class="btn btn-primary" onclick="downloadCSVReport('Incident Report')">Download Report</button>
+                <div class="stat-card" style="border-left: 4px solid var(--warning);">
+                    <span class="stat-label">Completed Bookings</span>
+                    <div class="stat-value"><?= number_format((int)$financialSummary['total_bookings']) ?></div>
+                    <span class="stat-comparison">Finished Reservations</span>
                 </div>
             </div>
 
-            <!-- REPORT GENERATOR & PREVIEW -->
-            <div class="card">
-                <div class="card-header-clean">
-                    <h3 class="card-title-text">Custom Report Generator</h3>
-                </div>
-
-                <div class="filter-card">
-                    <div class="filter-group">
-                        <label for="reportTypeSelect">Report Type</label>
-                        <select id="reportTypeSelect" class="form-control">
-                            <option value="Monthly Revenue">Monthly Revenue</option>
-                            <option value="Booking Summary">Booking Summary</option>
-                            <option value="User Registration">User Registration</option>
-                            <option value="Vehicle Performance">Vehicle Performance</option>
-                            <option value="Payment Report">Payment Report</option>
-                            <option value="Incident Log">Incident Log</option>
-                        </select>
+            <div class="grid-2" style="margin-top: 24px;">
+                <!-- Booking Status Breakdown -->
+                <div class="card">
+                    <div class="card-header-clean">
+                        <h3 class="card-title-text">Bookings Status Breakdown</h3>
                     </div>
-                    <div class="filter-group">
-                        <label>Date From</label>
-                        <input type="date" class="form-control" value="2026-08-01">
-                    </div>
-                    <div class="filter-group">
-                        <label>Date To</label>
-                        <input type="date" class="form-control" value="2026-08-08">
-                    </div>
-                    <div class="filter-group">
-                        <label>District</label>
-                        <select class="form-control">
-                            <option value="">All Districts</option>
-                            <?php foreach ($districts as $d): ?>
-                                <option value="<?php echo htmlspecialchars($d); ?>"><?php echo htmlspecialchars($d); ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                    <div style="display: flex; gap: 8px; align-self: flex-end;">
-                        <button class="btn btn-primary" onclick="showToast('Report generated successfully!', 'success')">Generate Report</button>
-                    </div>
-                </div>
-
-                <div style="margin-top: 10px;">
-                    <h4 style="font-size: 14px; font-weight: 600; margin-bottom: 12px;">Sample Report Preview</h4>
                     <div class="table-responsive">
                         <table class="custom-table">
                             <thead>
                                 <tr>
-                                    <th>Period / Date</th>
-                                    <th>Total Bookings</th>
-                                    <th>Gross Revenue (LKR)</th>
-                                    <th>Platform Commission (LKR)</th>
-                                    <th>Net Owner Payout (LKR)</th>
+                                    <th>Status</th>
+                                    <th>Total Count</th>
                                 </tr>
                             </thead>
                             <tbody>
+                                <?php foreach ($statusBreakdown as $sb): ?>
+                                    <tr>
+                                        <td><span class="badge badge-blue"><?= $escape(str_replace('_', ' ', ucfirst($sb['status']))) ?></span></td>
+                                        <td><span class="cell-primary-text"><?= number_format((int)$sb['count']) ?> Bookings</span></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Vehicle Category Popularity -->
+                <div class="card">
+                    <div class="card-header-clean">
+                        <h3 class="card-title-text">Vehicle Category Popularity</h3>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="custom-table">
+                            <thead>
                                 <tr>
-                                    <td>August 2026</td>
-                                    <td>248</td>
-                                    <td>Rs. 12,458,000.00</td>
-                                    <td>Rs. 1,245,800.00</td>
-                                    <td>Rs. 11,212,200.00</td>
+                                    <th>Category</th>
+                                    <th>Bookings Count</th>
+                                    <th>Total Revenue</th>
                                 </tr>
-                                <tr>
-                                    <td>July 2026</td>
-                                    <td>210</td>
-                                    <td>Rs. 10,500,000.00</td>
-                                    <td>Rs. 1,050,000.00</td>
-                                    <td>Rs. 9,450,000.00</td>
-                                </tr>
-                                <tr>
-                                    <td>June 2026</td>
-                                    <td>195</td>
-                                    <td>Rs. 9,750,000.00</td>
-                                    <td>Rs. 975,000.00</td>
-                                    <td>Rs. 8,775,000.00</td>
-                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($categoryPopularity as $cp): ?>
+                                    <tr>
+                                        <td><span class="cell-primary-text"><?= $escape(ucfirst($cp['vehicle_type'])) ?></span></td>
+                                        <td><?= number_format((int)$cp['booking_count']) ?></td>
+                                        <td><span class="cell-primary-text">Rs. <?= number_format((float)$cp['total_spent'], 2) ?></span></td>
+                                    </tr>
+                                <?php endforeach; ?>
                             </tbody>
                         </table>
                     </div>
@@ -195,3 +129,6 @@ $districts = getSriLankanDistricts();
 
 <?php include __DIR__ . '/partials/modals.php'; ?>
 <?php include __DIR__ . '/partials/footer.php'; ?>
+
+</body>
+</html>

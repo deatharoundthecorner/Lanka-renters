@@ -1,9 +1,27 @@
 <?php
-// replacement_requests.php - Lanka Renters Emergency Driver Replacement Page
-require_once __DIR__ . '/config/database.php';
-requireAdminLogin();
 
-$pageTitle = "Replacement Driver Requests";
+require_once dirname(__DIR__, 2) . '/app/helpers/AuthHelper.php';
+require_once dirname(__DIR__, 2) . '/app/models/ReplacementRequest.php';
+require_once __DIR__ . '/config/database.php';
+
+AuthHelper::startSession();
+AuthHelper::requireRole('admin');
+
+$pageTitle = "Replacement Requests";
+$flash = $_SESSION['admin_rep_flash'] ?? null;
+unset($_SESSION['admin_rep_flash']);
+
+try {
+    $model = new ReplacementRequest();
+    $requests = $model->getAllRequests();
+    $eligibleVehicles = $model->getEligibleVehicles('');
+} catch (Throwable $e) {
+    error_log("Replacement Requests Error: " . $e->getMessage());
+    $requests = [];
+    $eligibleVehicles = [];
+}
+
+$escape = static fn(mixed $val): string => htmlspecialchars((string)$val, ENT_QUOTES, 'UTF-8');
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -23,24 +41,20 @@ $pageTitle = "Replacement Driver Requests";
 
         <main class="page-container">
             <div class="page-header-box">
-                <h1 class="page-title">Replacement Driver Requests</h1>
-                <p class="page-subtitle">Review emergency requests to assign alternative drivers for active trips.</p>
+                <h1 class="page-title">Emergency Replacement Requests</h1>
+                <p class="page-subtitle">Assign replacement vehicles or drivers for breakdown / accident incidents.</p>
             </div>
 
+            <?php if (is_array($flash)): ?>
+                <div class="alert-box" role="alert" style="margin-bottom: 16px;">
+                    <?= $escape($flash['message'] ?? 'Action completed.') ?>
+                </div>
+            <?php endif; ?>
+
             <div class="card">
-                <div class="filter-card">
-                    <div class="filter-group">
-                        <label for="filterSearch">Search Request</label>
-                        <input type="text" id="filterSearch" class="form-control" placeholder="Search request ID, booking ID or driver...">
-                    </div>
-                    <div class="filter-group">
-                        <label for="filterDate">Date Range</label>
-                        <input type="date" id="filterDate" class="form-control">
-                    </div>
-                    <div style="display: flex; gap: 8px; align-self: flex-end;">
-                        <button class="btn btn-primary" onclick="initTableFilters()">Search</button>
-                        <button class="btn btn-secondary" id="filterResetBtn">Reset</button>
-                    </div>
+                <div class="card-header-clean">
+                    <h3 class="card-title-text">Active Replacement Requests</h3>
+                    <span class="badge badge-pending"><?= count($requests) ?> Requests</span>
                 </div>
 
                 <div class="table-responsive">
@@ -48,71 +62,66 @@ $pageTitle = "Replacement Driver Requests";
                         <thead>
                             <tr>
                                 <th>Request ID</th>
-                                <th>Booking ID</th>
-                                <th>Customer</th>
-                                <th>Current Driver</th>
+                                <th>Booking / Customer</th>
+                                <th>Original Vehicle</th>
                                 <th>Reason</th>
-                                <th>Action</th>
+                                <th>Status</th>
+                                <th>Assign Replacement</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr>
-                                <td><span class="cell-secondary-text">REP-001</span></td>
-                                <td><span class="cell-secondary-text">BKG-101</span></td>
-                                <td>
-                                    <div class="cell-stacked">
-                                        <span class="cell-primary-text">John Perera</span>
-                                        <span class="cell-secondary-text">CUS-001</span>
-                                    </div>
-                                </td>
-                                <td>
-                                    <div class="cell-stacked">
-                                        <span class="cell-primary-text">Kamal Silva</span>
-                                        <span class="cell-secondary-text">DRV-012</span>
-                                    </div>
-                                </td>
-                                <td>Medical Emergency of Assigned Driver</td>
-                                <td>
-                                    <div class="btn-group">
-                                        <button class="btn btn-approve btn-sm" onclick="triggerApprove('Replacement Driver Request REP-001', 'REP-001')">Approve</button>
-                                        <button class="btn btn-reject btn-sm" onclick="triggerReject('Replacement Driver Request REP-001', 'REP-001')">Reject</button>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td><span class="cell-secondary-text">REP-002</span></td>
-                                <td><span class="cell-secondary-text">BKG-102</span></td>
-                                <td>
-                                    <div class="cell-stacked">
-                                        <span class="cell-primary-text">Chamara Jayasinghe</span>
-                                        <span class="cell-secondary-text">CUS-004</span>
-                                    </div>
-                                </td>
-                                <td>
-                                    <div class="cell-stacked">
-                                        <span class="cell-primary-text">Roshan Ranasinghe</span>
-                                        <span class="cell-secondary-text">DRV-003</span>
-                                    </div>
-                                </td>
-                                <td>Vehicle Owner Requested Driver Swap</td>
-                                <td>
-                                    <div class="btn-group">
-                                        <button class="btn btn-approve btn-sm" onclick="triggerApprove('Replacement Driver Request REP-002', 'REP-002')">Approve</button>
-                                        <button class="btn btn-reject btn-sm" onclick="triggerReject('Replacement Driver Request REP-002', 'REP-002')">Reject</button>
-                                    </div>
-                                </td>
-                            </tr>
+                            <?php if (empty($requests)): ?>
+                                <tr>
+                                    <td colspan="6" style="text-align: center; color: var(--text-secondary); padding: 24px;">No replacement requests found.</td>
+                                </tr>
+                            <?php else: ?>
+                                <?php foreach ($requests as $req): ?>
+                                    <tr>
+                                        <td><span class="cell-secondary-text">REP-<?= (int)$req['id'] ?></span></td>
+                                        <td>
+                                            <div class="cell-stacked">
+                                                <span class="cell-primary-text"><?= $escape($req['customer_name']) ?></span>
+                                                <span class="cell-secondary-text">BKG-<?= (int)$req['booking_id'] ?></span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="cell-stacked">
+                                                <span class="cell-primary-text"><?= $escape($req['orig_make'] . ' ' . $req['orig_model']) ?></span>
+                                                <span class="cell-secondary-text"><?= $escape($req['orig_plate']) ?></span>
+                                            </div>
+                                        </td>
+                                        <td><span style="font-size: 13px; color: var(--text-secondary);"><?= $escape($req['reason']) ?></span></td>
+                                        <td>
+                                            <span class="badge <?= $req['status'] === 'approved' ? 'badge-approved' : ($req['status'] === 'dispatched' ? 'badge-blue' : 'badge-pending') ?>">
+                                                <?= $escape(ucfirst($req['status'])) ?>
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <?php if ($req['status'] === 'pending'): ?>
+                                                <form method="post" action="replacement_handler.php" style="display: flex; flex-direction: column; gap: 6px;">
+                                                    <input type="hidden" name="csrf_token" value="<?= $escape(AuthHelper::getCsrfToken()) ?>">
+                                                    <input type="hidden" name="request_id" value="<?= (int)$req['id'] ?>">
+                                                    <select name="replacement_vehicle_id" class="form-control" style="font-size: 12px; padding: 4px 6px;">
+                                                        <option value="">Select Replacement Fleet...</option>
+                                                        <?php foreach ($eligibleVehicles as $ev): ?>
+                                                            <option value="<?= (int)$ev['id'] ?>">
+                                                                <?= $escape($ev['make'] . ' ' . $ev['model'] . ' (' . $ev['license_plate'] . ')') ?>
+                                                            </option>
+                                                        <?php endforeach; ?>
+                                                    </select>
+                                                    <button type="submit" class="btn btn-primary btn-sm">Assign & Approve</button>
+                                                </form>
+                                            <?php else: ?>
+                                                <span class="cell-secondary-text">
+                                                    Assigned: <?= $escape(($req['rep_make'] ?? '') . ' ' . ($req['rep_model'] ?? '')) ?>
+                                                </span>
+                                            <?php endif; ?>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
                         </tbody>
                     </table>
-                </div>
-
-                <div class="pagination-wrapper">
-                    <span class="pagination-info">Showing 1 to 2 of 2 entries</span>
-                    <div class="pagination-controls">
-                        <button class="page-btn" disabled>Previous</button>
-                        <button class="page-btn active">1</button>
-                        <button class="page-btn" disabled>Next</button>
-                    </div>
                 </div>
             </div>
         </main>
@@ -121,3 +130,6 @@ $pageTitle = "Replacement Driver Requests";
 
 <?php include __DIR__ . '/partials/modals.php'; ?>
 <?php include __DIR__ . '/partials/footer.php'; ?>
+
+</body>
+</html>
