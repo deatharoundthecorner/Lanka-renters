@@ -95,9 +95,6 @@ $csrfToken = AuthHelper::getCsrfToken();
                     <h1>Dashboard</h1>
                     <p>Welcome back, <?php echo htmlspecialchars($currentUser['name']); ?>. Here's your fleet overview.</p>
                 </div>
-                <div class="vehicles-action">
-                    <a href="vehicles.php#add-vehicle-form" class="button button-primary">+ Add Vehicle</a>
-                </div>
             </section>
 
             <!-- Statistics Cards -->
