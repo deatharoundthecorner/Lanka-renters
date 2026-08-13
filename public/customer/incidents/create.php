@@ -1,0 +1,19 @@
+<?php
+require_once dirname(__DIR__) . '/_bootstrap.php';
+require_once dirname(__DIR__, 3) . '/app/controllers/CustomerPortalController.php';
+$viewData = (new CustomerPortalController())->incidentCreatePage($_GET, $_POST, strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET')));
+if (isset($viewData['redirect'])) { header('Location: ' . customer_url($viewData['redirect']), true, 303); exit; }
+require dirname(__DIR__) . '/components/layout/feature-start.php';
+?>
+<p><a class="text-link" href="<?= htmlspecialchars(customer_url('incidents/index.php'), ENT_QUOTES, 'UTF-8') ?>">&larr; Back to incidents</a></p>
+<?php if ($viewData['database_error']): ?><section class="empty-state"><h2>Incident reporting is unavailable</h2><p>Please try again later.</p></section>
+<?php elseif ($viewData['eligible_bookings'] === []): ?><section class="empty-state"><h2>No eligible ongoing booking</h2><p>Incidents can only be reported for a Customer-owned booking with ongoing status.</p><a class="button button--secondary" href="<?= htmlspecialchars(customer_url('bookings/index.php'), ENT_QUOTES, 'UTF-8') ?>">View bookings</a></section>
+<?php else: ?><form class="card feature-form" method="post" action="<?= htmlspecialchars(customer_url('incidents/create.php'), ENT_QUOTES, 'UTF-8') ?>" data-submit-once><?= CustomerCsrf::field() ?><span class="demo-label demo-label--database">Database incident</span>
+    <?php if (isset($viewData['errors']['form'])): ?><div class="alert alert--error"><p><?= htmlspecialchars($viewData['errors']['form'], ENT_QUOTES, 'UTF-8') ?></p></div><?php endif; ?>
+    <label for="incident-booking">Ongoing booking</label><select id="incident-booking" name="booking_id" required><option value="">Choose booking</option><?php foreach ($viewData['eligible_bookings'] as $booking): ?><option value="<?= (int) $booking['id'] ?>" <?= (string) $booking['id'] === $viewData['form']['booking_id'] ? 'selected' : '' ?>>#<?= (int) $booking['id'] ?> — <?= htmlspecialchars($booking['make'] . ' ' . $booking['model'], ENT_QUOTES, 'UTF-8') ?></option><?php endforeach; ?></select><?php if(isset($viewData['errors']['booking_id'])):?><p class="field-error"><?=htmlspecialchars($viewData['errors']['booking_id'],ENT_QUOTES,'UTF-8')?></p><?php endif;?>
+    <label for="incident-date">Incident date and time</label><input id="incident-date" type="datetime-local" name="incident_date" value="<?= htmlspecialchars($viewData['form']['incident_date'], ENT_QUOTES, 'UTF-8') ?>" required><?php if(isset($viewData['errors']['incident_date'])):?><p class="field-error"><?=htmlspecialchars($viewData['errors']['incident_date'],ENT_QUOTES,'UTF-8')?></p><?php endif;?>
+    <label for="incident-severity">Observed severity</label><select id="incident-severity" name="severity"><?php foreach(['minor','moderate','major'] as $severity):?><option value="<?=$severity?>" <?=$viewData['form']['severity']===$severity?'selected':''?>><?=ucfirst($severity)?></option><?php endforeach;?></select>
+    <label for="incident-description">Description <span class="form-hint">10–2000 characters; plain text only</span></label><textarea id="incident-description" name="description" minlength="10" maxlength="2000" required data-character-input><?= htmlspecialchars($viewData['form']['description'], ENT_QUOTES, 'UTF-8') ?></textarea><span class="form-hint" data-character-count>0 / 2000</span><?php if(isset($viewData['errors']['description'])):?><p class="field-error"><?=htmlspecialchars($viewData['errors']['description'],ENT_QUOTES,'UTF-8')?></p><?php endif;?>
+    <p class="form-hint">The server assigns reported status. Customers cannot resolve, close, or delete incidents.</p><button class="button button--primary" type="submit">Save incident report</button>
+</form><?php endif; ?>
+<?php require dirname(__DIR__) . '/components/layout/feature-end.php'; ?>

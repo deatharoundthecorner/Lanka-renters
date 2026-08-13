@@ -26,11 +26,16 @@ if (AuthHelper::isLoggedIn()) {
 
 $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $authController = new AuthController();
-    $result = $authController->register($_POST);
-    
-    if (!$result['success']) {
-        $error = $result['error'];
+    $csrfToken = $_POST['csrf_token'] ?? '';
+    if (!AuthHelper::validateCsrfToken($csrfToken)) {
+        $error = 'Invalid session token. Request rejected.';
+    } else {
+        $authController = new AuthController();
+        $result = $authController->register($_POST);
+
+        if (!$result['success']) {
+            $error = $result['error'];
+        }
     }
 }
 ?>
@@ -93,6 +98,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <?php endif; ?>
             
             <form action="" method="POST">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(AuthHelper::getCsrfToken()); ?>">
                 <div class="form-group">
                     <label class="form-label" for="name">Full Name</label>
                     <input class="form-control" type="text" id="name" name="name" required placeholder="Enter your full name" value="<?php echo htmlspecialchars($_POST['name'] ?? ''); ?>">

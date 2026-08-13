@@ -1,0 +1,2 @@
+<label for="<?= htmlspecialchars((string) ($searchId ?? 'customer-search'), ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) ($searchLabel ?? 'Search'), ENT_QUOTES, 'UTF-8') ?></label>
+<input id="<?= htmlspecialchars((string) ($searchId ?? 'customer-search'), ENT_QUOTES, 'UTF-8') ?>" type="search" name="<?= htmlspecialchars((string) ($searchName ?? 'keyword'), ENT_QUOTES, 'UTF-8') ?>" maxlength="80" value="<?= htmlspecialchars((string) ($searchValue ?? ''), ENT_QUOTES, 'UTF-8') ?>">

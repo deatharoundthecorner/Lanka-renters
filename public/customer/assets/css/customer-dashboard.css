@@ -1,0 +1,266 @@
+/* Welcome and recommended action */
+.welcome-strip {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1.1rem 1.25rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-card);
+    background: var(--color-card);
+}
+
+.welcome-strip h2,
+.welcome-strip p:last-child {
+    margin-bottom: 0;
+}
+
+.welcome-strip p:last-child {
+    color: var(--color-text-secondary);
+    font-size: 0.9rem;
+}
+
+.next-action-card {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 1.15rem;
+    padding: 1.35rem;
+    border: 1px solid #BFDBFE;
+    border-radius: var(--radius-card);
+    background: var(--color-card);
+    box-shadow: var(--shadow-card);
+}
+
+.next-action-card__icon {
+    width: 3rem;
+    height: 3rem;
+}
+
+.next-action-card__copy h2 {
+    margin-bottom: 0.35rem;
+}
+
+.next-action-card__copy p:last-child {
+    margin-bottom: 0;
+    color: var(--color-text-secondary);
+}
+
+/* Summary cards */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.85rem;
+}
+
+.stat-card {
+    min-width: 0;
+    padding: 1.1rem;
+}
+
+.stat-card__top {
+    margin-bottom: 0.9rem;
+}
+
+.stat-card__icon {
+    display: inline-grid;
+    width: 2.45rem;
+    height: 2.45rem;
+    place-items: center;
+    border-radius: 10px;
+}
+
+.stat-card__icon--info {
+    color: var(--color-primary);
+    background: var(--color-primary-light);
+}
+
+.stat-card__icon--success {
+    color: var(--color-success);
+    background: var(--color-success-soft);
+}
+
+.stat-card__icon--warning {
+    color: var(--color-warning);
+    background: var(--color-warning-soft);
+}
+
+.stat-card__icon--neutral {
+    color: #475569;
+    background: var(--color-neutral-soft);
+}
+
+.stat-card h3 {
+    margin-bottom: 0.25rem;
+}
+
+.stat-card p {
+    margin-bottom: 0;
+    color: var(--color-text-secondary);
+    font-size: 0.8rem;
+}
+
+/* Dashboard content grids */
+.dashboard-grid {
+    display: grid;
+    gap: 1rem;
+}
+
+.dashboard-grid--main {
+    grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.85fr);
+    align-items: start;
+}
+
+.dashboard-stack {
+    display: grid;
+    gap: 1rem;
+}
+
+/* Quick actions */
+.quick-links-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.85rem;
+}
+
+.quick-action {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 0.8rem;
+    padding: 1rem;
+    color: var(--color-text);
+    text-decoration: none;
+    transition: border-color var(--transition-fast), transform var(--transition-fast);
+}
+
+.quick-action:hover {
+    border-color: #BFDBFE;
+    transform: translateY(-2px);
+}
+
+.quick-action__icon {
+    width: 2.5rem;
+    height: 2.5rem;
+    flex: 0 0 auto;
+}
+
+.quick-action__copy {
+    min-width: 0;
+    flex: 1;
+}
+
+.quick-action__copy strong,
+.quick-action__copy small {
+    display: block;
+}
+
+.quick-action__copy strong {
+    font-size: 0.87rem;
+}
+
+.quick-action__copy small {
+    margin-top: 0.15rem;
+    color: var(--color-text-secondary);
+    font-size: 0.72rem;
+}
+
+.quick-action__arrow {
+    display: inline-flex;
+    color: var(--color-text-secondary);
+}
+
+/* Rental progress */
+.progress-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.progress-list__item {
+    position: relative;
+    display: grid;
+    min-height: 4.2rem;
+    grid-template-columns: 2rem minmax(0, 1fr);
+    gap: 0.85rem;
+    padding-bottom: 0.85rem;
+}
+
+.progress-list__item:not(:last-child)::after {
+    position: absolute;
+    top: 1.8rem;
+    bottom: 0;
+    left: 0.94rem;
+    width: 2px;
+    background: var(--color-border);
+    content: '';
+}
+
+.progress-list__marker {
+    position: relative;
+    z-index: 1;
+    display: inline-grid;
+    width: 1.9rem;
+    height: 1.9rem;
+    place-items: center;
+    color: #94A3B8;
+    border: 3px solid #CBD5E1;
+    border-radius: 50%;
+    background: var(--color-card);
+}
+
+.progress-list__marker .icon {
+    width: 1rem;
+    height: 1rem;
+}
+
+.progress-list__item--complete .progress-list__marker {
+    color: #FFFFFF;
+    border-color: var(--color-success);
+    background: var(--color-success);
+}
+
+.progress-list__item--current .progress-list__marker {
+    border-color: var(--color-primary);
+    box-shadow: inset 0 0 0 5px var(--color-card);
+    background: var(--color-primary);
+}
+
+.progress-list__item strong {
+    display: block;
+    margin-top: 0.15rem;
+    font-size: 0.9rem;
+}
+
+.progress-list__item p {
+    margin: 0.15rem 0 0;
+    color: var(--color-text-secondary);
+    font-size: 0.78rem;
+}
+
+/* Customer guidance list */
+.check-list {
+    display: grid;
+    gap: 0.8rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.check-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    color: #475569;
+    font-size: 0.82rem;
+}
+
+.check-list li > span {
+    display: inline-flex;
+    color: var(--color-success);
+}
+
+.check-list .icon {
+    width: 1rem;
+    height: 1rem;
+}
