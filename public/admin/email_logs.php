@@ -1,9 +1,23 @@
 <?php
-// email_logs.php - Lanka Renters Email Logs & Monitoring Page
+
+require_once dirname(__DIR__, 2) . '/app/helpers/AuthHelper.php';
+require_once dirname(__DIR__, 2) . '/app/models/EmailLog.php';
 require_once __DIR__ . '/config/database.php';
-requireAdminLogin();
+
+AuthHelper::startSession();
+AuthHelper::requireRole('admin');
 
 $pageTitle = "Email Logs";
+
+try {
+    $model = new EmailLog();
+    $emailLogs = $model->getAll();
+} catch (Throwable $e) {
+    error_log("Email Logs Error: " . $e->getMessage());
+    $emailLogs = [];
+}
+
+$escape = static fn(mixed $val): string => htmlspecialchars((string)$val, ENT_QUOTES, 'UTF-8');
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -22,163 +36,57 @@ $pageTitle = "Email Logs";
         <?php include __DIR__ . '/partials/header.php'; ?>
 
         <main class="page-container">
-            <div class="page-header-box" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;">
-                <div>
-                    <h1 class="page-title">Email Logs</h1>
-                    <p class="page-subtitle">Monitor automated system notifications, email delivery logs, and manually retry failed messages.</p>
-                </div>
-                <button class="btn btn-primary" onclick="triggerManualEmail()">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-                    <span>Send Email</span>
-                </button>
-            </div>
-
-            <!-- TOP STATISTICS (2 CARDS) -->
-            <div class="grid-2">
-                <div class="stat-card" style="border-left: 4px solid var(--success);">
-                    <div class="stat-header">
-                        <span class="stat-label">Emails Sent Today</span>
-                        <div class="stat-icon-box green">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-                        </div>
-                    </div>
-                    <div class="stat-value">126</div>
-                    <div class="stat-comparison">Automated system emails</div>
-                </div>
-
-                <div class="stat-card" style="border-left: 4px solid var(--danger);">
-                    <div class="stat-header">
-                        <span class="stat-label">Failed Attempts</span>
-                        <div class="stat-icon-box" style="background: var(--danger-bg); color: var(--danger);">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
-                        </div>
-                    </div>
-                    <div class="stat-value">7</div>
-                    <div class="stat-comparison" style="color: var(--danger);">Requires manual retry</div>
-                </div>
+            <div class="page-header-box">
+                <h1 class="page-title">System Email Notification Logs</h1>
+                <p class="page-subtitle">Monitor automated system notifications, email delivery logs, and delivery audit trails.</p>
             </div>
 
             <div class="card">
-                <div class="filter-card">
-                    <div class="filter-group">
-                        <label for="filterSearch">Search Logs</label>
-                        <input type="text" id="filterSearch" class="form-control" placeholder="Search recipient, subject or booking ID...">
-                    </div>
-                    <div class="filter-group">
-                        <label for="filterType">Recipient Type</label>
-                        <select id="filterType" class="form-control">
-                            <option value="">All Recipient Types</option>
-                            <option value="Customer">Customer</option>
-                            <option value="Driver">Driver</option>
-                            <option value="Owner">Owner</option>
-                        </select>
-                    </div>
-                    <div style="display: flex; gap: 8px; align-self: flex-end;">
-                        <button class="btn btn-primary" onclick="initTableFilters()">Search</button>
-                        <button class="btn btn-secondary" id="filterResetBtn">Reset</button>
-                    </div>
+                <div class="card-header-clean">
+                    <h3 class="card-title-text">Email Notifications Log</h3>
+                    <span class="badge badge-approved"><?= count($emailLogs) ?> Total Logs</span>
                 </div>
 
                 <div class="table-responsive">
                     <table class="custom-table">
                         <thead>
                             <tr>
-                                <th>Recipient Type</th>
                                 <th>Recipient</th>
+                                <th>Role</th>
                                 <th>Subject</th>
                                 <th>Booking ID</th>
+                                <th>Sent Date</th>
                                 <th>Status</th>
-                                <th>Action</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr>
-                                <td><span class="badge badge-blue">Customer</span></td>
-                                <td>
-                                    <div class="cell-stacked">
-                                        <span class="cell-primary-text">John Perera</span>
-                                        <span class="cell-secondary-text">CUS-001</span>
-                                    </div>
-                                </td>
-                                <td>Booking Confirmation - BKG-101</td>
-                                <td><span class="cell-secondary-text">BKG-101</span></td>
-                                <td><span class="badge badge-sent">Sent</span></td>
-                                <td>
-                                    <button class="btn btn-doc" onclick="openDocModal('Email Content Preview - EML-101', 'Booking Confirmation Template')">View</button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td><span class="badge badge-blue">Owner</span></td>
-                                <td>
-                                    <div class="cell-stacked">
-                                        <span class="cell-primary-text">Sunil Wickramasinghe</span>
-                                        <span class="cell-secondary-text">OWN-001</span>
-                                    </div>
-                                </td>
-                                <td>New Rental Request Assigned</td>
-                                <td><span class="cell-secondary-text">BKG-101</span></td>
-                                <td><span class="badge badge-sent">Sent</span></td>
-                                <td>
-                                    <button class="btn btn-doc" onclick="openDocModal('Email Content Preview - EML-102', 'Owner Rental Notice Template')">View</button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td><span class="badge badge-blue">Driver</span></td>
-                                <td>
-                                    <div class="cell-stacked">
-                                        <span class="cell-primary-text">Kamal Silva</span>
-                                        <span class="cell-secondary-text">DRV-012</span>
-                                    </div>
-                                </td>
-                                <td>Trip Schedule Update - BKG-101</td>
-                                <td><span class="cell-secondary-text">BKG-101</span></td>
-                                <td><span class="badge badge-failed">Failed</span></td>
-                                <td>
-                                    <button class="btn btn-primary btn-sm" onclick="retryEmail('EML-103', 'Kamal Silva (DRV-012)')">Send Again</button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td><span class="badge badge-blue">Customer</span></td>
-                                <td>
-                                    <div class="cell-stacked">
-                                        <span class="cell-primary-text">Chamara Jayasinghe</span>
-                                        <span class="cell-secondary-text">CUS-004</span>
-                                    </div>
-                                </td>
-                                <td>Payment Received Receipt</td>
-                                <td><span class="cell-secondary-text">BKG-102</span></td>
-                                <td><span class="badge badge-sent">Sent</span></td>
-                                <td>
-                                    <button class="btn btn-doc" onclick="openDocModal('Email Content Preview - EML-104', 'Payment Receipt Template')">View</button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td><span class="badge badge-blue">Driver</span></td>
-                                <td>
-                                    <div class="cell-stacked">
-                                        <span class="cell-primary-text">Nuwan Bandara</span>
-                                        <span class="cell-secondary-text">DRV-002</span>
-                                    </div>
-                                </td>
-                                <td>Replacement Driver Request Approved</td>
-                                <td><span class="cell-secondary-text">BKG-101</span></td>
-                                <td><span class="badge badge-failed">Failed</span></td>
-                                <td>
-                                    <button class="btn btn-primary btn-sm" onclick="retryEmail('EML-105', 'Nuwan Bandara (DRV-002)')">Send Again</button>
-                                </td>
-                            </tr>
+                            <?php if (empty($emailLogs)): ?>
+                                <tr>
+                                    <td colspan="6" style="text-align: center; color: var(--text-secondary); padding: 24px;">No email log records found.</td>
+                                </tr>
+                            <?php else: ?>
+                                <?php foreach ($emailLogs as $log): ?>
+                                    <tr>
+                                        <td>
+                                            <div class="cell-stacked">
+                                                <span class="cell-primary-text"><?= $escape($log['recipient_name']) ?></span>
+                                                <span class="cell-secondary-text"><?= $escape($log['recipient_email']) ?></span>
+                                            </div>
+                                        </td>
+                                        <td><span class="badge badge-blue"><?= $escape(ucfirst($log['recipient_type'])) ?></span></td>
+                                        <td><?= $escape($log['subject']) ?></td>
+                                        <td><span class="cell-secondary-text"><?= $log['booking_id'] ? 'BKG-' . (int)$log['booking_id'] : 'N/A' ?></span></td>
+                                        <td><?= $escape($log['sent_at']) ?></td>
+                                        <td>
+                                            <span class="badge <?= $log['status'] === 'sent' ? 'badge-approved' : 'badge-pending' ?>">
+                                                <?= $escape(ucfirst($log['status'])) ?>
+                                            </span>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
                         </tbody>
                     </table>
-                </div>
-
-                <div class="pagination-wrapper">
-                    <span class="pagination-info">Showing 1 to 5 of 133 entries</span>
-                    <div class="pagination-controls">
-                        <button class="page-btn" disabled>Previous</button>
-                        <button class="page-btn active">1</button>
-                        <button class="page-btn">2</button>
-                        <button class="page-btn">Next</button>
-                    </div>
                 </div>
             </div>
         </main>
@@ -187,3 +95,6 @@ $pageTitle = "Email Logs";
 
 <?php include __DIR__ . '/partials/modals.php'; ?>
 <?php include __DIR__ . '/partials/footer.php'; ?>
+
+</body>
+</html>

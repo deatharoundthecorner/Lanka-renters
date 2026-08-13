@@ -1,12 +1,9 @@
 <?php
-// index.php - Lanka Renters Entry Point
-require_once __DIR__ . '/config/database.php';
+// index.php - Lanka Renters Admin Workspace Entry Point
+require_once dirname(__DIR__, 2) . '/app/helpers/AuthHelper.php';
 
-if (isset($_SESSION['admin_logged_in']) && $_SESSION['admin_logged_in'] === true) {
-    header("Location: dashboard.php");
-    exit;
-} else {
-    header("Location: login.php");
-    exit;
-}
-?>
+AuthHelper::startSession();
+AuthHelper::requireRole('admin');
+
+header("Location: dashboard.php");
+exit;

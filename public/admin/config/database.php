@@ -2,12 +2,10 @@
 // config/database.php
 // Lanka Renters Admin Dashboard - Database Connection & Data Provider Helper
 
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
+require_once dirname(__DIR__, 2) . '/app/helpers/AuthHelper.php';
 
 if (!defined('DB_HOST')) define('DB_HOST', '127.0.0.1');
-if (!defined('DB_PORT')) define('DB_PORT', '3308');
+if (!defined('DB_PORT')) define('DB_PORT', '3306');
 if (!defined('DB_USER')) define('DB_USER', 'root');
 if (!defined('DB_PASS')) define('DB_PASS', '');
 if (!defined('DB_NAME')) define('DB_NAME', 'lanka_renters');
@@ -30,8 +28,8 @@ function getDBConnection() {
         }
 
         try {
-            $host = (defined('DB_HOST') && DB_HOST !== '3308') ? DB_HOST : '127.0.0.1';
-            $port = defined('DB_PORT') ? DB_PORT : '3308';
+            $host = defined('DB_HOST') ? DB_HOST : '127.0.0.1';
+            $port = defined('DB_PORT') ? DB_PORT : '3306';
             $user = defined('DB_USER') ? DB_USER : 'root';
             $pass = defined('DB_PASS') ? DB_PASS : '';
             $dbname = defined('DB_NAME') ? DB_NAME : 'lanka_renters';
@@ -44,7 +42,6 @@ function getDBConnection() {
             ];
             $pdo = new PDO($dsn, $user, $pass, $options);
         } catch (PDOException $e) {
-            // Fallback gracefully to dummy mode if DB connection fails
             return null;
         }
     }
@@ -105,12 +102,10 @@ function getAnnouncementPriorities() {
     ];
 }
 
-// Security Helper: Protect Admin Access
+// Security Helper: Protect Admin Access using canonical AuthHelper
 function requireAdminLogin() {
-    if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== true) {
-        header("Location: login.php");
-        exit;
-    }
+    AuthHelper::startSession();
+    AuthHelper::requireRole('admin');
 }
 
 // Sanitization Helper
