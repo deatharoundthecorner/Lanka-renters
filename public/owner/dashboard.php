@@ -82,12 +82,13 @@ $csrfToken = AuthHelper::getCsrfToken();
 </head>
 <body>
 
-    <?php include 'includes/header.php'; ?>
-
     <div class="dashboard-layout">
         <?php include 'includes/sidebar.php'; ?>
 
-        <main class="main-content">
+        <div class="main-wrapper">
+            <?php include 'includes/header.php'; ?>
+
+            <main class="main-content">
             <!-- Page Header -->
             <section class="vehicles-header" style="margin-bottom: 24px;">
                 <div class="vehicles-title">
@@ -170,6 +171,7 @@ $csrfToken = AuthHelper::getCsrfToken();
             </section>
         </main>
     </div>
+</div>
 
 </body>
 </html>

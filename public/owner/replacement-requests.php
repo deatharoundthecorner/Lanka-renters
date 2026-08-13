@@ -13,22 +13,24 @@ AuthHelper::requireRole('owner');
 </head>
 <body>
 
-    <!-- Include Header -->
-    <?php include 'includes/header.php'; ?>
-
     <div class="dashboard-layout">
         <!-- Include Sidebar -->
         <?php include 'includes/sidebar.php'; ?>
 
-        <!-- Main Content Area -->
-        <main class="main-content">
-  <section class="replacement-card-wrapper">
-    <article class="replacement-card">
-      <h1>Replacement requests</h1>
-      <p>Respond to replacement vehicle requests from admin.</p>
-    </article>
-  </section>
-</main>
+        <div class="main-wrapper">
+            <!-- Include Header -->
+            <?php include 'includes/header.php'; ?>
+
+            <!-- Main Content Area -->
+            <main class="main-content">
+                <section class="replacement-card-wrapper">
+                    <article class="replacement-card">
+                        <h1>Replacement requests</h1>
+                        <p>Respond to replacement vehicle requests from admin.</p>
+                    </article>
+                </section>
+            </main>
+        </div>
     </div>
 
 </body>

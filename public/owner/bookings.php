@@ -30,12 +30,13 @@ $statusMap = [
 </head>
 <body>
 
-    <?php include 'includes/header.php'; ?>
-
     <div class="dashboard-layout">
         <?php include 'includes/sidebar.php'; ?>
 
-        <main class="main-content">
+        <div class="main-wrapper">
+            <?php include 'includes/header.php'; ?>
+
+            <main class="main-content">
             <!-- Page Header -->
             <section class="booking-header">
                 <div class="booking-title">
@@ -140,6 +141,7 @@ $statusMap = [
             </section>
         </main>
     </div>
+</div>
 
 </body>
 </html>

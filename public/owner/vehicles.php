@@ -209,15 +209,16 @@ $csrfToken = AuthHelper::getCsrfToken();
 </head>
 <body>
 
-    <!-- Include Header -->
-    <?php include 'includes/header.php'; ?>
-
     <div class="dashboard-layout">
         <!-- Include Sidebar -->
         <?php include 'includes/sidebar.php'; ?>
 
-        <!-- Main Content Area -->
-        <main class="main-content">
+        <div class="main-wrapper">
+            <!-- Include Header -->
+            <?php include 'includes/header.php'; ?>
+
+            <!-- Main Content Area -->
+            <main class="main-content">
             <section class="vehicles-header">
                 <div class="vehicles-title">
                     <h1>My Vehicles</h1>
@@ -551,6 +552,7 @@ $csrfToken = AuthHelper::getCsrfToken();
             </section>
         </main>
     </div>
+</div>
 
 </body>
 </html>
