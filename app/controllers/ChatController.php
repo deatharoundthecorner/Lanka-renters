@@ -157,10 +157,7 @@ class ChatController {
             $roomId = $this->chatModel->createRoom($bookingId);
 
             // Add the driver as participant
-            $this->chatModel->addParticipant($roomId, $context['user_id']);
-
-            // Add the customer as participant
-            $this->chatModel->addParticipant($roomId, $booking['customer_user_id']);
+            $this->chatModel->ensureBookingParticipants($roomId, $bookingId);
 
             return [
                 'success' => true,

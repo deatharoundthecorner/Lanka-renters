@@ -3,19 +3,7 @@ require_once dirname(dirname(__DIR__)) . '/app/controllers/DriverController.php'
 require_once dirname(dirname(__DIR__)) . '/app/helpers/AuthHelper.php';
 
 AuthHelper::startSession();
-
-// Localized driver auth check
-if (!AuthHelper::isLoggedIn()) {
-    header("Location: login.php");
-    exit();
-}
-
-$user = AuthHelper::getCurrentUser();
-if (($user['role'] ?? '') !== 'driver') {
-    AuthHelper::logout();
-    header("Location: login.php");
-    exit();
-}
+AuthHelper::requireRole('driver');
 
 $driverController = new DriverController();
 
@@ -41,7 +29,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 // Fetch dashboard data to get current status and driver profile details
 $dashboardResult = $driverController->dashboard();
 if (!$dashboardResult['success']) {
-    die("Error loading driver data: " . htmlspecialchars($dashboardResult['error']));
+    error_log('Driver availability load failed: ' . ($dashboardResult['error'] ?? 'Unknown error'));
+    die('The page could not be loaded. Please try again later.');
 }
 
 $profile = $dashboardResult['profile'];

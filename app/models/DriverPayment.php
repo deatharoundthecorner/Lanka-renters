@@ -78,18 +78,37 @@ class DriverPayment {
     }
 
     /**
-     * Creates a new driver payment record.
+     * Creates one driver payment record per booking.
      */
     public function createPayment($driverId, $bookingId, $amount, $status = 'pending') {
-        $sql = "INSERT INTO `driver_payments` (`driver_id`, `booking_id`, `amount`, `payment_status`) 
-                VALUES (:driver_id, :booking_id, :amount, :status)";
+        $existingSql = "SELECT `driver_id` FROM `driver_payments`
+                        WHERE `booking_id` = :booking_id
+                        LIMIT 1";
+        $existingStmt = $this->db->prepare($existingSql);
+        $existingStmt->execute(['booking_id' => $bookingId]);
+        $existingDriverId = $existingStmt->fetchColumn();
+
+        if ($existingDriverId !== false) {
+            return (int)$existingDriverId === (int)$driverId;
+        }
+
+        $sql = "INSERT INTO `driver_payments` (`driver_id`, `booking_id`, `amount`, `payment_status`)
+                VALUES (:driver_id, :booking_id, :amount, :status)
+                ON DUPLICATE KEY UPDATE `id` = `id`";
         $stmt = $this->db->prepare($sql);
-        return $stmt->execute([
+        $stmt->execute([
             'driver_id'  => $driverId,
             'booking_id' => $bookingId,
             'amount'     => $amount,
             'status'     => $status
         ]);
+
+        $storedDriverStmt = $this->db->prepare("SELECT `driver_id` FROM `driver_payments`
+                                                WHERE `booking_id` = :booking_id
+                                                LIMIT 1");
+        $storedDriverStmt->execute(['booking_id' => $bookingId]);
+
+        return (int)$storedDriverStmt->fetchColumn() === (int)$driverId;
     }
 
     /**

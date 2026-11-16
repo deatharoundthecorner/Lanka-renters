@@ -3,19 +3,7 @@ require_once dirname(dirname(__DIR__)) . '/app/controllers/DriverController.php'
 require_once dirname(dirname(__DIR__)) . '/app/helpers/AuthHelper.php';
 
 AuthHelper::startSession();
-
-// Localized driver auth check
-if (!AuthHelper::isLoggedIn()) {
-    header("Location: login.php");
-    exit();
-}
-
-$user = AuthHelper::getCurrentUser();
-if (($user['role'] ?? '') !== 'driver') {
-    AuthHelper::logout();
-    header("Location: login.php");
-    exit();
-}
+AuthHelper::requireRole('driver');
 
 $driverController = new DriverController();
 
@@ -81,7 +69,15 @@ include 'includes/navbar.php';
     <!-- Active Trips -->
     <h2 style="font-size: 18px; font-weight: 700; margin-bottom: 15px;">Active Assigned Trips</h2>
     <?php if (empty($activeTrips)): ?>
-        <p style="font-style: italic; color: var(--text-muted); margin-bottom: 30px;">No active or ongoing bookings are currently assigned to you.</p>
+        <div class="card">
+            <div class="lr-empty-state" style="padding: 24px 20px;">
+                <div class="lr-empty-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="12 8 8 12 12 16 12 8"/><line x1="16" y1="12" x2="12" y2="12"/></svg>
+                </div>
+                <h3>No active trips assigned</h3>
+                <p>No active or ongoing bookings are currently assigned to your driver profile.</p>
+            </div>
+        </div>
     <?php else: ?>
         <?php foreach ($activeTrips as $trip): ?>
             <div class="card" style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 30px;">
@@ -133,9 +129,16 @@ include 'includes/navbar.php';
     <div class="card">
         <h2 class="card-title">Completed Trip History</h2>
         <?php if (empty($completedTrips)): ?>
-            <p style="font-style: italic; color: var(--text-muted);">No completed or cancelled trips in your history.</p>
+            <div class="lr-empty-state" style="padding: 24px 20px;">
+                <div class="lr-empty-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                </div>
+                <h3>No trip history yet</h3>
+                <p>Completed and closed driver bookings will appear in this history log.</p>
+            </div>
         <?php else: ?>
-            <table>
+            <div class="lr-table-wrap table-responsive">
+                <table>
                 <thead>
                     <tr>
                         <th>Booking ID</th>
@@ -163,6 +166,7 @@ include 'includes/navbar.php';
                     <?php endforeach; ?>
                 </tbody>
             </table>
+            </div>
         <?php endif; ?>
     </div>
 

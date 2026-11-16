@@ -3,19 +3,7 @@ require_once dirname(dirname(__DIR__)) . '/app/helpers/AuthHelper.php';
 require_once dirname(dirname(__DIR__)) . '/app/controllers/ChatController.php';
 
 AuthHelper::startSession();
-
-// Localized driver auth check
-if (!AuthHelper::isLoggedIn()) {
-    header("Location: login.php");
-    exit();
-}
-
-$user = AuthHelper::getCurrentUser();
-if (($user['role'] ?? '') !== 'driver') {
-    AuthHelper::logout();
-    header("Location: login.php");
-    exit();
-}
+AuthHelper::requireRole('driver');
 
 $chatController = new ChatController();
 $error = '';
@@ -57,12 +45,7 @@ include 'includes/sidebar.php';
 include 'includes/navbar.php';
 ?>
 <main class="main-content">
-    <div class="welcome-container">
-        <div>
-            <h2 class="welcome-title">Driver Messages</h2>
-            <p class="welcome-subtitle">Chat directly with customers, vehicle owners, or system administrators.</p>
-        </div>
-    </div>
+    <div class="welcome-container"><div><h2 class="welcome-title">Messages</h2><p class="welcome-subtitle">Chat with customers about bookings currently assigned to you.</p></div></div>
 
     <!-- Alerts -->
     <?php if (!empty($success)): ?>
@@ -76,65 +59,56 @@ include 'includes/navbar.php';
         </div>
     <?php endif; ?>
 
-    <div style="display: grid; grid-template-columns: 2fr 1.2fr; gap: 30px; align-items: flex-start;">
-        <!-- Left: Conversations List -->
-        <div class="card" style="margin: 0;">
-            <h2 class="card-title">Conversations</h2>
+    <div class="lr-messages-layout">
+        <aside class="lr-messages-panel">
+            <h2>Booking conversations</h2>
             <?php if (empty($rooms)): ?>
-                <p style="font-style: italic; color: var(--text-muted);">No active conversations found.</p>
-            <?php else: ?>
-                <div style="display: flex; flex-direction: column; gap: 15px;">
-                    <?php foreach ($rooms as $room): ?>
-                        <div style="border: 1px solid var(--border); border-radius: 6px; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; background-color: #ffffff;">
-                            <div>
-                                <div style="font-weight: 700; font-size: 15px; color: var(--text-main); margin-bottom: 4px;">
-                                    Booking #<?php echo htmlspecialchars($room['booking_id']); ?> 
-                                    (Chat with <?php echo htmlspecialchars($room['other_participant_name'] ?? 'System'); ?> - <span style="text-transform: capitalize; font-size:12px; color: var(--text-muted);"><?php echo htmlspecialchars($room['other_participant_role'] ?? 'Participant'); ?></span>)
-                                </div>
-                                <div style="color: var(--text-muted); font-size: 13px; margin-bottom: 4px;">
-                                    <?php echo !empty($room['last_message']) ? htmlspecialchars($room['last_message']) : '<em>No messages yet.</em>'; ?>
-                                </div>
-                                <div style="font-size: 11px; color: #999;">
-                                    <?php echo !empty($room['last_message_time']) ? date('Y-m-d H:i', strtotime($room['last_message_time'])) : ''; ?>
-                                </div>
-                            </div>
-                            <div>
-                                <a href="chat.php?room_id=<?php echo (int)$room['room_id']; ?>" class="btn-blue" style="font-size: 13px; padding: 8px 16px;">Open Chat</a>
-                            </div>
-                        </div>
-                    <?php endforeach; ?>
-                </div>
-            <?php endif; ?>
-        </div>
-
-        <!-- Right: Start a New Chat -->
-        <div class="card" style="margin: 0; background-color: #f8fafc;">
-            <h2 class="card-title">Start New Chat</h2>
-            <?php if (empty($assignedBookings)): ?>
-                <p style="font-style: italic; color: var(--text-muted); font-size: 13px;">No assigned bookings found to initiate conversations.</p>
-            <?php else: ?>
-                <form action="" method="POST">
-                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(AuthHelper::getCsrfToken()); ?>">
-                    <input type="hidden" name="action" value="start_chat">
-                    
-                    <div class="form-group">
-                        <label for="booking_id" class="form-label">Choose Booking Trip</label>
-                        <select name="booking_id" id="booking_id" class="form-control" required>
-                            <option value="">-- Choose Booking --</option>
-                            <?php foreach ($assignedBookings as $b): ?>
-                                <option value="<?php echo (int)$b['id']; ?>">
-                                    Booking #<?php echo htmlspecialchars($b['id']); ?> (<?php echo htmlspecialchars($b['customer_name']); ?>)
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
+                <div class="lr-message-empty" style="min-height: 240px;">
+                    <div class="lr-message-empty-icon">
+                        <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.86 9.86 0 01-4.255-.949L3 20l1.395-3.72A7.15 7.15 0 013 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
                     </div>
-
-                    <button type="submit" class="btn-blue" style="width: 100%; margin-top: 10px;">Initialize Chat</button>
-                </form>
+                    <h3>No eligible conversations</h3>
+                    <p>Messages become available when you are assigned to an eligible rental.</p>
+                </div>
+            <?php else: ?>
+                <ul class="lr-message-rooms">
+                    <?php foreach ($rooms as $room): ?>
+                        <li class="lr-message-room">
+                            <a href="chat.php?room_id=<?php echo (int)$room['room_id']; ?>">
+                                <div class="chat-room-info">
+                                    <div class="chat-room-title">Booking #<?php echo (int)$room['booking_id']; ?></div>
+                                    <div class="chat-room-sub"><?php echo htmlspecialchars(($room['make'] ?? '') . ' ' . ($room['model'] ?? '')); ?></div>
+                                    <div class="chat-room-meta"><?php echo !empty($room['last_message']) ? htmlspecialchars($room['last_message']) : 'No messages yet'; ?></div>
+                                </div>
+                            </a>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
             <?php endif; ?>
-        </div>
+            <form class="lr-message-picker" action="" method="POST">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(AuthHelper::getCsrfToken()); ?>">
+                <input type="hidden" name="action" value="start_chat">
+                <label for="booking_id">Open conversation for booking</label>
+                <select name="booking_id" id="booking_id" required>
+                    <option value="">Choose booking</option>
+                    <?php foreach ($assignedBookings as $b): ?>
+                        <option value="<?php echo (int)$b['id']; ?>">#<?php echo (int)$b['id']; ?> — <?php echo htmlspecialchars(($b['customer_name'] ?? 'Assigned rental')); ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <button type="submit" class="button button-primary btn-primary" <?php echo empty($assignedBookings) ? 'disabled' : ''; ?>>Open booking chat</button>
+                <?php if (empty($assignedBookings)): ?>
+                    <p class="form-hint">No eligible assigned rental is available.</p>
+                <?php endif; ?>
+            </form>
+        </aside>
+        <section class="lr-messages-window" aria-live="polite">
+            <div class="lr-message-empty">
+                <div class="lr-message-empty-icon">
+                    <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.86 9.86 0 01-4.255-.949L3 20l1.395-3.72A7.15 7.15 0 013 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+                </div>
+                <h2>Select a conversation</h2>
+                <p>Messages are stored in MySQL and limited to assigned booking participants.</p>
+            </div>
+        </section>
     </div>
 </main>
-<?php
-include 'includes/footer.php';
-?>
