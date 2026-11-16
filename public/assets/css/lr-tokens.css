@@ -1,0 +1,48 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap');
+
+:root {
+    --lr-primary: #0b57d0;
+    --lr-primary-hover: #0845aa;
+    --lr-primary-soft: #eaf3ff;
+
+    --lr-accent: #f59e0b;
+    --lr-accent-hover: #d97706;
+
+    --lr-text: #0b1220;
+    --lr-text-muted: #61708a;
+
+    --lr-bg: #f6f8fb;
+    --lr-surface: #ffffff;
+
+    --lr-border: #dce4ee;
+
+    --lr-success: #079669;
+    --lr-warning: #d97706;
+    --lr-danger: #dc2626;
+    --lr-info: #2563eb;
+
+    --lr-font: "Montserrat", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --lr-sidebar-width: 270px;
+    --lr-header-height: 64px;
+    --lr-radius-sm: 6px;
+    --lr-radius: 10px;
+    --lr-radius-lg: 14px;
+    --lr-shadow-sm: 0 1px 2px rgba(11, 18, 32, 0.05);
+
+    /* Temporary aliases keep existing Driver selectors visually compatible. */
+    --bg-main: var(--lr-bg);
+    --bg-card: var(--lr-surface);
+    --primary: var(--lr-primary);
+    --primary-hover: var(--lr-primary-hover);
+    --text-main: var(--lr-text);
+    --text-dark: var(--lr-text);
+    --text-muted: var(--lr-text-muted);
+    --text-secondary: var(--lr-text-muted);
+    --border: var(--lr-border);
+    --border-light: var(--lr-border);
+    --success: var(--lr-success);
+    --warning: var(--lr-warning);
+    --danger: var(--lr-danger);
+    --sidebar-width: var(--lr-sidebar-width);
+    --navbar-height: var(--lr-header-height);
+}

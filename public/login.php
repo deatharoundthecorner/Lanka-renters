@@ -1,4 +1,6 @@
 <?php
+require_once dirname(__DIR__) . '/app/controllers/AuthController.php';
+require_once dirname(__DIR__) . '/app/helpers/AuthHelper.php';
 
 // Unified Sign In Page
 
@@ -18,7 +20,7 @@ if (AuthHelper::isLoggedIn()) {
             header("Location: driver/dashboard.php");
             break;
         case 'customer':
-            header("Location: customer/dashboard.php");
+            header("Location: customer/dashboard/index.php");
             break;
     }
     exit();
@@ -26,31 +28,44 @@ if (AuthHelper::isLoggedIn()) {
 
 $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $email = $_POST['email'] ?? '';
-    $password = $_POST['password'] ?? '';
-    
-    $authController = new AuthController();
-    $result = $authController->login($email, $password);
-    
-    if ($result['success']) {
-        $user = AuthHelper::getCurrentUser();
-        switch ($user['role'] ?? '') {
-            case 'admin':
-                header("Location: admin/dashboard.php");
-                break;
-            case 'owner':
-                header("Location: owner/dashboard.php");
-                break;
-            case 'driver':
-                header("Location: driver/dashboard.php");
-                break;
-            case 'customer':
-                header("Location: customer/dashboard.php");
-                break;
-        }
-        exit();
+    $csrfToken = $_POST['csrf_token'] ?? '';
+    if (!AuthHelper::validateCsrfToken($csrfToken)) {
+        $error = 'Invalid session token. Request rejected.';
     } else {
-        $error = $result['error'];
+        $email = $_POST['email'] ?? '';
+        $password = $_POST['password'] ?? '';
+
+        $authController = new AuthController();
+        $result = $authController->login($email, $password);
+
+        if ($result['success']) {
+            $user = AuthHelper::getCurrentUser();
+            switch ($user['role'] ?? '') {
+                case 'admin':
+                    header("Location: admin/dashboard.php");
+                    break;
+                case 'owner':
+                    header("Location: owner/dashboard.php");
+                    break;
+                case 'driver':
+                    header("Location: driver/dashboard.php");
+                    break;
+                case 'customer':
+                    if (!empty($_GET['redirect'])) {
+                        $redirectUrl = $_GET['redirect'];
+                        // Ensure the redirect is safe (local/relative path or matching host)
+                        if (strpos($redirectUrl, '://') === false || (isset($_SERVER['HTTP_HOST']) && strpos($redirectUrl, $_SERVER['HTTP_HOST']) !== false)) {
+                            header("Location: " . $redirectUrl);
+                            exit();
+                        }
+                    }
+                    header("Location: customer/dashboard/index.php");
+                    break;
+            }
+            exit();
+        } else {
+            $error = $result['error'];
+        }
     }
 }
 ?>
@@ -62,7 +77,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <title>Sign In - Lanka Renters</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/lr-auth.css">
     <style>
         :root {
             --dark-blue: #0B3A82;
@@ -78,7 +94,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: 'Outfit', sans-serif;
+            font-family: 'Montserrat', 'Segoe UI', sans-serif;
         }
 
         body {
@@ -242,7 +258,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     </style>
 </head>
-<body>
+<body class="auth-page auth-page--login">
 
     <!-- Background Decors (Vehicle themed SVGs) -->
     <svg class="bg-decor decor-left" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -254,10 +270,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <div class="login-container">
         <div class="login-card">
-            <div class="logo-section">
-                <h1 class="logo-text">Lanka Renters</h1>
+            <div class="logo-section" style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                <img class="auth-brand-logo" src="assets/images/brand/lanka-renters-mark.png" alt="Lanka Renters logo mark">
+                <div class="logo-text">Lanka Renters</div>
                 <p class="subtitle">Unified Sign In Portal</p>
             </div>
+
+            <?php if (!empty($_GET['message'])): ?>
+                <div class="alert-box" style="background-color: #EFF6FF; border: 1px solid #BFDBFE; color: #1D4ED8; margin-bottom: 20px;">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <span><?php echo htmlspecialchars($_GET['message']); ?></span>
+                </div>
+            <?php endif; ?>
 
             <?php if (!empty($error)): ?>
                 <div class="alert-box">
@@ -269,6 +295,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <?php endif; ?>
 
             <form action="" method="POST">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(AuthHelper::getCsrfToken()); ?>">
                 <div class="form-group">
                     <label class="form-label" for="email">Email Address</label>
                     <input class="form-input" type="email" id="email" name="email" required placeholder="name@example.com" autofocus>
@@ -276,7 +303,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 <div class="form-group">
                     <label class="form-label" for="password">Password</label>
-                    <input class="form-input" type="password" id="password" name="password" required placeholder="••••••••">
+                    <div class="password-field">
+                        <input class="form-input" type="password" id="password" name="password" required placeholder="••••••••">
+                        <button class="password-toggle" type="button" data-password-toggle="password" aria-controls="password" aria-label="Show password" aria-pressed="false">Show</button>
+                    </div>
                 </div>
 
                 <button type="submit" class="btn-submit">Sign In</button>
@@ -288,6 +318,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
     </div>
 
+    <script src="assets/js/password-visibility.js" defer></script>
 </body>
 </html>
-

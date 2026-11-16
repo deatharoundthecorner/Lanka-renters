@@ -20,18 +20,8 @@ class Chat {
      * @return int Room ID
      */
     public function createRoom($bookingId) {
-        // Check if room exists
-        $sqlCheck = "SELECT `id` FROM `chat_rooms` WHERE `booking_id` = :booking_id LIMIT 1";
-        $stmt = $this->db->prepare($sqlCheck);
-        $stmt->execute(['booking_id' => $bookingId]);
-        $roomId = $stmt->fetchColumn();
-
-        if ($roomId) {
-            return (int)$roomId;
-        }
-
-        // Create new room
-        $sqlInsert = "INSERT INTO `chat_rooms` (`booking_id`) VALUES (:booking_id)";
+        $sqlInsert = "INSERT INTO `chat_rooms` (`booking_id`) VALUES (:booking_id)
+                      ON DUPLICATE KEY UPDATE `id` = LAST_INSERT_ID(`id`)";
         $stmt = $this->db->prepare($sqlInsert);
         $stmt->execute(['booking_id' => $bookingId]);
         return (int)$this->db->lastInsertId();
@@ -63,6 +53,40 @@ class Chat {
             'room_id' => $roomId,
             'user_id' => $userId
         ]);
+    }
+
+    /** Ensures the booking's eligible Customer, Owner, and assigned Driver are enrolled. */
+    public function ensureBookingParticipants($roomId, $bookingId): void {
+        $statement = $this->db->prepare(
+            "SELECT c.user_id AS customer_user_id,
+                    vo.user_id AS owner_user_id,
+                    du.id AS driver_user_id
+             FROM bookings b
+             JOIN customers c ON c.id = b.customer_id
+             JOIN vehicles v ON v.id = b.vehicle_id
+             JOIN vehicle_owners vo ON vo.id = v.owner_id
+             LEFT JOIN drivers d ON d.id = b.driver_id
+             LEFT JOIN users du ON du.id = d.user_id
+             WHERE b.id = :booking_id
+             LIMIT 1"
+        );
+        $statement->execute(['booking_id' => $bookingId]);
+        $booking = $statement->fetch(PDO::FETCH_ASSOC);
+        if (!is_array($booking)) {
+            return;
+        }
+
+        $participantStatement = $this->db->prepare(
+            'INSERT IGNORE INTO chat_participants (room_id, user_id) VALUES (:room_id, :user_id)'
+        );
+        foreach ([$booking['customer_user_id'], $booking['owner_user_id'], $booking['driver_user_id']] as $userId) {
+            if ((int)$userId > 0) {
+                $participantStatement->execute([
+                    'room_id' => (int)$roomId,
+                    'user_id' => (int)$userId,
+                ]);
+            }
+        }
     }
 
     /**
@@ -124,25 +148,85 @@ class Chat {
      * @return array Array of room details
      */
     public function getDriverRooms($userId) {
+        return $this->getUserRooms($userId);
+    }
+
+    /**
+     * Retrieves all chat rooms for any user (Owner, Driver, Customer, Admin).
+     *
+     * @param int $userId User ID (users.id)
+     * @return array
+     */
+    public function getUserRooms($userId) {
         $sql = "SELECT cr.id as room_id, cr.booking_id,
+                       b.vehicle_id, v.make, v.model, v.license_plate,
                        (SELECT u.name FROM chat_participants cp2 
                         JOIN users u ON cp2.user_id = u.id 
-                        WHERE cp2.room_id = cr.id AND cp2.user_id != :user_id LIMIT 1) as other_participant_name,
+                        WHERE cp2.room_id = cr.id AND cp2.user_id != :user_id1 LIMIT 1) as other_participant_name,
                        (SELECT u.role FROM chat_participants cp2 
                         JOIN users u ON cp2.user_id = u.id 
-                        WHERE cp2.room_id = cr.id AND cp2.user_id != :user_id LIMIT 1) as other_participant_role,
-                       cm.message_text as last_message, cm.sent_at as last_message_time
+                        WHERE cp2.room_id = cr.id AND cp2.user_id != :user_id2 LIMIT 1) as other_participant_role,
+                       cm.message_text as last_message, cm.sent_at as last_message_time,
+                        (SELECT COUNT(*) FROM chat_messages cm_unread
+                         WHERE cm_unread.room_id = cr.id AND cm_unread.sender_id != :user_id3 AND cm_unread.is_read = 0) as unread_count
                 FROM chat_rooms cr
                 JOIN chat_participants cp ON cr.id = cp.room_id
+                LEFT JOIN bookings b ON cr.booking_id = b.id
+                LEFT JOIN vehicles v ON b.vehicle_id = v.id
                 LEFT JOIN chat_messages cm ON cm.id = (
-                    SELECT id FROM chat_messages 
-                    WHERE room_id = cr.id 
+                    SELECT id FROM chat_messages
+                    WHERE room_id = cr.id
                     ORDER BY sent_at DESC, id DESC LIMIT 1
                 )
-                WHERE cp.user_id = :user_id
+                WHERE cp.user_id = :user_id4
                 ORDER BY COALESCE(cm.sent_at, cr.created_at) DESC";
         $stmt = $this->db->prepare($sql);
-        $stmt->execute(['user_id' => $userId]);
+        $stmt->execute([
+            'user_id1' => (int)$userId,
+            'user_id2' => (int)$userId,
+            'user_id3' => (int)$userId,
+            'user_id4' => (int)$userId
+        ]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Marks all unread messages in a room as read for a given user.
+     *
+     * @param int $roomId
+     * @param int $userId
+     * @return bool
+     */
+    public function markMessagesAsRead($roomId, $userId) {
+        $sql = "UPDATE chat_messages SET is_read = 1 WHERE room_id = :room_id AND sender_id != :user_id AND is_read = 0";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([
+            'room_id' => (int)$roomId,
+            'user_id' => (int)$userId
+        ]);
+    }
+
+    /**
+     * Ensures an Owner is enrolled as a participant in all chat rooms associated with bookings of their vehicles.
+     *
+     * @param int $ownerId
+     * @param int $ownerUserId
+     * @return void
+     */
+    public function ensureOwnerRoomsEnrolled($ownerId, $ownerUserId) {
+        $sql = "SELECT b.id as booking_id
+                FROM bookings b
+                JOIN vehicles v ON b.vehicle_id = v.id
+                WHERE v.owner_id = :owner_id";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute(['owner_id' => (int)$ownerId]);
+        $bookings = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
+        foreach ($bookings as $bId) {
+            $roomId = $this->createRoom((int)$bId);
+            if ($roomId > 0) {
+                $this->ensureBookingParticipants($roomId, (int)$bId);
+            }
+        }
     }
 }
