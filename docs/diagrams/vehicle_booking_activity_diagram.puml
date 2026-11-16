@@ -1,0 +1,150 @@
+@startuml Vehicle_Booking_Activity_Diagram
+!theme C4_Standard
+skinparam DefaultFontName "Arial"
+skinparam DefaultFontSize 12
+skinparam ActivityFontSize 12
+skinparam ActivityFontColor #0F172A
+skinparam ActivityBackgroundColor #F8FAFC
+skinparam ActivityBorderColor #475569
+skinparam ActivityBorderThickness 1.5
+skinparam DiamondBackgroundColor #FEF3C7
+skinparam DiamondBorderColor #D97706
+skinparam DiamondFontColor #78350F
+skinparam ArrowColor #2563EB
+skinparam ArrowThickness 1.5
+skinparam SwimlaneTitleBackgroundColor #1E293B
+skinparam SwimlaneTitleFontColor #FFFFFF
+skinparam SwimlaneTitleFontSize 13
+skinparam SwimlaneBorderColor #94A3B8
+
+title **LANKA RENTERS - VEHICLE BOOKING PROCESS (ACTIVITY DIAGRAM)**
+
+|#F1F5F9| Customer
+start
+:Browse & Select Vehicle;
+
+|#F0FDF4| System Logic
+if (Customer & Guarantor Verified?) then (Yes)
+  
+  |#F1F5F9| Customer
+  :Select Service Type\n(Self-Drive OR With-Driver);
+  :Select Dates & Pickup Location;
+
+  |#F0FDF4| System Logic
+  if (Rental Dates Valid & Available?) then (Yes)
+    
+    if (Service Type?) then (With Driver)
+      :Verify Driver Documents & Schedule;
+      if (Eligible Driver Available?) then (Yes)
+        |#FFF7ED| Owner & Driver
+        :Assign Driver to Booking;
+      else (No)
+        |#F0FDF4| System Logic
+        #FECACA:Display Error: No Driver Available;
+        stop
+      endif
+    else (Self-Drive)
+      |#F0FDF4| System Logic
+      :Validate Collection Location;
+    endif
+
+    :Calculate Estimate & Key Money Deposit;
+    
+    |#F1F5F9| Customer
+    :Review Estimate & Accept Terms;
+    
+    |#F0FDF4| System Logic
+    :Create Booking Request\n[Status: Pending Approval];
+
+    |#FFF7ED| Owner & Driver
+    if (Owner Approves Request?) then (Approved)
+      
+      |#F1F5F9| Customer
+      :Select Payment Method;
+      
+      if (Payment Type?) then (Online Gateway)
+        |#FAF5FF| Payment & Admin
+        :Process Card Payment;
+        if (Payment Success?) then (Yes)
+          |#F0FDF4| System Logic
+          #BBF7D0:Status -> Confirmed;
+        else (No)
+          |#F0FDF4| System Logic
+          #FECACA:Auto-Cancel Booking;
+          stop
+        endif
+      else (Bank Transfer Slip)
+        |#F1F5F9| Customer
+        :Upload Bank Deposit Receipt;
+        |#FAF5FF| Payment & Admin
+        if (Admin Validates Slip?) then (Valid)
+          |#F0FDF4| System Logic
+          #BBF7D0:Status -> Confirmed;
+        else (Invalid)
+          |#F0FDF4| System Logic
+          #FECACA:Reject Slip & Request Re-upload;
+          stop
+        endif
+      endif
+
+      |#FFF7ED| Owner & Driver
+      :Perform Pre-Rental Joint Inspection;
+      :Handover Keys & Vehicle;
+      
+      |#F0FDF4| System Logic
+      #BBF7D0:Status -> Ongoing;
+
+      |#F1F5F9| Customer
+      :Drive / Use Vehicle During Rental;
+
+      if (In-Trip Incident / Request?) then (Breakdown / Accident)
+        :Report Incident to System;
+        |#FFF7ED| Owner & Driver
+        :Dispatch Roadside Support / Unit;
+        |#F1F5F9| Customer
+        :Resume Rental;
+      elseif (Extension Request) then (Yes)
+        :Request Date Extension;
+        |#FFF7ED| Owner & Driver
+        if (Owner Approves Extension?) then (Yes)
+          |#F0FDF4| System Logic
+          :Recalculate Cost & Update End Date;
+        else (No)
+          |#F1F5F9| Customer
+          :Keep Original Return Date;
+        endif
+      else (Normal Operation)
+      endif
+
+      |#F1F5F9| Customer
+      :Return Vehicle at Location;
+
+      |#FFF7ED| Owner & Driver
+      :Inspect Return Condition, Fuel & Mileage;
+
+      |#F0FDF4| System Logic
+      :Calculate Over-Mileage / Fuel / Damage Fees;
+      :Process Key Money Deposit Refund;
+      #BBF7D0:Status -> Completed;
+
+      |#F1F5F9| Customer
+      :Submit Rating & Review;
+      stop
+
+    else (Rejected / Expired)
+      |#F0FDF4| System Logic
+      #FECACA:Status -> Rejected / Expired;
+      stop
+    endif
+
+  else (Invalid / Overlap)
+    #FECACA:Display Error: Invalid Dates;
+    stop
+  endif
+
+else (Not Verified)
+  #FECACA:Prompt Customer Verification;
+  stop
+endif
+
+@enduml

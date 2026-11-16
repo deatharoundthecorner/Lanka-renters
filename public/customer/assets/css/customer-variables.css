@@ -1,0 +1,23 @@
+/* Customer design tokens */
+:root {
+    --color-primary-dark: #0B3A82;
+    --color-primary: #1357C8;
+    --color-primary-light: #DBEAFE;
+    --color-background: #F8FAFC;
+    --color-card: #FFFFFF;
+    --color-text: #0F172A;
+    --color-text-secondary: #64748B;
+    --color-border: #E2E8F0;
+    --color-success: #0F8A65;
+    --color-success-soft: #DCFCE7;
+    --color-warning: #B45309;
+    --color-warning-soft: #FEF3C7;
+    --color-error: #B42318;
+    --color-error-soft: #FEE2E2;
+    --color-neutral-soft: #F1F5F9;
+    --radius-card: 16px;
+    --radius-control: 10px;
+    --shadow-card: 0 8px 24px rgba(15, 23, 42, 0.06);
+    --sidebar-width: 272px;
+    --transition-fast: 180ms ease;
+}

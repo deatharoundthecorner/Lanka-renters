@@ -1,22 +1,18 @@
 <?php
-$title = $title ?? "Statistic";
-$value = $value ?? "0";
-$icon = $icon ?? "📊";
-$color = $color ?? "primary";
+$stat = is_array($stat ?? null) ? $stat : [];
+$tone = in_array(($stat['tone'] ?? ''), ['info', 'success', 'warning', 'neutral'], true)
+    ? (string) $stat['tone']
+    : 'neutral';
 ?>
-
-<div class="stat-card">
-
-    <div class="stat-card__icon <?= htmlspecialchars($color) ?>">
-        <?= htmlspecialchars($icon) ?>
+<article class="stat-card">
+    <div class="stat-card__top">
+        <span class="stat-card__icon stat-card__icon--<?= htmlspecialchars($tone, ENT_QUOTES, 'UTF-8') ?>" aria-hidden="true">
+            <?= customer_icon((string) ($stat['icon'] ?? 'info')) ?>
+        </span>
+        <span class="status-badge status-badge--<?= htmlspecialchars($tone, ENT_QUOTES, 'UTF-8') ?>">
+            <?= htmlspecialchars((string) ($stat['value'] ?? '0'), ENT_QUOTES, 'UTF-8') ?>
+        </span>
     </div>
-
-    <div class="stat-card__content">
-
-        <h3><?= htmlspecialchars($value) ?></h3>
-
-        <p><?= htmlspecialchars($title) ?></p>
-
-    </div>
-
-</div>
+    <h3><?= htmlspecialchars((string) ($stat['label'] ?? 'Statistic'), ENT_QUOTES, 'UTF-8') ?></h3>
+    <p><?= htmlspecialchars((string) ($stat['detail'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
+</article>

@@ -14,3 +14,26 @@ Thumbs.db
 
 # Temporary files
 *.tmp
+
+# Local runtime files
+mysql_stderr.log
+mysql_stdout.log
+public/uploads/
+storage/customer-verification-documents/
+
+# Never publish uploaded or locally stored user files
+/uploads/
+/storage/
+/public/uploads/
+/public/assets/uploads/
+
+# Local configuration and secrets
+.env.*
+!.env.example
+
+# Database exports and private/sample data dumps
+/database/*dump*.sql
+/database/lanka_renters*.sql
+/database/sample*.sql
+/public/admin/database.sql
+/docs/Customer/sql/*dummy_data.sql
