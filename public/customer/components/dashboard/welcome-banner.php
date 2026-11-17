@@ -1,0 +1,1 @@
+<section class="welcome-strip"><div><p class="eyebrow">Customer workspace</p><h2>Welcome, <?= htmlspecialchars((string) ($welcomeName ?? 'Customer'), ENT_QUOTES, 'UTF-8') ?></h2><p>Your actions and records remain scoped to your authenticated account.</p></div></section>

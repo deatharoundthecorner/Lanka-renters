@@ -4,19 +4,8 @@ require_once dirname(dirname(__DIR__)) . '/app/models/Notification.php';
 require_once dirname(dirname(__DIR__)) . '/app/controllers/DriverController.php';
 
 AuthHelper::startSession();
-
-// Localized driver auth check
-if (!AuthHelper::isLoggedIn()) {
-    header("Location: login.php");
-    exit();
-}
-
+AuthHelper::requireRole('driver');
 $user = AuthHelper::getCurrentUser();
-if (($user['role'] ?? '') !== 'driver') {
-    AuthHelper::logout();
-    header("Location: login.php");
-    exit();
-}
 
 $notificationModel = new Notification();
 $driverController = new DriverController();

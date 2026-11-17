@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#EFF6FF" />
+      <stop offset="100%" stop-color="#DBEAFE" />
+    </linearGradient>
+    <linearGradient id="carGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#3B82F6" />
+      <stop offset="100%" stop-color="#1D4ED8" />
+    </linearGradient>
+  </defs>
+  <rect width="100%" height="100%" rx="16" fill="url(#bgGrad)" />
+  <g transform="translate(100, 80)">
+    <!-- Road Line -->
+    <line x1="0" y1="300" x2="600" y2="300" stroke="#94A3B8" stroke-width="4" stroke-linecap="round" />
+    
+    <!-- Car Body Shadow -->
+    <ellipse cx="300" cy="295" rx="240" ry="15" fill="#1E293B" opacity="0.15" />
+    
+    <!-- Car Body Upper -->
+    <path d="M 120 220 C 120 220 180 120 260 110 C 310 103 400 110 440 150 C 470 180 500 210 520 220 Z" fill="url(#carGrad)" />
+    
+    <!-- Windows -->
+    <path d="M 255 125 C 255 125 200 190 150 210 L 260 210 L 260 125 Z" fill="#FFFFFF" opacity="0.75" />
+    <path d="M 280 125 L 280 210 L 440 210 C 430 180 410 150 380 135 C 350 125 300 125 280 125 Z" fill="#FFFFFF" opacity="0.75" />
+    
+    <!-- Car Body Lower -->
+    <path d="M 60 220 C 60 200 90 190 120 190 L 480 190 C 510 190 540 200 540 220 L 540 265 C 540 275 530 285 520 285 L 80 285 C 70 285 60 275 60 265 Z" fill="url(#carGrad)" />
+    
+    <!-- Headlights & Taillights -->
+    <path d="M 525 210 L 540 210 L 538 230 L 522 225 Z" fill="#FBBF24" />
+    <path d="M 60 210 L 70 210 L 68 225 L 58 220 Z" fill="#EF4444" />
+    
+    <!-- Wheel Arches -->
+    <path d="M 115 285 A 45 45 0 0 1 205 285" fill="none" stroke="#DBEAFE" stroke-width="8" />
+    <path d="M 395 285 A 45 45 0 0 1 485 285" fill="none" stroke="#DBEAFE" stroke-width="8" />
+    
+    <!-- Wheels -->
+    <circle cx="160" cy="285" r="35" fill="#1E293B" stroke="#64748B" stroke-width="5" />
+    <circle cx="160" cy="285" r="15" fill="#94A3B8" />
+    <circle cx="440" cy="285" r="35" fill="#1E293B" stroke="#64748B" stroke-width="5" />
+    <circle cx="440" cy="285" r="15" fill="#94A3B8" />
+  </g>
+  <text x="50%" y="450" font-family="'Outfit', sans-serif" font-size="28" font-weight="700" fill="#1E293B" text-anchor="middle">Lanka Renters - Premium Car</text>
+</svg>

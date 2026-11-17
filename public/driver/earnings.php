@@ -3,26 +3,15 @@ require_once dirname(dirname(__DIR__)) . '/app/helpers/AuthHelper.php';
 require_once dirname(dirname(__DIR__)) . '/app/controllers/DriverController.php';
 
 AuthHelper::startSession();
-
-// Localized driver auth check
-if (!AuthHelper::isLoggedIn()) {
-    header("Location: login.php");
-    exit();
-}
-
-$user = AuthHelper::getCurrentUser();
-if (($user['role'] ?? '') !== 'driver') {
-    AuthHelper::logout();
-    header("Location: login.php");
-    exit();
-}
+AuthHelper::requireRole('driver');
 
 $driverController = new DriverController();
 
 // Fetch earnings history and split
 $earningsResult = $driverController->viewEarningsDetail();
 if (!$earningsResult['success']) {
-    die("Error retrieving earnings details: " . htmlspecialchars($earningsResult['error']));
+    error_log('Driver earnings load failed: ' . ($earningsResult['error'] ?? 'Unknown error'));
+    die('The page could not be loaded. Please try again later.');
 }
 
 $summary = $earningsResult['summary'];

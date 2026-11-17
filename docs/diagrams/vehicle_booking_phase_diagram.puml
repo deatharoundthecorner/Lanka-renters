@@ -1,0 +1,111 @@
+@startuml Vehicle_Booking_Phase_Workflow
+!theme C4_Standard
+skinparam DefaultFontName "Arial"
+skinparam DefaultFontSize 12
+skinparam ActivityFontSize 12
+skinparam ActivityFontColor #0F172A
+skinparam ActivityBackgroundColor #F8FAFC
+skinparam ActivityBorderColor #475569
+skinparam ActivityBorderThickness 1.5
+skinparam DiamondBackgroundColor #FEF3C7
+skinparam DiamondBorderColor #D97706
+skinparam DiamondFontColor #78350F
+skinparam ArrowColor #2563EB
+skinparam ArrowThickness 1.5
+
+title **LANKA RENTERS - VEHICLE BOOKING LIFECYCLE (PHASE-BASED WORKFLOW)**
+
+start
+
+partition "Phase 1: Customer Verification & Vehicle Selection" {
+    :Customer searches & selects vehicle;
+    if (Customer & Guarantor Verified?) then (Yes)
+        :Customer selects Service Type\n(Self-Drive vs With-Driver);
+        :Customer enters rental dates & location;
+    else (No)
+        #FECACA:Prompt Customer Verification & Block Booking;
+        stop
+    endif
+}
+
+partition "Phase 2: Validation & Pricing Estimate" {
+    if (Rental dates valid (>=28 days) & available?) then (Valid & Available)
+        if (Booking Service Type?) then (With Driver)
+            if (Check Driver Documents & Schedule?) then (Eligible Driver Found)
+                :System assigns driver to booking;
+            else (Unavailable)
+                #FECACA:Display Error: Driver Unavailable;
+                stop
+            endif
+        else (Self-Drive)
+            :Validate vehicle collection location;
+        endif
+
+        :Calculate rental estimate & key money deposit;
+        :Customer accepts booking terms & agreement;
+        :System creates booking request [Status: Pending Approval];
+    else (Invalid / Overlap)
+        #FECACA:Display Error: Invalid Dates or Schedule Conflict;
+        stop
+    endif
+}
+
+partition "Phase 3: Owner Approval & Payment Verification" {
+    if (Owner reviews booking request?) then (Approved)
+        :Customer selects payment option;
+        if (Payment Option?) then (Online Card)
+            :Process Online Card Transaction;
+            if (Payment Success?) then (Success)
+                #BBF7D0:Status -> Confirmed;
+            else (Failed / Timeout)
+                #FECACA:Auto-Cancel Booking;
+                stop
+            endif
+        else (Bank Transfer Slip)
+            :Customer uploads bank deposit receipt;
+            if (Admin verifies deposit slip?) then (Verified)
+                #BBF7D0:Status -> Confirmed;
+            else (Rejected)
+                #FECACA:Reject Slip & Request Re-upload;
+                stop
+            endif
+        endif
+    else (Rejected / Expired)
+        #FECACA:Set Status: Rejected / Expired;
+        stop
+    endif
+}
+
+partition "Phase 4: Pre-Rental Handover & Trip Operations" {
+    :Owner & Customer conduct joint pre-rental safety check;
+    :Log initial mileage & fuel level;
+    :Owner hands over vehicle keys;
+    #BBF7D0:Status -> Ongoing;
+    :Customer drives vehicle;
+
+    if (In-trip event occurs?) then (Breakdown / Incident)
+        :Customer reports incident;
+        :Owner dispatches roadside support or replacement unit;
+    elseif (Extension Request) then (Yes)
+        :Customer requests extension;
+        if (Owner approves extension?) then (Yes)
+            :System recalculates cost & updates end date;
+        else (No)
+            :Rental retains original return date;
+        endif
+    else (Normal Operation)
+    endif
+}
+
+partition "Phase 5: Return Inspection & Deposit Settlement" {
+    :Customer returns vehicle at designated location;
+    :Owner performs joint post-rental inspection;
+    :Log final mileage, fuel level & inspect for damages;
+    :System calculates over-mileage, fuel deficit & damage fees;
+    :Process remaining key money deposit refund;
+    #BBF7D0:Status -> Completed;
+    :Customer & Owner submit rating & review;
+    stop
+}
+
+@enduml

@@ -3,6 +3,7 @@
 require_once dirname(__DIR__) . '/models/User.php';
 require_once dirname(__DIR__) . '/models/Customer.php';
 require_once dirname(__DIR__) . '/models/VehicleOwner.php';
+require_once dirname(__DIR__) . '/models/Driver.php';
 require_once dirname(__DIR__) . '/helpers/AuthHelper.php';
 require_once dirname(__DIR__) . '/helpers/Database.php';
 
@@ -42,8 +43,8 @@ class AuthController {
             }
         }
 
-        // Validate that role is valid for public registration (only customer or owner allowed)
-        $allowedRoles = ['customer', 'owner'];
+        // Validate that role is valid for public registration (customer, owner or driver allowed)
+        $allowedRoles = ['customer', 'owner', 'driver'];
         if (!in_array($data['role'], $allowedRoles)) {
             return [
                 'success' => false,
@@ -94,6 +95,12 @@ class AuthController {
                 if (!$ownerProfileId) {
                     throw new Exception("Failed to create vehicle owner profile record.");
                 }
+            } elseif ($data['role'] === 'driver') {
+                $driverModel = new Driver();
+                $driverProfileId = $driverModel->create($userId);
+                if (!$driverProfileId) {
+                    throw new Exception("Failed to create driver profile record.");
+                }
             }
 
             // Commit transaction on success of all operations
@@ -116,9 +123,10 @@ class AuthController {
             if ($db->inTransaction()) {
                 $db->rollBack();
             }
+            error_log(sprintf('Registration failed [%s]: %s', get_class($e), $e->getMessage()));
             return [
                 'success' => false,
-                'error' => "Registration failed: " . $e->getMessage()
+                'error' => 'Registration failed. Please try again later.'
             ];
         }
     }
@@ -184,12 +192,6 @@ class AuthController {
         // 2. Redirect to login page
         $this->redirect('login.php');
     }
-
-    /**
-     * Directs the user to their role-specific dashboard page.
-     * 
-     * @param string $role User role
-     */
     private function redirectByRole($role) {
         switch ($role) {
             case 'admin':
@@ -202,13 +204,22 @@ class AuthController {
                 $this->redirect('driver/dashboard.php');
                 break;
             case 'customer':
-                $this->redirect('customer/dashboard.php');
+                if (!empty($_GET['redirect'])) {
+                    $redirectUrl = $_GET['redirect'];
+                    // Ensure the redirect is safe (local/relative path or matching host)
+                    if (strpos($redirectUrl, '://') === false || (isset($_SERVER['HTTP_HOST']) && strpos($redirectUrl, $_SERVER['HTTP_HOST']) !== false)) {
+                        $this->redirect($redirectUrl);
+                        break;
+                    }
+                }
+                $this->redirect('customer/dashboard/index.php');
                 break;
             default:
                 $this->redirect('index.php');
                 break;
         }
     }
+
 
     /**
      * Safe redirection helper. Supports subfolder-scoped routes.

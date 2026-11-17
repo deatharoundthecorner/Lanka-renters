@@ -3,26 +3,15 @@ require_once dirname(dirname(__DIR__)) . '/app/helpers/AuthHelper.php';
 require_once dirname(dirname(__DIR__)) . '/app/controllers/DriverController.php';
 
 AuthHelper::startSession();
-
-// Localized driver auth check
-if (!AuthHelper::isLoggedIn()) {
-    header("Location: login.php");
-    exit();
-}
-
-$user = AuthHelper::getCurrentUser();
-if (($user['role'] ?? '') !== 'driver') {
-    AuthHelper::logout();
-    header("Location: login.php");
-    exit();
-}
+AuthHelper::requireRole('driver');
 
 $driverController = new DriverController();
 
 // Fetch performance stats
 $performanceResult = $driverController->viewPerformance();
 if (!$performanceResult['success']) {
-    die("Error retrieving performance data: " . htmlspecialchars($performanceResult['error']));
+    error_log('Driver performance load failed: ' . ($performanceResult['error'] ?? 'Unknown error'));
+    die('The page could not be loaded. Please try again later.');
 }
 
 $stats = $performanceResult['stats'];
