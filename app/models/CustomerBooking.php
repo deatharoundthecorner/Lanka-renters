@@ -13,7 +13,6 @@ class CustomerBookingRuleException extends RuntimeException
  */
 class CustomerBooking
 {
-    private const BLOCKING_STATUSES = ['pending_payment', 'confirmed', 'ongoing'];
     private const CANCELLABLE_STATUSES = ['pending_payment', 'confirmed'];
     private const REQUIRED_DRIVER_DOCUMENTS = ['nic', 'driving_license', 'police_report'];
 
@@ -33,9 +32,18 @@ class CustomerBooking
                     u.role,
                     u.status AS user_status,
                     c.id AS customer_id,
-                    c.verification_status
+                    c.verification_status AS customer_verification_status,
+                    COALESCE(guarantor.verification_status, 'missing') AS guarantor_verification_status,
+                    CASE
+                        WHEN c.verification_status = 'approved'
+                             AND guarantor.verification_status = 'approved' THEN 'approved'
+                        WHEN c.verification_status = 'rejected'
+                             OR guarantor.verification_status = 'rejected' THEN 'rejected'
+                        ELSE 'pending'
+                    END AS verification_status
                 FROM users u
                 INNER JOIN customers c ON c.user_id = u.id
+                LEFT JOIN customer_guarantors guarantor ON guarantor.customer_id = c.id
                 WHERE u.id = :user_id
                   AND u.role = 'customer'
                 LIMIT 1";
@@ -65,8 +73,16 @@ class CustomerBooking
                     v.transmission,
                     v.fuel_type,
                     v.seating_capacity,
+                    v.location,
+                    v.air_conditioning,
                     v.price_per_day,
+                    v.monthly_rental_price,
+                    v.refundable_key_money,
+                    v.mileage_limit_km,
+                    v.mileage_is_unlimited,
+                    v.additional_mileage_charge_per_km,
                     v.price_with_driver_per_day,
+                    v.image_url,
                     v.status,
                     v.verification_status,
                     owner_user.name AS owner_name
@@ -111,7 +127,8 @@ class CustomerBooking
         string $endDate,
         int $rentalDays,
         ?int $driverId,
-        ?string $deliveryAddress
+        ?string $deliveryAddress,
+        string $agreementVersion
     ): array {
         $db = $this->connection();
 
@@ -133,6 +150,7 @@ class CustomerBooking
                 0,
                 true
             );
+            $storedPickupLocation = $this->pickupLocationForBooking($vehicle, $bookingType, $deliveryAddress);
 
             if ($this->hasVehicleOverlap($vehicleId, $startDate, $endDate, 0, true)) {
                 throw new CustomerBookingRuleException('The vehicle is already booked for part of the selected period.');
@@ -186,13 +204,31 @@ class CustomerBooking
             $statement->bindValue(':end_date', $endDate);
             $statement->bindValue(
                 ':delivery_address',
-                $deliveryAddress,
-                $deliveryAddress === null ? PDO::PARAM_NULL : PDO::PARAM_STR
+                $storedPickupLocation,
+                PDO::PARAM_STR
             );
             $statement->bindValue(':total_price', $totalPrice);
             $statement->execute();
 
             $bookingId = (int) $db->lastInsertId();
+
+            $agreementStatement = $db->prepare(
+                "INSERT INTO customer_booking_agreements (
+                    booking_id,
+                    customer_id,
+                    agreement_version,
+                    accepted_at
+                ) VALUES (
+                    :booking_id,
+                    :customer_id,
+                    :agreement_version,
+                    CURRENT_TIMESTAMP
+                )"
+            );
+            $agreementStatement->bindValue(':booking_id', $bookingId, PDO::PARAM_INT);
+            $agreementStatement->bindValue(':customer_id', (int) $customer['customer_id'], PDO::PARAM_INT);
+            $agreementStatement->bindValue(':agreement_version', $agreementVersion);
+            $agreementStatement->execute();
             $db->commit();
 
             return ['booking_id' => $bookingId, 'total_price' => $totalPrice];
@@ -299,6 +335,8 @@ class CustomerBooking
                     b.pickup_status,
                     b.created_at,
                     b.updated_at,
+                    agreement.agreement_version,
+                    agreement.accepted_at AS agreement_accepted_at,
                     v.owner_id,
                     v.make,
                     v.model,
@@ -308,6 +346,7 @@ class CustomerBooking
                     v.transmission,
                     v.fuel_type,
                     v.seating_capacity,
+                    v.location,
                     v.price_per_day,
                     v.price_with_driver_per_day,
                     owner_user.name AS owner_name,
@@ -318,6 +357,8 @@ class CustomerBooking
                 INNER JOIN vehicles v ON v.id = b.vehicle_id
                 INNER JOIN vehicle_owners vo ON vo.id = v.owner_id
                 INNER JOIN users owner_user ON owner_user.id = vo.user_id
+                LEFT JOIN customer_booking_agreements agreement
+                    ON agreement.booking_id = b.id
                 LEFT JOIN drivers d ON d.id = b.driver_id
                 LEFT JOIN users driver_user ON driver_user.id = d.user_id
                 WHERE b.id = :booking_id
@@ -377,6 +418,7 @@ class CustomerBooking
                 $bookingId,
                 true
             );
+            $storedPickupLocation = $this->pickupLocationForBooking($vehicle, $bookingType, $deliveryAddress);
 
             if ($this->hasVehicleOverlap($vehicleId, $startDate, $endDate, $bookingId, true)) {
                 throw new CustomerBookingRuleException('The vehicle is already booked for part of the updated period.');
@@ -415,8 +457,8 @@ class CustomerBooking
             $statement->bindValue(':end_date', $endDate);
             $statement->bindValue(
                 ':delivery_address',
-                $deliveryAddress,
-                $deliveryAddress === null ? PDO::PARAM_NULL : PDO::PARAM_STR
+                $storedPickupLocation,
+                PDO::PARAM_STR
             );
             $statement->bindValue(':total_price', $totalPrice);
             $statement->bindValue(':booking_id', $bookingId, PDO::PARAM_INT);
@@ -618,7 +660,13 @@ class CustomerBooking
                     SELECT 1
                     FROM bookings assigned_booking
                     WHERE assigned_booking.driver_id = d.id
-                      AND assigned_booking.status IN ('pending_payment', 'confirmed', 'ongoing')
+                      AND (
+                          assigned_booking.status IN ('confirmed', 'ongoing')
+                          OR (
+                              assigned_booking.status = 'pending_payment'
+                              AND assigned_booking.created_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)
+                          )
+                      )
                       AND assigned_booking.start_date < :eligible_booking_end
                       AND assigned_booking.end_date > :eligible_booking_start
                       {$excludeSql}
@@ -639,7 +687,7 @@ class CustomerBooking
                 INNER JOIN users driver_user ON driver_user.id = d.user_id
                 INNER JOIN driver_owner_links owner_link ON owner_link.driver_id = d.id
                 WHERE owner_link.owner_id = :owner_id
-                  AND owner_link.link_status = 'active'
+                  AND owner_link.status = 'accepted'
                   AND d.availability_status = 'available'
                   AND driver_user.role = 'driver'
                   AND driver_user.status = 'active'
@@ -648,7 +696,8 @@ class CustomerBooking
                       FROM driver_documents approved_document
                       WHERE approved_document.driver_id = d.id
                         AND approved_document.document_type IN ('nic', 'driving_license', 'police_report')
-                        AND approved_document.verification_status = 'approved'
+                        AND approved_document.status = 'approved'
+                        AND approved_document.is_current = 1
                         AND (
                             approved_document.expiry_date IS NULL
                             OR approved_document.expiry_date >= :document_valid_until
@@ -693,14 +742,16 @@ class CustomerBooking
         if ($excludeBookingId > 0) {
             $excludeSql = ' AND id <> :overlap_exclude_booking_id';
         }
-        $statusPlaceholders = implode(', ', array_map(
-            static fn (int $index): string => ':blocking_status_' . $index,
-            array_keys(self::BLOCKING_STATUSES)
-        ));
         $sql = "SELECT id
                 FROM bookings
                 WHERE {$field} = :overlap_resource_id
-                  AND status IN ({$statusPlaceholders})
+                  AND (
+                      status IN ('confirmed', 'ongoing')
+                      OR (
+                          status = 'pending_payment'
+                          AND created_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)
+                      )
+                  )
                   AND start_date < :overlap_end
                   AND end_date > :overlap_start
                   {$excludeSql}
@@ -711,9 +762,6 @@ class CustomerBooking
 
         $statement = $this->connection()->prepare($sql);
         $statement->bindValue(':overlap_resource_id', $resourceId, PDO::PARAM_INT);
-        foreach (self::BLOCKING_STATUSES as $index => $status) {
-            $statement->bindValue(':blocking_status_' . $index, $status);
-        }
         $statement->bindValue(':overlap_end', $endDate);
         $statement->bindValue(':overlap_start', $startDate);
         if ($excludeBookingId > 0) {
@@ -722,6 +770,26 @@ class CustomerBooking
         $statement->execute();
 
         return $statement->fetchColumn() !== false;
+    }
+
+    private function pickupLocationForBooking(array $vehicle, string $bookingType, ?string $submittedLocation): string
+    {
+        if ($bookingType === 'self_drive') {
+            $collectionLocation = preg_replace('/\s+/', ' ', trim((string) ($vehicle['location'] ?? ''))) ?? '';
+            if ($collectionLocation === '') {
+                throw new CustomerBookingRuleException('This vehicle has no listed collection location.');
+            }
+
+            return $collectionLocation;
+        }
+
+        $pickupLocation = preg_replace('/\s+/', ' ', trim((string) $submittedLocation)) ?? '';
+        $length = function_exists('mb_strlen') ? mb_strlen($pickupLocation) : strlen($pickupLocation);
+        if ($length < 5 || $length > 255) {
+            throw new CustomerBookingRuleException('Pickup Location must be between 5 and 255 characters.');
+        }
+
+        return $pickupLocation;
     }
 
     private function calculateTotal(string $dailyRate, int $rentalDays): string

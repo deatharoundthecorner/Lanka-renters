@@ -57,7 +57,7 @@ $escape = static fn(mixed $val): string => htmlspecialchars((string)$val, ENT_QU
                     <span class="badge badge-pending"><?= count($incidents) ?> Total Incidents</span>
                 </div>
 
-                <div class="table-responsive">
+                <div class="lr-table-wrap table-responsive">
                     <table class="custom-table">
                         <thead>
                             <tr>
@@ -66,14 +66,24 @@ $escape = static fn(mixed $val): string => htmlspecialchars((string)$val, ENT_QU
                                 <th>Reported By</th>
                                 <th>Severity</th>
                                 <th>Description</th>
+                                <th>Evidence</th>
                                 <th>Status</th>
+                                <th>Customer Preference</th>
                                 <th>Action</th>
                             </tr>
                         </thead>
                         <tbody>
                             <?php if (empty($incidents)): ?>
                                 <tr>
-                                    <td colspan="7" style="text-align: center; color: var(--text-secondary); padding: 24px;">No incident records found.</td>
+                                    <td colspan="9">
+                                        <div class="lr-empty-state">
+                                            <div class="lr-empty-icon">
+                                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                                            </div>
+                                            <h3>No incidents reported</h3>
+                                            <p>All vehicles and trips are running smoothly with no unresolved incident tickets.</p>
+                                        </div>
+                                    </td>
                                 </tr>
                             <?php else: ?>
                                 <?php foreach ($incidents as $inc): ?>
@@ -98,10 +108,30 @@ $escape = static fn(mixed $val): string => htmlspecialchars((string)$val, ENT_QU
                                         </td>
                                         <td><div style="max-width: 260px; font-size: 13px; color: var(--text-secondary);"><?= $escape($inc['description']) ?></div></td>
                                         <td>
+                                            <?php if (!empty($inc['evidence_photo'])): ?>
+                                                <?php
+                                                $photoRel = ltrim((string)$inc['evidence_photo'], '/');
+                                                $physicalPath = dirname(__DIR__, 2) . '/public/' . $photoRel;
+                                                $fileExists = file_exists($physicalPath) && is_file($physicalPath);
+                                                ?>
+                                                <?php if ($fileExists): ?>
+                                                    <a href="../<?= $escape($photoRel) ?>" target="_blank" class="btn btn-secondary btn-sm" style="padding: 2px 6px; font-size: 11px; display: inline-flex; align-items: center; gap: 4px;">
+                                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                                                        <span>Photo ↗</span>
+                                                    </a>
+                                                <?php else: ?>
+                                                    <span class="cell-secondary-text" style="font-size: 11px; font-style: italic;" title="<?= $escape($photoRel) ?>">Attached (<?= $escape(basename($photoRel)) ?>)</span>
+                                                <?php endif; ?>
+                                            <?php else: ?>
+                                                <span class="cell-secondary-text" style="font-size: 11px; color: var(--text-muted); font-style: italic;">No photo</span>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td>
                                             <span class="badge <?= $inc['status'] === 'resolved' ? 'badge-approved' : ($inc['status'] === 'investigating' ? 'badge-blue' : 'badge-pending') ?>">
                                                 <?= $escape(ucfirst($inc['status'])) ?>
                                             </span>
                                         </td>
+                                        <td><?= in_array($inc['resolution_preference'] ?? null, ['refund', 'replacement'], true) ? $escape($inc['resolution_preference'] === 'refund' ? 'Request Refund' : 'Request Replacement') : '<span class="cell-secondary-text">Not provided</span>' ?></td>
                                         <td>
                                             <form method="post" action="incident_handler.php" style="display: flex; gap: 6px;">
                                                 <input type="hidden" name="csrf_token" value="<?= $escape(AuthHelper::getCsrfToken()) ?>">

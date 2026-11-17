@@ -41,11 +41,15 @@ $availabilityMap = [
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Driver Management - LankaRenters</title>
     <meta name="description" content="Search, request and manage verified drivers for your vehicle fleet on LankaRenters.">
-    <link rel="stylesheet" href="includes/assets/css/owner-style.css">
+  <link rel="stylesheet" href="includes/assets/css/owner-style.css">
+  <link rel="stylesheet" href="../assets/css/lr-tokens.css">
+  <link rel="stylesheet" href="../assets/css/lr-shell.css">
+  <link rel="stylesheet" href="../assets/css/lr-components.css">
+  <link rel="stylesheet" href="includes/assets/css/owner-canonical.css">
 </head>
 <body>
 
-    <div class="dashboard-layout">
+<div class="dashboard-layout dashboard-wrapper">
         <?php include 'includes/sidebar.php'; ?>
 
         <div class="main-wrapper">
@@ -53,7 +57,7 @@ $availabilityMap = [
 
             <main class="main-content">
             <!-- Page Header -->
-            <section class="drivers-header">
+      <section class="drivers-header welcome-container">
                 <div class="drivers-heading">
                     <h1>Driver Management</h1>
                     <p>Search, request and manage verified drivers for your vehicles.</p>
@@ -63,13 +67,13 @@ $availabilityMap = [
             <!-- Alert Messages -->
             <?php if (!empty($error)): ?>
                 <div style="background-color:#fef2f2; border:1px solid #fca5a5; color:#991b1b; padding:14px 18px; border-radius:12px; margin-bottom:20px; font-weight:600;">
-                    ⚠️ <?php echo htmlspecialchars($error); ?>
+                    <?php echo htmlspecialchars($error); ?>
                 </div>
             <?php endif; ?>
 
             <?php if (!empty($success)): ?>
                 <div style="background-color:#f0fdf4; border:1px solid #86efac; color:#166534; padding:14px 18px; border-radius:12px; margin-bottom:20px; font-weight:600;">
-                    ✅ <?php echo htmlspecialchars($success); ?>
+                    <?php echo htmlspecialchars($success); ?>
                 </div>
             <?php endif; ?>
 

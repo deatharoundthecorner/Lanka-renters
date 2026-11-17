@@ -11,7 +11,8 @@ $driverController = new DriverController();
 // Resolve secure driver profile context
 $dashboardResult = $driverController->dashboard();
 if (!$dashboardResult['success']) {
-    die("Driver profile record not found: " . htmlspecialchars($dashboardResult['error']));
+    error_log('Driver safety profile load failed: ' . ($dashboardResult['error'] ?? 'Unknown error'));
+    die('The page could not be loaded. Please try again later.');
 }
 $driver = $dashboardResult['profile'];
 
@@ -203,10 +204,10 @@ include 'includes/navbar.php';
                                     <span style="font-size:11px; color: var(--text-muted);"><?php echo htmlspecialchars($check['license_plate']); ?></span>
                                 </td>
                                 <td style="font-size: 11px;">
-                                    Brakes: <?php echo $check['brakes'] ? '🟢 Pass' : '🔴 Fail'; ?><br>
-                                    Lights: <?php echo $check['lights'] ? '🟢 Pass' : '🔴 Fail'; ?><br>
-                                    Tires: <?php echo $check['tires'] ? '🟢 Pass' : '🔴 Fail'; ?><br>
-                                    Fuel: <?php echo $check['fuel'] ? '🟢 Pass' : '🔴 Fail'; ?>
+                                    Brakes: <span class="lr-check-result <?php echo $check['brakes'] ? 'pass' : 'fail'; ?>"><?php echo $check['brakes'] ? 'Pass' : 'Fail'; ?></span><br>
+                                    Lights: <span class="lr-check-result <?php echo $check['lights'] ? 'pass' : 'fail'; ?>"><?php echo $check['lights'] ? 'Pass' : 'Fail'; ?></span><br>
+                                    Tires: <span class="lr-check-result <?php echo $check['tires'] ? 'pass' : 'fail'; ?>"><?php echo $check['tires'] ? 'Pass' : 'Fail'; ?></span><br>
+                                    Fuel: <span class="lr-check-result <?php echo $check['fuel'] ? 'pass' : 'fail'; ?>"><?php echo $check['fuel'] ? 'Pass' : 'Fail'; ?></span>
                                 </td>
                                 <td><?php echo date('Y-m-d', strtotime($check['created_at'])); ?></td>
                                 <td>

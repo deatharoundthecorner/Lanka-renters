@@ -20,18 +20,8 @@ class Chat {
      * @return int Room ID
      */
     public function createRoom($bookingId) {
-        // Check if room exists
-        $sqlCheck = "SELECT `id` FROM `chat_rooms` WHERE `booking_id` = :booking_id LIMIT 1";
-        $stmt = $this->db->prepare($sqlCheck);
-        $stmt->execute(['booking_id' => $bookingId]);
-        $roomId = $stmt->fetchColumn();
-
-        if ($roomId) {
-            return (int)$roomId;
-        }
-
-        // Create new room
-        $sqlInsert = "INSERT INTO `chat_rooms` (`booking_id`) VALUES (:booking_id)";
+        $sqlInsert = "INSERT INTO `chat_rooms` (`booking_id`) VALUES (:booking_id)
+                      ON DUPLICATE KEY UPDATE `id` = LAST_INSERT_ID(`id`)";
         $stmt = $this->db->prepare($sqlInsert);
         $stmt->execute(['booking_id' => $bookingId]);
         return (int)$this->db->lastInsertId();
@@ -63,6 +53,40 @@ class Chat {
             'room_id' => $roomId,
             'user_id' => $userId
         ]);
+    }
+
+    /** Ensures the booking's eligible Customer, Owner, and assigned Driver are enrolled. */
+    public function ensureBookingParticipants($roomId, $bookingId): void {
+        $statement = $this->db->prepare(
+            "SELECT c.user_id AS customer_user_id,
+                    vo.user_id AS owner_user_id,
+                    du.id AS driver_user_id
+             FROM bookings b
+             JOIN customers c ON c.id = b.customer_id
+             JOIN vehicles v ON v.id = b.vehicle_id
+             JOIN vehicle_owners vo ON vo.id = v.owner_id
+             LEFT JOIN drivers d ON d.id = b.driver_id
+             LEFT JOIN users du ON du.id = d.user_id
+             WHERE b.id = :booking_id
+             LIMIT 1"
+        );
+        $statement->execute(['booking_id' => $bookingId]);
+        $booking = $statement->fetch(PDO::FETCH_ASSOC);
+        if (!is_array($booking)) {
+            return;
+        }
+
+        $participantStatement = $this->db->prepare(
+            'INSERT IGNORE INTO chat_participants (room_id, user_id) VALUES (:room_id, :user_id)'
+        );
+        foreach ([$booking['customer_user_id'], $booking['owner_user_id'], $booking['driver_user_id']] as $userId) {
+            if ((int)$userId > 0) {
+                $participantStatement->execute([
+                    'room_id' => (int)$roomId,
+                    'user_id' => (int)$userId,
+                ]);
+            }
+        }
     }
 
     /**
@@ -201,7 +225,7 @@ class Chat {
         foreach ($bookings as $bId) {
             $roomId = $this->createRoom((int)$bId);
             if ($roomId > 0) {
-                $this->addParticipant($roomId, (int)$ownerUserId);
+                $this->ensureBookingParticipants($roomId, (int)$bId);
             }
         }
     }

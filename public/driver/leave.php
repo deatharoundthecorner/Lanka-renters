@@ -161,59 +161,71 @@ include 'includes/navbar.php';
         <div class="card" style="margin: 0;">
             <h2 class="card-title">Leave History Log</h2>
             <?php if (empty($leaves)): ?>
-                <p style="font-style: italic; color: var(--text-muted);">No leave requests found.</p>
+                <div class="lr-empty-state" style="padding: 24px 20px;">
+                    <div class="lr-empty-icon">
+                        <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                        </svg>
+                    </div>
+                    <h3>No leave requests found</h3>
+                    <p>Your submitted time-off and leave history requests will be listed here.</p>
+                </div>
             <?php else: ?>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Start Date</th>
-                            <th>End Date</th>
-                            <th>Reason</th>
-                            <th>Status</th>
-                            <th>Requested On</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ($leaves as $leave): ?>
+                <div class="lr-table-wrap table-responsive">
+                    <table>
+                        <thead>
                             <tr>
-                                <td><?php echo htmlspecialchars($leave['start_date']); ?></td>
-                                <td><?php echo htmlspecialchars($leave['end_date']); ?></td>
-                                <td><?php echo htmlspecialchars($leave['reason']); ?></td>
-                                <td>
-                                    <span class="status-pill status-<?php echo htmlspecialchars($leave['status']); ?>">
-                                        <?php echo htmlspecialchars($leave['status']); ?>
-                                    </span>
-                                </td>
-                                <td><?php echo date('Y-m-d', strtotime($leave['created_at'])); ?></td>
-                                <td>
-                                    <div style="display: flex; gap: 6px; align-items: center;">
-                                        <!-- Only available if status is pending -->
-                                        <?php if ($leave['status'] === 'pending'): ?>
-                                            <!-- Delete Action -->
-                                            <form action="leave.php" method="POST" style="margin:0;" onsubmit="return confirm('Are you sure you want to delete this leave request?');">
-                                                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(AuthHelper::getCsrfToken()); ?>">
-                                                <input type="hidden" name="action" value="delete_leave">
-                                                <input type="hidden" name="leave_id" value="<?php echo $leave['id']; ?>">
-                                                <button type="submit" style="padding: 0; font-size: 11px; background-color: var(--danger); color: white; border: none; border-radius: 4px; cursor: pointer; width: 62px; height: 26px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box;">Delete</button>
-                                            </form>
-                                            
-                                            <!-- Cancel Action -->
-                                            <form action="leave.php" method="POST" style="margin:0;" onsubmit="return confirm('Are you sure you want to cancel this leave request?');">
-                                                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(AuthHelper::getCsrfToken()); ?>">
-                                                <input type="hidden" name="action" value="cancel_leave">
-                                                <input type="hidden" name="leave_id" value="<?php echo $leave['id']; ?>">
-                                                <button type="submit" class="btn-secondary" style="padding: 0; font-size: 11px; margin: 0; border-radius: 4px; width: 62px; height: 26px; display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box;">Cancel</button>
-                                            </form>
-                                        <?php else: ?>
-                                            <span style="color: var(--text-muted); font-size: 11px;">Locked</span>
-                                        <?php endif; ?>
-                                    </div>
-                                </td>
+                                <th>Start Date</th>
+                                <th>End Date</th>
+                                <th>Reason</th>
+                                <th>Status</th>
+                                <th>Requested On</th>
+                                <th>Actions</th>
                             </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($leaves as $leave): ?>
+                                <tr>
+                                    <td><?php echo htmlspecialchars($leave['start_date']); ?></td>
+                                    <td><?php echo htmlspecialchars($leave['end_date']); ?></td>
+                                    <td><?php echo htmlspecialchars($leave['reason']); ?></td>
+                                    <td>
+                                        <span class="status-pill status-<?php echo htmlspecialchars($leave['status']); ?>">
+                                            <?php echo htmlspecialchars($leave['status']); ?>
+                                        </span>
+                                    </td>
+                                    <td><?php echo date('Y-m-d', strtotime($leave['created_at'])); ?></td>
+                                    <td>
+                                        <div style="display: flex; gap: 6px; align-items: center;">
+                                            <!-- Only available if status is pending -->
+                                            <?php if ($leave['status'] === 'pending'): ?>
+                                                <a href="leave.php?edit_id=<?php echo (int)$leave['id']; ?>" class="btn-secondary" style="padding: 4px 10px; font-size: 11px; font-weight: 600; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; text-decoration: none;">Edit</a>
+
+                                                <!-- Delete Action -->
+                                                <form action="leave.php" method="POST" style="margin:0;" onsubmit="return confirm('Are you sure you want to delete this leave request?');">
+                                                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(AuthHelper::getCsrfToken()); ?>">
+                                                    <input type="hidden" name="action" value="delete_leave">
+                                                    <input type="hidden" name="leave_id" value="<?php echo $leave['id']; ?>">
+                                                    <button type="submit" style="padding: 4px 10px; font-size: 11px; font-weight: 600; background-color: var(--danger); color: white; border: none; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center;">Delete</button>
+                                                </form>
+
+                                                <!-- Cancel Action -->
+                                                <form action="leave.php" method="POST" style="margin:0;" onsubmit="return confirm('Are you sure you want to cancel this leave request?');">
+                                                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(AuthHelper::getCsrfToken()); ?>">
+                                                    <input type="hidden" name="action" value="cancel_leave">
+                                                    <input type="hidden" name="leave_id" value="<?php echo $leave['id']; ?>">
+                                                    <button type="submit" class="btn-secondary" style="padding: 4px 10px; font-size: 11px; font-weight: 600; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center;">Cancel</button>
+                                                </form>
+                                            <?php else: ?>
+                                                <span style="color: var(--text-muted); font-size: 11px;">Locked</span>
+                                            <?php endif; ?>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
             <?php endif; ?>
         </div>
     </div>

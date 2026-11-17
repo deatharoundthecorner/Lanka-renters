@@ -48,7 +48,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 // Fetch current profile & stats (Read)
 $dashboardResult = $driverController->dashboard();
 if (!$dashboardResult['success']) {
-    die("Error loading driver profile details: " . htmlspecialchars($dashboardResult['error']));
+    error_log('Driver profile load failed: ' . ($dashboardResult['error'] ?? 'Unknown error'));
+    die('The page could not be loaded. Please try again later.');
 }
 
 $profile = $dashboardResult['profile'];
@@ -98,26 +99,26 @@ include 'includes/navbar.php';
                 $userStatus = strtoupper($profile['user_status'] ?? 'ACTIVE');
                 $statusConfigs = [
                     'ACTIVE' => [
-                        'color' => '#065F46', 'bg' => '#ECFDF5', 'border' => '#A7F3D0', 'dot' => '🟢',
+                        'color' => '#065F46', 'bg' => '#ECFDF5', 'border' => '#A7F3D0',
                         'title' => 'Active', 'desc' => 'Your driver account is active and available for operations.'
                     ],
                     'INACTIVE' => [
-                        'color' => '#334155', 'bg' => '#F1F5F9', 'border' => '#CBD5E1', 'dot' => '⚪',
+                        'color' => '#334155', 'bg' => '#F1F5F9', 'border' => '#CBD5E1',
                         'title' => 'Inactive', 'desc' => 'Your account is currently inactive. You will not receive trip bookings.'
                     ],
                     'PENDING' => [
-                        'color' => '#92400E', 'bg' => '#FEF3C7', 'border' => '#FCD34D', 'dot' => '🟡',
+                        'color' => '#92400E', 'bg' => '#FEF3C7', 'border' => '#FCD34D',
                         'title' => 'Pending Approval', 'desc' => 'Your driver profile is awaiting administrative verification.'
                     ],
                     'SUSPENDED' => [
-                        'color' => '#991B1B', 'bg' => '#FEF2F2', 'border' => '#FCA5A5', 'dot' => '🔴',
+                        'color' => '#991B1B', 'bg' => '#FEF2F2', 'border' => '#FCA5A5',
                         'title' => 'Suspended', 'desc' => 'Your account is suspended. Please contact support.'
                     ]
                 ];
                 $statusConf = $statusConfigs[$userStatus] ?? $statusConfigs['ACTIVE'];
                 ?>
                 <div style="background-color: <?php echo $statusConf['bg']; ?>; border: 1px solid <?php echo $statusConf['border']; ?>; border-radius: 8px; padding: 15px; display: flex; align-items: flex-start; gap: 12px;">
-                    <div style="font-size: 18px; line-height: 1;"><?php echo $statusConf['dot']; ?></div>
+                    <span class="lr-status-dot <?php echo strtolower($userStatus); ?>" aria-hidden="true"></span>
                     <div>
                         <div style="font-weight: 700; color: <?php echo $statusConf['color']; ?>; font-size: 13.5px; text-transform: uppercase;"><?php echo htmlspecialchars($statusConf['title']); ?></div>
                         <div style="font-size: 12px; color: <?php echo $statusConf['color']; ?>; margin-top: 4px; line-height: 1.4; opacity: 0.9;"><?php echo htmlspecialchars($statusConf['desc']); ?></div>
@@ -170,12 +171,11 @@ include 'includes/navbar.php';
                         $d = $item['doc'];
                         $st = $d ? strtoupper($d['status']) : 'MISSING';
                         $stColor = $st === 'APPROVED' ? 'var(--success)' : ($st === 'PENDING' ? 'var(--warning)' : 'var(--danger)');
-                        $stIcon = $st === 'APPROVED' ? '✓' : ($st === 'PENDING' ? '⏳' : '✗');
                     ?>
                         <div style="display: flex; align-items: center; justify-content: space-between; font-size: 12px; padding: 6px 0; border-bottom: 1px dashed var(--border);">
                             <span style="color: var(--text-main); font-weight: 500;"><?php echo htmlspecialchars($item['name']); ?></span>
                             <span style="color: <?php echo $stColor; ?>; font-weight: 700; display: flex; align-items: center; gap: 4px;">
-                                <?php echo $stIcon; ?> <?php echo $st; ?>
+                                <?php echo $st; ?>
                             </span>
                         </div>
                     <?php endforeach; ?>
@@ -193,7 +193,7 @@ include 'includes/navbar.php';
                     <div>
                         <span style="font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; display: block;">Average Rating</span>
                         <span style="font-size: 14px; font-weight: 600; color: var(--text-main); display: flex; align-items: center; gap: 4px; margin-top: 2px;">
-                            ⭐ <?php echo number_format($stats['rating'], 2); ?> / 5.00
+                            <?php echo number_format($stats['rating'], 2); ?> / 5.00
                         </span>
                     </div>
                     <div>

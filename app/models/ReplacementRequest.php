@@ -47,6 +47,12 @@ class ReplacementRequest {
 
         $sql .= " ORDER BY rr.created_at DESC, rr.id DESC";
 
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
      * Gets all replacement requests with detailed incident, booking, and vehicle info.
      */
     public function getAllRequests(): array {
@@ -168,6 +174,10 @@ class ReplacementRequest {
             'replacement_vehicle_id' => $replacementVehicleId ? (int)$replacementVehicleId : null,
             'remarks'                => $remarks ? trim($remarks) : null,
             'id'                     => (int)$requestId
+        ]);
+    }
+
+    /**
      * Assigns replacement vehicle and updates request status.
      */
     public function assignReplacement(int $requestId, int $replacementVehicleId, string $remarks = '', string $status = 'approved'): bool {

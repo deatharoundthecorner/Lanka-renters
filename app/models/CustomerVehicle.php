@@ -30,13 +30,23 @@ class CustomerVehicle
                     v.transmission,
                     v.fuel_type,
                     v.seating_capacity,
+                    v.location,
+                    v.air_conditioning,
                     v.price_per_day,
+                    v.monthly_rental_price,
+                    v.refundable_key_money,
+                    v.mileage_limit_km,
+                    v.mileage_is_unlimited,
+                    v.additional_mileage_charge_per_km,
                     v.price_with_driver_per_day,
+                    v.image_url,
                     v.status,
                     v.verification_status,
                     v.created_at,
                     u.name AS owner_name,
-                    COALESCE(document_summary.approved_document_count, 0) AS approved_document_count
+                    COALESCE(document_summary.approved_document_count, 0) AS approved_document_count,
+                    COALESCE(rating_summary.average_rating, 0) AS average_rating,
+                    COALESCE(rating_summary.review_count, 0) AS review_count
                 FROM vehicles v
                 INNER JOIN vehicle_owners vo ON vo.id = v.owner_id
                 INNER JOIN users u ON u.id = vo.user_id
@@ -46,6 +56,12 @@ class CustomerVehicle
                     WHERE verification_status = 'approved'
                     GROUP BY vehicle_id
                 ) document_summary ON document_summary.vehicle_id = v.id
+                LEFT JOIN (
+                    SELECT vehicle_id, AVG(vehicle_rating) AS average_rating, COUNT(*) AS review_count
+                    FROM ratings_reviews
+                    WHERE vehicle_rating IS NOT NULL
+                    GROUP BY vehicle_id
+                ) rating_summary ON rating_summary.vehicle_id = v.id
                 {$where}
                 ORDER BY {$orderBy}
                 LIMIT :result_limit OFFSET :result_offset";
@@ -89,13 +105,23 @@ class CustomerVehicle
                     v.transmission,
                     v.fuel_type,
                     v.seating_capacity,
+                    v.location,
+                    v.air_conditioning,
                     v.price_per_day,
+                    v.monthly_rental_price,
+                    v.refundable_key_money,
+                    v.mileage_limit_km,
+                    v.mileage_is_unlimited,
+                    v.additional_mileage_charge_per_km,
                     v.price_with_driver_per_day,
+                    v.image_url,
                     v.status,
                     v.verification_status,
                     v.created_at,
                     u.name AS owner_name,
-                    COALESCE(document_summary.approved_document_count, 0) AS approved_document_count
+                    COALESCE(document_summary.approved_document_count, 0) AS approved_document_count,
+                    COALESCE(rating_summary.average_rating, 0) AS average_rating,
+                    COALESCE(rating_summary.review_count, 0) AS review_count
                 FROM vehicles v
                 INNER JOIN vehicle_owners vo ON vo.id = v.owner_id
                 INNER JOIN users u ON u.id = vo.user_id
@@ -105,8 +131,15 @@ class CustomerVehicle
                     WHERE verification_status = 'approved'
                     GROUP BY vehicle_id
                 ) document_summary ON document_summary.vehicle_id = v.id
+                LEFT JOIN (
+                    SELECT vehicle_id, AVG(vehicle_rating) AS average_rating, COUNT(*) AS review_count
+                    FROM ratings_reviews
+                    WHERE vehicle_rating IS NOT NULL
+                    GROUP BY vehicle_id
+                ) rating_summary ON rating_summary.vehicle_id = v.id
                 WHERE v.id = :vehicle_id
                   AND v.verification_status = 'approved'
+                  AND v.status <> 'unavailable'
                   AND vo.verification_status = 'approved'
                   AND u.status = 'active'
                   AND u.role = 'owner'
@@ -122,9 +155,16 @@ class CustomerVehicle
 
     public function customerVerificationStatus(int $userId): string
     {
-        $sql = "SELECT verification_status
-                FROM customers
-                WHERE user_id = :user_id
+        $sql = "SELECT CASE
+                    WHEN c.verification_status = 'approved'
+                         AND g.verification_status = 'approved' THEN 'approved'
+                    WHEN c.verification_status = 'rejected'
+                         OR g.verification_status = 'rejected' THEN 'rejected'
+                    ELSE 'pending'
+                END AS verification_status
+                FROM customers c
+                LEFT JOIN customer_guarantors g ON g.customer_id = c.id
+                WHERE c.user_id = :user_id
                 LIMIT 1";
 
         $statement = $this->connection()->prepare($sql);
@@ -194,7 +234,13 @@ class CustomerVehicle
                 SELECT 1
                 FROM bookings blocking_booking
                 WHERE blocking_booking.vehicle_id = v.id
-                  AND blocking_booking.status IN ('pending_payment', 'confirmed', 'ongoing')
+                  AND (
+                      blocking_booking.status IN ('confirmed', 'ongoing')
+                      OR (
+                          blocking_booking.status = 'pending_payment'
+                          AND blocking_booking.created_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)
+                      )
+                  )
                   AND blocking_booking.start_date < :availability_end
                   AND blocking_booking.end_date > :availability_start
             )";

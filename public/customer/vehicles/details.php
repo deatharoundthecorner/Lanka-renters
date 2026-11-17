@@ -6,7 +6,7 @@ $controller = new CustomerController();
 $viewData = $controller->vehicleDetails($_GET);
 $pageTitle = $viewData['page_title'];
 $vehicle = $viewData['vehicle'];
-
+$backPath = 'vehicles/index.php' . (($viewData['catalogue_query'] ?? '') !== '' ? '?' . $viewData['catalogue_query'] : '');
 require dirname(__DIR__) . '/components/layout/header.php';
 ?>
 <div class="customer-shell">
@@ -15,7 +15,7 @@ require dirname(__DIR__) . '/components/layout/header.php';
         <?php require dirname(__DIR__) . '/components/layout/navbar.php'; ?>
         <main class="customer-content" id="main-content">
             <?php require dirname(__DIR__) . '/components/layout/page-header.php'; ?>
-            <p><a class="text-link vehicle-back-link" href="<?= htmlspecialchars(customer_url('vehicles/index.php'), ENT_QUOTES, 'UTF-8') ?>">&larr; Back to vehicle search</a></p>
+            <p><a class="text-link vehicle-back-link" href="<?= htmlspecialchars(customer_url($backPath), ENT_QUOTES, 'UTF-8') ?>">&larr; Back to catalogue</a></p>
 
             <?php if ($viewData['database_error']): ?>
                 <section class="empty-state" aria-labelledby="vehicle-detail-error-title">
@@ -28,7 +28,7 @@ require dirname(__DIR__) . '/components/layout/header.php';
                     <span class="empty-state__icon" aria-hidden="true"><?= customer_icon('search') ?></span>
                     <h2 id="vehicle-not-found-title">Vehicle not found</h2>
                     <p>This vehicle does not exist or is not an approved Customer catalogue listing.</p>
-                    <a class="button button--secondary" href="<?= htmlspecialchars(customer_url('vehicles/index.php'), ENT_QUOTES, 'UTF-8') ?>">Browse approved vehicles</a>
+                    <a class="button button--secondary" href="<?= htmlspecialchars(customer_url($backPath), ENT_QUOTES, 'UTF-8') ?>">Browse approved vehicles</a>
                 </section>
             <?php else: ?>
                 <?php require dirname(__DIR__) . '/components/vehicle/vehicle-gallery.php'; ?>
@@ -44,9 +44,9 @@ require dirname(__DIR__) . '/components/layout/header.php';
                                 <?php $vehicleStatus = (string) $vehicle['status']; require dirname(__DIR__) . '/components/vehicle/availability-badge.php'; ?>
                             </div>
                             <div class="vehicle-detail-prices">
-                                <p class="vehicle-price"><strong>Rs. <?= number_format((float) $vehicle['price_per_day'], 2) ?></strong><span>/ day self-drive</span></p>
+                                <p class="vehicle-price"><strong>LKR <?= number_format((float) $vehicle['price_per_day'], 2) ?></strong><span>/ day self-drive</span></p>
                                 <?php if ($vehicle['price_with_driver_per_day'] !== null): ?>
-                                    <p class="vehicle-price"><strong>Rs. <?= number_format((float) $vehicle['price_with_driver_per_day'], 2) ?></strong><span>/ day with driver</span></p>
+                                    <p class="vehicle-price"><strong>LKR <?= number_format((float) $vehicle['price_with_driver_per_day'], 2) ?></strong><span>/ day with driver</span></p>
                                 <?php endif; ?>
                             </div>
                             <div class="vehicle-trust-row">
@@ -56,25 +56,28 @@ require dirname(__DIR__) . '/components/layout/header.php';
                         </section>
 
                         <?php require dirname(__DIR__) . '/components/vehicle/vehicle-specs.php'; ?>
+                        <?php require dirname(__DIR__) . '/components/vehicle/rental-usage-details.php'; ?>
+                        <?php require dirname(__DIR__) . '/components/vehicle/booking-rules.php'; ?>
+
+                        <?php if ((string) ($vehicle['status'] ?? '') === 'available'): ?>
+                            <section class="card vehicle-booking-handoff" aria-labelledby="booking-handoff-title">
+                                <h2 id="booking-handoff-title">Ready to book?</h2>
+                                <p>Open the Booking Request Form to choose dates, service type, a Driver when needed, and accept the Booking Agreement.</p>
+                                <a class="button button--primary" href="<?= htmlspecialchars(customer_url('bookings/create.php?vehicle_id=' . (int) $vehicle['id']), ENT_QUOTES, 'UTF-8') ?>">Create Booking</a>
+                            </section>
+                        <?php else: ?>
+                            <section class="card vehicle-booking-handoff" aria-labelledby="booking-unavailable-title">
+                                <h2 id="booking-unavailable-title">Booking unavailable</h2>
+                                <p>This vehicle is not currently eligible for a new booking request. Check availability or return to the catalogue to choose another vehicle.</p>
+                            </section>
+                        <?php endif; ?>
                     </div>
 
                     <aside class="vehicle-detail-layout__aside" aria-label="Booking readiness">
                         <?php require dirname(__DIR__) . '/components/vehicle/owner-card.php'; ?>
                         <section class="card vehicle-booking-handoff" aria-labelledby="booking-handoff-title">
-                            <div class="card__header">
-                                <h2 id="booking-handoff-title">Ready to book?</h2>
-                                <span class="card__header-icon" aria-hidden="true"><?= customer_icon('calendar') ?></span>
-                            </div>
-                            <?php if ((string) $vehicle['status'] !== 'available'): ?>
-                                <p>This listing is approved, but it is not currently available for a new booking.</p>
-                                <span class="button button--secondary is-disabled" aria-disabled="true">Booking unavailable</span>
-                            <?php elseif ($viewData['customer_verification_status'] !== 'approved'): ?>
-                                <p>Your Customer verification must be approved before you can continue to booking.</p>
-                                <a class="button button--secondary" href="<?= htmlspecialchars(customer_url('verification/index.php'), ENT_QUOTES, 'UTF-8') ?>">View verification</a>
-                            <?php else: ?>
-                                <p>Choose your rental dates and service. Availability and pricing will be rechecked securely.</p>
-                                <a class="button button--primary" href="<?= htmlspecialchars(customer_url('bookings/create.php?vehicle_id=' . (int) $vehicle['id']), ENT_QUOTES, 'UTF-8') ?>">Continue to booking <?= customer_icon('arrow-right') ?></a>
-                            <?php endif; ?>
+                            <div class="card__header"><h2 id="booking-handoff-title">Booking safety</h2><span class="card__header-icon" aria-hidden="true"><?= customer_icon('shield') ?></span></div>
+                            <p>Vehicle availability, Customer verification, Driver eligibility, dates, and prices are rechecked securely when you send the request.</p>
                         </section>
                     </aside>
                 </div>

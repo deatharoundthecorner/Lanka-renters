@@ -86,7 +86,7 @@ $requiredCssValues = [
     '--color-card: #FFFFFF',
     '--color-text: #0F172A',
     '--color-text-secondary: #64748B',
-    'font-family: Inter, Arial, sans-serif',
+    'font-family: "Montserrat", Arial, sans-serif',
     '--radius-card: 16px',
 ];
 

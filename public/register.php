@@ -47,8 +47,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <title>Register - Lanka Renters</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="assets/css/driver.css">
+    <link rel="stylesheet" href="assets/css/lr-auth.css">
     <style>
         .login-link {
             text-align: center;
@@ -80,14 +81,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     </style>
 </head>
-<body>
+<body class="auth-page auth-page--register">
     <div class="auth-container" style="max-width: 500px; padding: 40px 20px;">
         <div class="auth-card">
             <div class="auth-header" style="display: flex; flex-direction: column; align-items: center; gap: 8px; margin-bottom: 24px;">
-                <div style="display: flex; align-items: center; gap: 10px; text-decoration: none; font-size: 28px; font-weight: 800; color: #0B3A82;">
-                    <span style="width: 38px; height: 38px; background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%); color: #FFFFFF; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 800; box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);">L</span>
-                    <span>Lanka<span style="color: #2563EB;">Renters</span></span>
-                </div>
+                <img class="auth-brand-logo" src="assets/images/brand/lanka-renters-mark.png" alt="Lanka Renters">
                 <p class="auth-subtitle">Create a New Account</p>
             </div>
             
@@ -116,7 +114,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 
                 <div class="form-group">
                     <label class="form-label" for="password">Password</label>
-                    <input class="form-control" type="password" id="password" name="password" required placeholder="Create a password">
+                    <div class="password-field">
+                        <input class="form-control" type="password" id="password" name="password" required placeholder="Create a password">
+                        <button class="password-toggle" type="button" data-password-toggle="password" aria-controls="password" aria-label="Show password" aria-pressed="false">Show</button>
+                    </div>
                 </div>
 
                 <div class="form-group">
@@ -136,5 +137,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
         </div>
     </div>
+    <script src="assets/js/password-visibility.js" defer></script>
 </body>
 </html>

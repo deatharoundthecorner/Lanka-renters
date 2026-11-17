@@ -29,7 +29,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 // Fetch dashboard data to get current status and driver profile details
 $dashboardResult = $driverController->dashboard();
 if (!$dashboardResult['success']) {
-    die("Error loading driver data: " . htmlspecialchars($dashboardResult['error']));
+    error_log('Driver availability load failed: ' . ($dashboardResult['error'] ?? 'Unknown error'));
+    die('The page could not be loaded. Please try again later.');
 }
 
 $profile = $dashboardResult['profile'];

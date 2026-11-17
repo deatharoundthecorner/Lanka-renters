@@ -109,18 +109,11 @@ $totalReviewItems = $stats['pending_customers'] + $stats['pending_vehicles'] + $
         <?php include __DIR__ . '/partials/header.php'; ?>
 
         <main class="page-container">
-            <!-- Header Badges & Titles -->
+            <!-- Header Review Summary -->
             <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 12px;">
                 <div style="display: flex; align-items: center; gap: 10px;">
                     <span class="badge badge-blue">Admin</span>
-                    <span class="badge badge-pending"><?= $totalReviewItems ?> item<?= $totalReviewItems === 1 ? '' : 's' ?> need review</span>
-                </div>
-
-                <!-- System Status Indicator Card -->
-                <div style="display: flex; align-items: center; gap: 8px; background: #FFFFFF; border: 1px solid var(--border); padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600;">
-                    <span class="status-indicator-dot green"></span>
-                    <span style="color: var(--text-main);">System Status:</span>
-                    <span style="color: var(--success);">All systems operational</span>
+                    <span class="badge badge-pending review-count-badge"><?= $totalReviewItems ?> item<?= $totalReviewItems === 1 ? '' : 's' ?> need review</span>
                 </div>
             </div>
 
@@ -129,19 +122,24 @@ $totalReviewItems = $stats['pending_customers'] + $stats['pending_vehicles'] + $
                 <p class="page-subtitle">Keep approvals, payments, incidents, and settlements moving clearly.</p>
             </div>
 
-            <!-- "Do this next" Callout Card -->
+            <!-- Pending Reviews Callout Card -->
             <div class="do-this-next-card">
                 <div class="do-next-left">
                     <div class="do-next-icon">
                         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
                     </div>
                     <div class="do-next-content">
-                        <span class="do-next-tag">Do this next</span>
-                        <h3><?= $stats['pending_customers'] ?> customer approval<?= $stats['pending_customers'] === 1 ? '' : 's' ?> waiting for review.</h3>
-                        <p>Clear identity checks to keep safe customers moving.</p>
+                        <span class="do-next-tag">Pending Reviews</span>
+                        <?php if ($stats['pending_customers'] > 0): ?>
+                            <h3><?= $stats['pending_customers'] ?> customer approval<?= $stats['pending_customers'] === 1 ? '' : 's' ?> waiting for review.</h3>
+                            <p>Review pending Customer account statuses.</p>
+                        <?php else: ?>
+                            <h3>No pending customer approvals</h3>
+                            <p>All customer accounts and submissions are up to date.</p>
+                        <?php endif; ?>
                     </div>
                 </div>
-                <a href="users.php" class="btn btn-primary">
+                <a href="customer_verification.php" class="btn btn-primary">
                     <span>Review approvals</span>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
                 </a>
@@ -156,6 +154,7 @@ $totalReviewItems = $stats['pending_customers'] + $stats['pending_vehicles'] + $
                     </div>
                     <div style="display: flex; flex-wrap: wrap; gap: 8px;">
                         <a href="announcements.php?action=create" class="btn btn-primary btn-sm">+ Add Announcement</a>
+                        <a href="customer_verification.php" class="btn btn-secondary btn-sm">Verify Customers</a>
                         <a href="users.php" class="btn btn-secondary btn-sm">Review Users</a>
                         <a href="vehicles.php" class="btn btn-secondary btn-sm">Review Vehicles</a>
                         <a href="payments.php" class="btn btn-secondary btn-sm">Review Payments</a>
@@ -221,6 +220,25 @@ $totalReviewItems = $stats['pending_customers'] + $stats['pending_vehicles'] + $
                         <span>View Registered →</span>
                     </div>
                 </div>
+            </div>
+
+            <div class="card admin-revenue-card" style="margin-top:24px;">
+                <div class="card-header-clean admin-revenue-header">
+                    <div><h3 class="card-title-text">Revenue Overview</h3><p class="card-subtitle-text">Monthly completed payment income</p></div>
+                    <label class="admin-year-selector" for="revenueYear">Year <select id="revenueYear" aria-label="Revenue year"></select></label>
+                </div>
+                <div class="admin-revenue-summary" aria-label="Revenue summary">
+                    <div><span>Annual Revenue</span><strong id="annualRevenue">LKR 0</strong></div>
+                    <div><span>Completed Payments</span><strong id="completedPayments">0</strong></div>
+                    <div><span>Average Monthly Revenue</span><strong id="averageMonthlyRevenue">LKR 0</strong></div>
+                    <div><span>Highest Revenue Month</span><strong id="highestRevenueMonth">-</strong></div>
+                </div>
+                <div class="admin-chart-wrap">
+                    <canvas id="monthlyPaymentChart" aria-label="Completed payment income by month" role="img"></canvas>
+                    <div id="monthlyPaymentTooltip" class="admin-chart-tooltip" role="status" hidden></div>
+                </div>
+                <p id="monthlyPaymentEmpty" class="admin-chart-empty" style="display:none;">No completed payment income recorded for this year.</p>
+                <div class="admin-booking-status" aria-labelledby="bookingStatusTitle"><h4 id="bookingStatusTitle">Booking Status</h4><div id="bookingStatusList"></div><p id="bookingStatusEmpty" style="display:none;color:var(--text-secondary);">No booking activity this month.</p></div>
             </div>
 
             <!-- Financial Statistics Cards -->
@@ -321,27 +339,6 @@ $totalReviewItems = $stats['pending_customers'] + $stats['pending_vehicles'] + $
                 </a>
             </div>
 
-            <!-- System Services Operational Status Grid Card -->
-            <div class="card">
-                <div class="card-header-clean">
-                    <h3 class="card-title-text">System Services Operational Status</h3>
-                </div>
-                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; font-size: 13px;">
-                    <div style="background: var(--bg-main); padding: 12px 16px; border-radius: 8px; display: flex; align-items: center; justify-content: space-between;">
-                        <span>Booking System</span>
-                        <span class="badge badge-approved">Operational</span>
-                    </div>
-                    <div style="background: var(--bg-main); padding: 12px 16px; border-radius: 8px; display: flex; align-items: center; justify-content: space-between;">
-                        <span>Payment System</span>
-                        <span class="badge badge-approved">Operational</span>
-                    </div>
-                    <div style="background: var(--bg-main); padding: 12px 16px; border-radius: 8px; display: flex; align-items: center; justify-content: space-between;">
-                        <span>Email Notifications</span>
-                        <span class="badge badge-approved">Operational</span>
-                    </div>
-                </div>
-            </div>
-
             <!-- Admin Essentials Card & Guidance -->
             <div class="grid-2">
                 <div class="card">
@@ -382,14 +379,14 @@ $totalReviewItems = $stats['pending_customers'] + $stats['pending_vehicles'] + $
                                 <strong style="color: var(--text-main);">Customer registrations</strong>
                                 <p style="color: var(--text-muted);"><?= number_format($stats['users']) ?> total registered customers</p>
                             </div>
-                            <span class="badge badge-approved"><?= number_format($stats['pending_customers']) ?> pending</span>
+                            <span class="badge badge-pending"><?= number_format($stats['pending_customers']) ?> pending</span>
                         </div>
                         <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-light); padding-bottom: 8px;">
                             <div>
                                 <strong style="color: var(--text-main);">Fleet vehicles</strong>
                                 <p style="color: var(--text-muted);"><?= number_format($stats['vehicles']) ?> total registered vehicles</p>
                             </div>
-                            <span class="badge badge-approved"><?= number_format($stats['pending_vehicles']) ?> pending</span>
+                            <span class="badge badge-pending"><?= number_format($stats['pending_vehicles']) ?> pending</span>
                         </div>
                         <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-light); padding-bottom: 8px;">
                             <div>
@@ -410,6 +407,44 @@ $totalReviewItems = $stats['pending_customers'] + $stats['pending_vehicles'] + $
         </main>
     </div>
 </div>
+
+<script>
+(function () {
+    const endpoint = 'data/dashboard-live.php';
+    const colors = ['#0b57d0', '#079669', '#d97706', '#dc2626', '#61708a'];
+    const yearSelect = document.getElementById('revenueYear');
+    const canvas = document.getElementById('monthlyPaymentChart');
+    const tooltip = document.getElementById('monthlyPaymentTooltip');
+    const empty = document.getElementById('monthlyPaymentEmpty');
+    const fullMonthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    let chartRows = [];
+    let chartYear = new Date().getFullYear();
+    function money(value) { return 'LKR ' + Math.round(value).toLocaleString('en-US'); }
+    function compactMoney(value) { if (value >= 1000000) return 'LKR ' + (value / 1000000).toFixed(value % 1000000 ? 1 : 0) + 'm'; if (value >= 1000) return 'LKR ' + (value / 1000).toFixed(value % 1000 ? 1 : 0) + 'k'; return 'LKR ' + Math.round(value); }
+    function renderYearOptions(years) { const values = years.length ? years : [new Date().getFullYear()]; const current = yearSelect.value || String(values[values.length - 1]); yearSelect.replaceChildren(...values.map(year => { const option=document.createElement('option'); option.value=year; option.textContent=year; option.selected=String(year)===current; return option; })); }
+    function niceMaximum(value) { if (value <= 0) return 1; const magnitude = Math.pow(10, Math.floor(Math.log10(value))); return Math.ceil(value / magnitude / 5) * 5 * magnitude; }
+    function drawRevenue() {
+        if (!canvas || !chartRows.length) return;
+        const rect = canvas.getBoundingClientRect(); const ratio = window.devicePixelRatio || 1; const width = Math.max(1, rect.width); const height = 280; const ctx = canvas.getContext('2d');
+        canvas.width = Math.round(width * ratio); canvas.height = Math.round(height * ratio); ctx.setTransform(ratio, 0, 0, ratio, 0, 0); ctx.clearRect(0, 0, width, height);
+        const left=72, right=20, top=18, bottom=42, plotWidth=width-left-right, plotHeight=height-top-bottom, values=chartRows.map(row=>Number(row.total)||0), max=niceMaximum(Math.max(...values, 0));
+        ctx.font=(width < 450 ? '9px' : '12px')+' Outfit, sans-serif'; ctx.textBaseline='middle';
+        for(let index=0;index<=4;index++){const value=max*index/4,y=top+plotHeight-(plotHeight*index/4);ctx.strokeStyle='#e7edf5';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(left,y);ctx.lineTo(width-right,y);ctx.stroke();ctx.fillStyle='#64748b';ctx.textAlign='right';ctx.fillText(compactMoney(value),left-10,y);}
+        ctx.fillStyle='#64748b';ctx.textAlign='center';chartRows.forEach((row,index)=>ctx.fillText(row.label,left+(plotWidth*index/11),height-18));
+        const points=chartRows.map((row,index)=>({x:left+(plotWidth*index/11),y:top+plotHeight-((Number(row.total)||0)/max*plotHeight)}));
+        const gradient=ctx.createLinearGradient(0,top,0,top+plotHeight);gradient.addColorStop(0,'rgba(37,99,235,.18)');gradient.addColorStop(1,'rgba(37,99,235,0)');ctx.fillStyle=gradient;ctx.beginPath();points.forEach((point,index)=>index?ctx.lineTo(point.x,point.y):ctx.moveTo(point.x,point.y));ctx.lineTo(width-right,top+plotHeight);ctx.lineTo(left,top+plotHeight);ctx.closePath();ctx.fill();
+        ctx.strokeStyle='#2563eb';ctx.lineWidth=2.5;ctx.beginPath();points.forEach((point,index)=>index?ctx.lineTo(point.x,point.y):ctx.moveTo(point.x,point.y));ctx.stroke();points.forEach(point=>{ctx.fillStyle='#fff';ctx.strokeStyle='#2563eb';ctx.lineWidth=2;ctx.beginPath();ctx.arc(point.x,point.y,4,0,Math.PI*2);ctx.fill();ctx.stroke();});
+        empty.style.display=values.every(value=>value===0)?'block':'none';
+    }
+    function renderSummary(rows) { const values=rows.map(row=>Number(row.total)||0),annual=values.reduce((sum,value)=>sum+value,0),payments=rows.reduce((sum,row)=>sum+(Number(row.count)||0),0),highest=Math.max(...values,0),index=values.indexOf(highest);document.getElementById('annualRevenue').textContent=money(annual);document.getElementById('completedPayments').textContent=String(payments);document.getElementById('averageMonthlyRevenue').textContent=money(annual/12);document.getElementById('highestRevenueMonth').textContent=highest>0?rows[index].label:'-'; }
+    function renderStatuses(rows) { const list=document.getElementById('bookingStatusList'); list.replaceChildren(); const labels={'pending_payment':'Pending Payment','confirmed':'Confirmed','ongoing':'Ongoing','completed':'Completed','cancelled':'Cancelled'}; const values={}; rows.forEach(row=>values[row.status]=Number(row.count)||0); const max=Math.max(...Object.values(values),1); Object.keys(labels).forEach((key,index)=>{const value=values[key]||0;const row=document.createElement('div');row.className='admin-status-row';row.innerHTML='<span>'+labels[key]+'</span><strong>'+value+'</strong><i><b style="width:'+(value/max*100)+'%;background:'+colors[index]+'"></b></i>';list.append(row);}); document.getElementById('bookingStatusEmpty').style.display=Object.values(values).every(value=>value===0)?'block':'none';}
+    canvas.addEventListener('mousemove', function(event) { if (!chartRows.length) return; const bounds=canvas.getBoundingClientRect(),relative=Math.max(0,Math.min(bounds.width,event.clientX-bounds.left)),index=Math.max(0,Math.min(11,Math.round((relative-72)/(bounds.width-92)*11))),row=chartRows[index]; tooltip.innerHTML='<strong>'+fullMonthNames[index]+' '+chartYear+'</strong><span>Completed Payments: '+(Number(row.count)||0)+'</span><span>Income: '+money(Number(row.total)||0)+'</span>';tooltip.style.left=Math.min(bounds.width-210,Math.max(8,relative+12))+'px';tooltip.style.top='18px';tooltip.hidden=false; });
+    canvas.addEventListener('mouseleave', function(){tooltip.hidden=true;});
+    let activeRequest=false;
+    function refresh(){if(activeRequest)return;activeRequest=true;const year=yearSelect.value?('?year='+encodeURIComponent(yearSelect.value)):'';fetch(endpoint+year,{credentials:'same-origin',cache:'no-store'}).then(r=>r.json()).then(data=>{if(!data.success)return;renderYearOptions(data.available_years||[]);chartRows=(data.monthly_payments||[]).map(row=>({label:row.label,total:Number(row.total)||0,count:Number(row.count)||0}));chartYear=data.year;drawRevenue();renderSummary(chartRows);renderStatuses(data.booking_status||[]);}).catch(()=>{}).finally(()=>{activeRequest=false;});}
+    yearSelect.addEventListener('change',refresh); window.addEventListener('resize',drawRevenue); refresh(); window.setInterval(refresh,5000);
+}());
+</script>
 
 <?php include __DIR__ . '/partials/modals.php'; ?>
 <?php include __DIR__ . '/partials/footer.php'; ?>

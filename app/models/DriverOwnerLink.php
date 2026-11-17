@@ -57,6 +57,23 @@ class DriverOwnerLink {
     }
 
     /**
+     * Accepts a pending request for the assigned driver exactly once.
+     */
+    public function acceptPending($linkId, $driverId): bool {
+        $sql = "UPDATE `driver_owner_links`
+                SET `status` = 'accepted', `accepted_at` = CURRENT_TIMESTAMP
+                WHERE `id` = :id
+                  AND `driver_id` = :driver_id
+                  AND `status` = 'pending'";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([
+            'id'        => $linkId,
+            'driver_id' => $driverId
+        ]);
+        return $stmt->rowCount() === 1;
+    }
+
+    /**
      * Retrieves a connection link by its ID.
      */
     public function findById($linkId) {

@@ -10,7 +10,8 @@ $driverController = new DriverController();
 // Resolve secure driver profile context
 $dashboardResult = $driverController->dashboard();
 if (!$dashboardResult['success']) {
-    die("Driver profile record not found: " . htmlspecialchars($dashboardResult['error']));
+    error_log('Driver incident profile load failed: ' . ($dashboardResult['error'] ?? 'Unknown error'));
+    die('The page could not be loaded. Please try again later.');
 }
 $driver = $dashboardResult['profile'];
 

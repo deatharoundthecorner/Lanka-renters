@@ -23,7 +23,17 @@ class Report {
                     COALESCE(SUM(total_price * 0.90), 0) as total_payouts,
                     COUNT(id) as total_bookings
                 FROM `bookings`
-                WHERE `status` = 'completed'";
+                                WHERE `status` = 'completed'
+                                    AND EXISTS (
+                                            SELECT 1 FROM `payments` p
+                                            WHERE p.`booking_id` = `bookings`.`id`
+                                                AND p.`payment_status` = 'completed'
+                                    )
+                                    AND NOT EXISTS (
+                                            SELECT 1 FROM `payments` p
+                                            WHERE p.`booking_id` = `bookings`.`id`
+                                                AND p.`payment_status` = 'refunded'
+                                    )";
         $stmt = $this->db->prepare($sql);
         $stmt->execute();
         return $stmt->fetch(PDO::FETCH_ASSOC) ?: [

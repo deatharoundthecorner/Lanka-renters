@@ -25,11 +25,15 @@ $filter            = $dataResult['filter'] ?? null;
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Replacement Requests - LankaRenters Owner</title>
-    <link rel="stylesheet" href="includes/assets/css/owner-style.css">
+  <link rel="stylesheet" href="includes/assets/css/owner-style.css">
+  <link rel="stylesheet" href="../assets/css/lr-tokens.css">
+  <link rel="stylesheet" href="../assets/css/lr-shell.css">
+  <link rel="stylesheet" href="../assets/css/lr-components.css">
+  <link rel="stylesheet" href="includes/assets/css/owner-canonical.css">
 </head>
 <body>
 
-    <div class="dashboard-layout">
+<div class="dashboard-layout dashboard-wrapper">
         <?php include 'includes/sidebar.php'; ?>
 
         <div class="main-wrapper">
@@ -37,7 +41,7 @@ $filter            = $dataResult['filter'] ?? null;
 
             <main class="main-content">
                 <!-- Page Header -->
-                <section class="vehicles-header" style="margin-bottom: 24px;">
+      <section class="vehicles-header welcome-container" style="margin-bottom: 24px;">
                     <div class="vehicles-title">
                         <h1>Replacement Vehicle Requests</h1>
                         <p>Review and respond to replacement vehicle requests submitted for your fleet during incidents.</p>
@@ -137,7 +141,6 @@ $filter            = $dataResult['filter'] ?? null;
 
                         <?php if (empty($requests)): ?>
                             <div style="padding: 48px; text-align: center; color: #64748b;">
-                                <div style="font-size: 2.8rem; margin-bottom: 12px;">🔄</div>
                                 <p style="font-size: 1.05rem; font-weight: 600; color: #0f172a; margin: 0 0 6px;">No Replacement Requests Found</p>
                                 <p style="margin: 0; font-size: 0.9rem;">Replacement vehicle requests logged during breakdown or accident incidents will appear here.</p>
                             </div>

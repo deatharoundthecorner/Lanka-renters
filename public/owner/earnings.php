@@ -18,11 +18,15 @@ $vehicleBreakdown   = $data['vehicle_breakdown']  ?? [];
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Earnings - LankaRenters</title>
     <meta name="description" content="Track your vehicle rental income, deductions and settlements on LankaRenters.">
-    <link rel="stylesheet" href="includes/assets/css/owner-style.css">
+  <link rel="stylesheet" href="includes/assets/css/owner-style.css">
+  <link rel="stylesheet" href="../assets/css/lr-tokens.css">
+  <link rel="stylesheet" href="../assets/css/lr-shell.css">
+  <link rel="stylesheet" href="../assets/css/lr-components.css">
+  <link rel="stylesheet" href="includes/assets/css/owner-canonical.css">
 </head>
 <body>
 
-    <div class="dashboard-layout">
+<div class="dashboard-layout dashboard-wrapper">
         <?php include 'includes/sidebar.php'; ?>
 
         <div class="main-wrapper">
@@ -30,7 +34,7 @@ $vehicleBreakdown   = $data['vehicle_breakdown']  ?? [];
 
             <main class="main-content">
             <!-- Page Header -->
-            <section class="earnings-header">
+      <section class="earnings-header welcome-container">
                 <div class="earnings-title">
                     <h1>Earnings</h1>
                     <p>Track income from your vehicle fleet.</p>
@@ -101,7 +105,6 @@ $vehicleBreakdown   = $data['vehicle_breakdown']  ?? [];
 
                     <?php if (empty($vehicleBreakdown)): ?>
                         <div style="text-align: center; padding: 48px 24px; color: #64748b;">
-                            <div style="font-size: 3rem; margin-bottom: 12px;">💰</div>
                             <p style="font-size: 1.1rem; font-weight: 600; color: #0f172a; margin: 0 0 8px;">No vehicles listed yet</p>
                             <p style="margin: 0;"><a href="vehicles.php#add-vehicle-form" style="color: #2563eb; font-weight: 600;">Add a vehicle</a> to start earning.</p>
                         </div>

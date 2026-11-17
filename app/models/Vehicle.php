@@ -24,11 +24,19 @@ class Vehicle {
         $sql = "INSERT INTO `vehicles` (
                     `owner_id`, `make`, `model`, `year`, `license_plate`, 
                     `vehicle_type`, `transmission`, `fuel_type`, `seating_capacity`, 
-                    `price_per_day`, `price_with_driver_per_day`, `image_url`, `status`, `verification_status`
+                    `location`, `air_conditioning`,
+                    `price_per_day`, `price_with_driver_per_day`,
+                    `monthly_rental_price`, `refundable_key_money`,
+                    `mileage_limit_km`, `mileage_is_unlimited`, `additional_mileage_charge_per_km`,
+                    `image_url`, `status`, `verification_status`
                 ) VALUES (
                     :owner_id, :make, :model, :year, :license_plate, 
                     :vehicle_type, :transmission, :fuel_type, :seating_capacity, 
-                    :price_per_day, :price_with_driver_per_day, :image_url, :status, :verification_status
+                    :location, :air_conditioning,
+                    :price_per_day, :price_with_driver_per_day,
+                    :monthly_rental_price, :refundable_key_money,
+                    :mileage_limit_km, :mileage_is_unlimited, :additional_mileage_charge_per_km,
+                    :image_url, :status, :verification_status
                 )";
 
         $stmt = $this->db->prepare($sql);
@@ -36,22 +44,41 @@ class Vehicle {
         $priceWithDriver = (!empty($data['price_with_driver_per_day']) && is_numeric($data['price_with_driver_per_day']))
             ? (float)$data['price_with_driver_per_day']
             : null;
+        $monthlyPrice = (!empty($data['monthly_rental_price']) && is_numeric($data['monthly_rental_price']))
+            ? (float)$data['monthly_rental_price']
+            : null;
+        $refundableKeyMoney = (!empty($data['refundable_key_money']) && is_numeric($data['refundable_key_money']))
+            ? (float)$data['refundable_key_money']
+            : null;
+        $mileageLimit = (!empty($data['mileage_limit_km']) && is_numeric($data['mileage_limit_km']))
+            ? (int)$data['mileage_limit_km']
+            : null;
+        $mileageCharge = (!empty($data['additional_mileage_charge_per_km']) && is_numeric($data['additional_mileage_charge_per_km']))
+            ? (float)$data['additional_mileage_charge_per_km']
+            : null;
 
         $params = [
-            'owner_id'                  => (int)$data['owner_id'],
-            'make'                      => trim($data['make']),
-            'model'                     => trim($data['model']),
-            'year'                      => (int)$data['year'],
-            'license_plate'             => strtoupper(trim($data['license_plate'])),
-            'vehicle_type'              => $data['vehicle_type'],
-            'transmission'              => $data['transmission'],
-            'fuel_type'                 => $data['fuel_type'],
-            'seating_capacity'          => (int)$data['seating_capacity'],
-            'price_per_day'             => (float)$data['price_per_day'],
-            'price_with_driver_per_day' => $priceWithDriver,
-            'image_url'                 => !empty($data['image_url']) ? trim($data['image_url']) : null,
-            'status'                    => $data['status'] ?? 'unavailable',
-            'verification_status'       => $data['verification_status'] ?? 'pending'
+            'owner_id'                         => (int)$data['owner_id'],
+            'make'                             => trim($data['make']),
+            'model'                            => trim($data['model']),
+            'year'                             => (int)$data['year'],
+            'license_plate'                    => strtoupper(trim($data['license_plate'])),
+            'vehicle_type'                     => $data['vehicle_type'],
+            'transmission'                     => $data['transmission'],
+            'fuel_type'                        => $data['fuel_type'],
+            'seating_capacity'                 => (int)$data['seating_capacity'],
+            'location'                         => !empty($data['location']) ? trim($data['location']) : null,
+            'air_conditioning'                 => isset($data['air_conditioning']) ? (int)$data['air_conditioning'] : 1,
+            'price_per_day'                    => (float)$data['price_per_day'],
+            'price_with_driver_per_day'        => $priceWithDriver,
+            'monthly_rental_price'             => $monthlyPrice,
+            'refundable_key_money'             => $refundableKeyMoney,
+            'mileage_limit_km'                 => $mileageLimit,
+            'mileage_is_unlimited'             => !empty($data['mileage_is_unlimited']) ? 1 : 0,
+            'additional_mileage_charge_per_km' => $mileageCharge,
+            'image_url'                        => !empty($data['image_url']) ? trim($data['image_url']) : null,
+            'status'                           => $data['status'] ?? 'unavailable',
+            'verification_status'              => $data['verification_status'] ?? 'pending'
         ];
 
         if ($stmt->execute($params)) {
@@ -107,6 +134,18 @@ class Vehicle {
         $priceWithDriver = (!empty($data['price_with_driver_per_day']) && is_numeric($data['price_with_driver_per_day']))
             ? (float)$data['price_with_driver_per_day']
             : null;
+        $monthlyPrice = (!empty($data['monthly_rental_price']) && is_numeric($data['monthly_rental_price']))
+            ? (float)$data['monthly_rental_price']
+            : null;
+        $refundableKeyMoney = (!empty($data['refundable_key_money']) && is_numeric($data['refundable_key_money']))
+            ? (float)$data['refundable_key_money']
+            : null;
+        $mileageLimit = (!empty($data['mileage_limit_km']) && is_numeric($data['mileage_limit_km']))
+            ? (int)$data['mileage_limit_km']
+            : null;
+        $mileageCharge = (!empty($data['additional_mileage_charge_per_km']) && is_numeric($data['additional_mileage_charge_per_km']))
+            ? (float)$data['additional_mileage_charge_per_km']
+            : null;
 
         $imageSql = array_key_exists('image_url', $data) ? ", `image_url` = :image_url" : "";
 
@@ -119,25 +158,39 @@ class Vehicle {
                     `transmission` = :transmission,
                     `fuel_type` = :fuel_type,
                     `seating_capacity` = :seating_capacity,
+                    `location` = :location,
+                    `air_conditioning` = :air_conditioning,
                     `price_per_day` = :price_per_day,
-                    `price_with_driver_per_day` = :price_with_driver_per_day
+                    `price_with_driver_per_day` = :price_with_driver_per_day,
+                    `monthly_rental_price` = :monthly_rental_price,
+                    `refundable_key_money` = :refundable_key_money,
+                    `mileage_limit_km` = :mileage_limit_km,
+                    `mileage_is_unlimited` = :mileage_is_unlimited,
+                    `additional_mileage_charge_per_km` = :additional_mileage_charge_per_km
                     {$imageSql}
                 WHERE `id` = :id AND `owner_id` = :owner_id";
 
         $stmt = $this->db->prepare($sql);
         $params = [
-            'make'                      => trim($data['make']),
-            'model'                     => trim($data['model']),
-            'year'                      => (int)$data['year'],
-            'license_plate'             => strtoupper(trim($data['license_plate'])),
-            'vehicle_type'              => $data['vehicle_type'],
-            'transmission'              => $data['transmission'],
-            'fuel_type'                 => $data['fuel_type'],
-            'seating_capacity'          => (int)$data['seating_capacity'],
-            'price_per_day'             => (float)$data['price_per_day'],
-            'price_with_driver_per_day' => $priceWithDriver,
-            'id'                        => (int)$id,
-            'owner_id'                  => (int)$ownerId
+            'make'                             => trim($data['make']),
+            'model'                            => trim($data['model']),
+            'year'                             => (int)$data['year'],
+            'license_plate'                    => strtoupper(trim($data['license_plate'])),
+            'vehicle_type'                     => $data['vehicle_type'],
+            'transmission'                     => $data['transmission'],
+            'fuel_type'                        => $data['fuel_type'],
+            'seating_capacity'                 => (int)$data['seating_capacity'],
+            'location'                         => !empty($data['location']) ? trim($data['location']) : null,
+            'air_conditioning'                 => isset($data['air_conditioning']) ? (int)$data['air_conditioning'] : 1,
+            'price_per_day'                    => (float)$data['price_per_day'],
+            'price_with_driver_per_day'        => $priceWithDriver,
+            'monthly_rental_price'             => $monthlyPrice,
+            'refundable_key_money'             => $refundableKeyMoney,
+            'mileage_limit_km'                 => $mileageLimit,
+            'mileage_is_unlimited'             => !empty($data['mileage_is_unlimited']) ? 1 : 0,
+            'additional_mileage_charge_per_km' => $mileageCharge,
+            'id'                               => (int)$id,
+            'owner_id'                         => (int)$ownerId
         ];
 
         if (array_key_exists('image_url', $data)) {
@@ -184,6 +237,34 @@ class Vehicle {
      */
     public function deactivate($id, $ownerId) {
         return $this->updateStatus($id, $ownerId, 'unavailable');
+    }
+
+    /**
+     * Permanently deletes an owner-owned vehicle.
+     * Foreign-key restrictions are intentionally left to the database so
+     * historical rental records can never be removed by cascade.
+     */
+    public function delete($id, $ownerId) {
+        $sql = "DELETE FROM `vehicles` WHERE `id` = :id AND `owner_id` = :owner_id";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([
+            'id' => (int)$id,
+            'owner_id' => (int)$ownerId,
+        ]);
+
+        return $stmt->rowCount() > 0;
+    }
+
+    /**
+     * Returns true when a vehicle is referenced by any booking, including
+     * completed or cancelled history that must remain intact.
+     */
+    public function hasBookings($vehicleId) {
+        $sql = "SELECT COUNT(*) AS `cnt` FROM `bookings` WHERE `vehicle_id` = :vehicle_id";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute(['vehicle_id' => (int)$vehicleId]);
+        $row = $stmt->fetch();
+        return ((int)($row['cnt'] ?? 0)) > 0;
     }
 
     /**

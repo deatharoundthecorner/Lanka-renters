@@ -45,7 +45,7 @@ include 'includes/navbar.php';
     
     <div class="welcome-container">
         <div>
-            <h2 class="welcome-title">Connected Vehicle Owners 🤝</h2>
+            <h2 class="welcome-title">Connected Vehicle Owners</h2>
             <p class="welcome-subtitle">View and manage your linked vehicle owners and connection requests.</p>
         </div>
     </div>
@@ -62,7 +62,7 @@ include 'includes/navbar.php';
         <div class="card" style="margin-bottom: 24px; border-left: 4px solid var(--warning);">
             <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
                 <h3 class="card-title" style="color: var(--warning-dark, #b45309);">
-                    ⚠️ Pending Connection Requests (<?php echo count($pendingRequests); ?>)
+                    Pending Connection Requests (<?php echo count($pendingRequests); ?>)
                 </h3>
             </div>
             <div style="padding: 16px;">
@@ -72,9 +72,9 @@ include 'includes/navbar.php';
                             <div>
                                 <h4 style="margin: 0; font-size: 15px; font-weight: 700; color: #1e293b;"><?php echo htmlspecialchars($req['owner_name']); ?></h4>
                                 <div style="font-size: 13px; color: #64748b; margin-top: 4px;">
-                                    <span>📧 <?php echo htmlspecialchars($req['owner_email']); ?></span> &bull; 
-                                    <span>📞 <?php echo htmlspecialchars($req['owner_phone'] ?? 'N/A'); ?></span> &bull; 
-                                    <span>🚗 <?php echo (int)($req['vehicle_count'] ?? 0); ?> listed vehicles</span>
+                                    <span>Email: <?php echo htmlspecialchars($req['owner_email']); ?></span> &bull; 
+                                    <span>Phone: <?php echo htmlspecialchars($req['owner_phone'] ?? 'N/A'); ?></span> &bull; 
+                                    <span><?php echo (int)($req['vehicle_count'] ?? 0); ?> listed vehicles</span>
                                 </div>
                             </div>
                             <div style="display: flex; gap: 8px;">
@@ -105,8 +105,12 @@ include 'includes/navbar.php';
         </div>
 
         <?php if (empty($connectedOwners)): ?>
-            <div style="padding: 40px 20px; text-align: center;">
-                <div style="font-size: 48px; margin-bottom: 12px;">🤝</div>
+            <div class="lr-empty-state" style="padding: 40px 20px; text-align: center;">
+                <span class="lr-empty-icon" aria-hidden="true">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.36-1.86M17 20H7m10 0v-2c0-.66-.13-1.28-.36-1.86M7 20H2v-2a3 3 0 015.36-1.86M7 20v-2c0-.66.13-1.28.36-1.86m0 0a5 5 0 019.28 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    </svg>
+                </span>
                 <h4 style="margin: 0 0 6px; font-weight: 700; color: var(--text-dark);">No connected owners yet</h4>
                 <p style="margin: 0; font-size: 14px; color: var(--text-muted);">Vehicle owners who send you connection requests will appear here once accepted.</p>
             </div>

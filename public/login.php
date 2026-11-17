@@ -77,7 +77,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <title>Sign In - Lanka Renters</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/lr-auth.css">
     <style>
         :root {
             --dark-blue: #0B3A82;
@@ -93,7 +94,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: 'Outfit', sans-serif;
+            font-family: 'Montserrat', 'Segoe UI', sans-serif;
         }
 
         body {
@@ -257,7 +258,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     </style>
 </head>
-<body>
+<body class="auth-page auth-page--login">
 
     <!-- Background Decors (Vehicle themed SVGs) -->
     <svg class="bg-decor decor-left" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -270,10 +271,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="login-container">
         <div class="login-card">
             <div class="logo-section" style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
-                <div style="display: flex; align-items: center; gap: 10px; text-decoration: none; font-size: 28px; font-weight: 800; color: #0B3A82;">
-                    <span style="width: 38px; height: 38px; background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%); color: #FFFFFF; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 800; box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);">L</span>
-                    <span>Lanka<span style="color: #2563EB;">Renters</span></span>
-                </div>
+                <img class="auth-brand-logo" src="assets/images/brand/lanka-renters-mark.png" alt="Lanka Renters logo mark">
+                <div class="logo-text">Lanka Renters</div>
                 <p class="subtitle">Unified Sign In Portal</p>
             </div>
 
@@ -304,7 +303,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 <div class="form-group">
                     <label class="form-label" for="password">Password</label>
-                    <input class="form-input" type="password" id="password" name="password" required placeholder="••••••••">
+                    <div class="password-field">
+                        <input class="form-input" type="password" id="password" name="password" required placeholder="••••••••">
+                        <button class="password-toggle" type="button" data-password-toggle="password" aria-controls="password" aria-label="Show password" aria-pressed="false">Show</button>
+                    </div>
                 </div>
 
                 <button type="submit" class="btn-submit">Sign In</button>
@@ -316,6 +318,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
     </div>
 
+    <script src="assets/js/password-visibility.js" defer></script>
 </body>
 </html>
-

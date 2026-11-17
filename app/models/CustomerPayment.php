@@ -175,7 +175,9 @@ final class CustomerPayment
                 FROM bookings b JOIN customers c ON c.id = b.customer_id
                 JOIN users u ON u.id = c.user_id JOIN vehicles v ON v.id = b.vehicle_id
                 WHERE b.id = :booking_id AND c.user_id = :user_id AND u.role = 'customer'
-                  AND b.status = 'pending_payment' LIMIT 1" . ($forUpdate ? ' FOR UPDATE' : '');
+                  AND b.status = 'pending_payment'
+                  AND b.created_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)
+                LIMIT 1" . ($forUpdate ? ' FOR UPDATE' : '');
     }
 
     private function getBlockingPayment(int $customerId, int $bookingId, bool $forUpdate = false): ?array

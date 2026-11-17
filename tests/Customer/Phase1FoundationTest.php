@@ -90,10 +90,10 @@ foreach ($entryPoints as $entryPoint) {
 $configSource = file_get_contents($root . '/app/config/database.php');
 if (
     !is_string($configSource)
-    || !str_contains($configSource, 'port=3308')
+    || !str_contains($configSource, 'port=3306')
     || str_contains($configSource, "../core/Database.php")
 ) {
-    $blockers[] = 'Shared app/config/database.php is not yet the authoritative origin/develop port-3308 configuration.';
+    $blockers[] = 'Shared app/config/database.php is not yet the authoritative origin/develop port-3306 configuration.';
 }
 
 CustomerCsrf::rotate();

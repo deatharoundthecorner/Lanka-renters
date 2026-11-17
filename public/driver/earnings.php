@@ -10,7 +10,8 @@ $driverController = new DriverController();
 // Fetch earnings history and split
 $earningsResult = $driverController->viewEarningsDetail();
 if (!$earningsResult['success']) {
-    die("Error retrieving earnings details: " . htmlspecialchars($earningsResult['error']));
+    error_log('Driver earnings load failed: ' . ($earningsResult['error'] ?? 'Unknown error'));
+    die('The page could not be loaded. Please try again later.');
 }
 
 $summary = $earningsResult['summary'];

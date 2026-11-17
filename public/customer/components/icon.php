@@ -10,10 +10,11 @@ if (!function_exists('customer_icon')) {
             'dashboard' => '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
             'shield' => '<path d="M12 3 5 6v5c0 4.6 2.9 8 7 10 4.1-2 7-5.4 7-10V6l-7-3Z"/><path d="m9 12 2 2 4-4"/>',
             'car' => '<path d="m5 11 1.5-4h11l1.5 4"/><path d="M3 12h18v6H3z"/><path d="M6 18v2M18 18v2M7 15h.01M17 15h.01"/>',
+            'camera' => '<path d="M4 8h3l1.5-2h7L17 8h3a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2Z"/><circle cx="12" cy="14" r="3.5"/>',
             'calendar' => '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18M8 14h.01M12 14h.01M16 14h.01"/>',
             'clipboard' => '<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V2h6v2M8 10h8M8 14h8M8 18h5"/>',
             'credit-card' => '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M7 15h3"/>',
-            'chat' => '<path d="M21 12a8 8 0 0 1-9 8 9 9 0 0 1-4-.9L3 21l1.7-4A8 8 0 1 1 21 12Z"/>',
+            'chat' => '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
             'alert' => '<path d="M12 3 2.8 20h18.4L12 3Z"/><path d="M12 9v5M12 17h.01"/>',
             'switch' => '<path d="M4 7h13M14 4l3 3-3 3M20 17H7M10 14l-3 3 3 3"/>',
             'return' => '<path d="M9 7 4 12l5 5M4 12h10a6 6 0 0 1 6 6"/>',
@@ -28,7 +29,7 @@ if (!function_exists('customer_icon')) {
             'clock' => '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
             'arrow-right' => '<path d="M5 12h14M14 7l5 5-5 5"/>',
             'info' => '<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7h.01"/>',
-            'logout' => '<path d="M10 4H5v16h5M14 8l4 4-4 4M18 12H9"/>',
+            'logout' => '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>',
         ];
 
         $path = $paths[$name] ?? $paths['info'];

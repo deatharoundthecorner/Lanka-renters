@@ -36,7 +36,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 // Fetch dashboard data through controller
 $dashboardResult = $driverController->dashboard();
 if (!$dashboardResult['success']) {
-    die("Error loading driver dashboard: " . htmlspecialchars($dashboardResult['error']));
+    error_log('Driver dashboard load failed: ' . ($dashboardResult['error'] ?? 'Unknown error'));
+    die('The page could not be loaded. Please try again later.');
 }
 
 $profile = $dashboardResult['profile'] ?? [];
@@ -73,7 +74,7 @@ include 'includes/navbar.php';
     <!-- Welcome section -->
     <div class="welcome-container">
         <div>
-            <h2 class="welcome-title">Welcome back, <?php echo htmlspecialchars($profile['name'] ?? $user['name'] ?? 'Driver'); ?> 👋</h2>
+            <h2 class="welcome-title">Welcome back, <?php echo htmlspecialchars($profile['name'] ?? $user['name'] ?? 'Driver'); ?></h2>
             <p class="welcome-subtitle">Here's what's happening with your account today.</p>
         </div>
         <div class="card" style="margin: 0; padding: 12px 20px; display: flex; align-items: center; gap: 10px;">
@@ -147,7 +148,13 @@ include 'includes/navbar.php';
     <div class="card">
         <h2 class="card-title">Active Trip</h2>
         <?php if (empty($activeTrips)): ?>
-            <p style="font-style: italic; color: var(--text-muted);">No active trips at the moment.</p>
+            <div class="lr-empty-state" style="padding: 24px 20px;">
+                <div class="lr-empty-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="12 8 8 12 12 16 12 8"/><line x1="16" y1="12" x2="12" y2="12"/></svg>
+                </div>
+                <h3>No active trips right now</h3>
+                <p>When a rental booking with driver is assigned to you, active route and pickup tracking will appear here.</p>
+            </div>
         <?php else: 
             $activeTrip = $activeTrips[0]; // Display the main ongoing trip
             $pStatus = $activeTrip['pickup_status'];
@@ -261,7 +268,12 @@ include 'includes/navbar.php';
         <div class="card" style="margin-bottom:0;">
             <h2 class="card-title" style="margin-bottom: 15px;">Recent Notifications</h2>
             <?php if (empty($latestNotifications)): ?>
-                <p style="font-style: italic; color: var(--text-muted); font-size: 13px;">No notifications.</p>
+                <div class="lr-empty-state" style="padding: 16px 12px;">
+                    <div class="lr-empty-icon" style="width: 32px; height: 32px; margin-bottom: 8px;">
+                        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+                    </div>
+                    <p style="color: var(--text-muted); font-size: 13px; margin: 0;">No new notifications</p>
+                </div>
             <?php else: ?>
                 <div style="display:flex; flex-direction:column; gap:12px;">
                     <?php foreach ($latestNotifications as $notif): ?>

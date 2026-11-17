@@ -10,6 +10,7 @@ class CustomerBookingController
     private const TIMEZONE = 'Asia/Colombo';
     private const PAGE_SIZE = 6;
     private const FLASH_KEY = '_customer_booking_flash';
+    private const AGREEMENT_VERSION = 'customer-booking-terms-v1';
 
     private Customer $customerModel;
     private CustomerBooking $bookingModel;
@@ -23,19 +24,28 @@ class CustomerBookingController
     public function createPage(array $query, array $post, string $requestMethod): array
     {
         $data = $this->pageData(
-            'Create Booking',
-            'Choose a rental period and service for an approved vehicle.',
+            'Booking Request Form',
+            'Complete your rental details and accept the booking conditions before creating a request.',
             'bookings'
         );
         $data['page_kicker'] = 'Booking management';
         $data['vehicle'] = null;
         $data['drivers'] = [];
-        $data['form'] = $this->emptyForm();
+        $data['form'] = $requestMethod === 'POST' ? $this->bookingForm($post) : $this->bookingForm($query);
+        $data['agreements'] = $requestMethod === 'POST' ? $this->agreementForm($post) : $this->emptyAgreements();
         $data['field_errors'] = [];
         $data['eligibility_message'] = '';
         $data['database_error'] = false;
         $data['invalid_vehicle'] = false;
         $data['estimate'] = null;
+        $data['customer_context'] = null;
+        $data['requirements'] = [];
+        $data['driver_dates_ready'] = false;
+        $data['can_send_request'] = false;
+        $data['can_handoff'] = false;
+        $data['can_complete_selection'] = false;
+        $data['can_create_request'] = false;
+        $data['selected_driver'] = null;
         $data['redirect'] = '';
         $data['minimum_date'] = $this->today()->format('Y-m-d');
 
@@ -46,12 +56,9 @@ class CustomerBookingController
             return $data;
         }
 
-        if ($requestMethod === 'POST') {
-            $data['form'] = $this->bookingForm($post);
-        }
-
         try {
             $context = $this->bookingModel->getCustomerContext($this->sessionUserId());
+            $data['customer_context'] = $context;
             $data['eligibility_message'] = $this->customerEligibilityMessage($context);
             $vehicle = $this->bookingModel->getBookableVehicle($vehicleId);
             if ($vehicle === null) {
@@ -63,8 +70,26 @@ class CustomerBookingController
 
             $data['drivers'] = $this->eligibleDriversForForm($vehicle, $data['form']);
             $data['estimate'] = $this->estimate($vehicle, $data['form']);
+            $data['driver_dates_ready'] = $this->driverLookupDates($data['form'])['start'] !== null;
+            $data['requirements'] = $this->bookingRequirements($vehicle, $data['form'], $context, $data['drivers']);
+            $data['can_send_request'] = $this->canSendRequest(
+                $data['requirements'],
+                (string) $data['form']['booking_type']
+            );
+            $data['can_handoff'] = $data['can_send_request'];
+            $data['can_complete_selection'] = $this->canCompleteSelection(
+                $data['requirements'],
+                (string) $data['form']['booking_type']
+            );
+            $data['can_create_request'] = $data['can_handoff'] && $this->allAgreementsAccepted($data['agreements']);
+            $data['selected_driver'] = $this->selectedDriver($data['drivers'], $data['form']);
 
             if ($requestMethod !== 'POST') {
+                return $data;
+            }
+
+            $bookingAction = (string) ($post['booking_action'] ?? '');
+            if ($bookingAction === 'preview') {
                 return $data;
             }
 
@@ -76,6 +101,25 @@ class CustomerBookingController
                 return $data;
             }
 
+            if ($bookingAction === 'handoff') {
+                if (!$data['can_send_request']) {
+                    $data['field_errors']['form'] = 'Complete the outstanding booking requirements before continuing.';
+                    return $data;
+                }
+                $data['redirect'] = $this->bookingReviewPath($vehicleId, $validated);
+                return $data;
+            }
+
+            if ($bookingAction !== 'create') {
+                $data['field_errors']['form'] = 'The booking request action was invalid.';
+                return $data;
+            }
+
+            if (!$this->allAgreementsAccepted($data['agreements'])) {
+                $data['field_errors']['booking_agreements'] = 'You must accept the Booking Agreement before creating your request.';
+                return $data;
+            }
+
             $result = $this->bookingModel->createForCustomer(
                 $this->sessionUserId(),
                 $vehicleId,
@@ -84,7 +128,8 @@ class CustomerBookingController
                 $validated['end_date'],
                 $validated['rental_days'],
                 $validated['driver_id'],
-                $validated['delivery_address']
+                $validated['delivery_address'],
+                self::AGREEMENT_VERSION
             );
             $this->setFlash('success', 'Booking #' . $result['booking_id'] . ' was created and is pending payment.');
             $data['redirect'] = 'bookings/details.php?id=' . (int) $result['booking_id'];
@@ -232,7 +277,7 @@ class CustomerBookingController
                     'start_date' => substr((string) $booking['start_date'], 0, 10),
                     'end_date' => substr((string) $booking['end_date'], 0, 10),
                     'driver_id' => $booking['driver_id'] !== null ? (string) $booking['driver_id'] : '',
-                    'delivery_address' => (string) ($booking['delivery_address'] ?? ''),
+                    'pickup_location' => (string) ($booking['delivery_address'] ?? ''),
                 ];
             }
 
@@ -349,12 +394,13 @@ class CustomerBookingController
                     $errors['end_date'] = 'The minimum rental period is 28 days.';
                 }
                 if ($end > $start->modify('+6 months')) {
-                    $errors['end_date'] = 'The maximum rental period is six calendar months.';
+                    $errors['end_date'] = 'The maximum rental period is 6 months.';
                 }
             }
         }
 
-        $driverId = $this->positiveInteger($form['driver_id']);
+        $submittedDriverId = $this->positiveInteger($form['driver_id']);
+        $driverId = $submittedDriverId;
         if ($bookingType === 'with_driver') {
             if (($vehicle['price_with_driver_per_day'] ?? null) === null) {
                 $errors['booking_type'] = 'This vehicle does not offer a with-driver service.';
@@ -363,14 +409,26 @@ class CustomerBookingController
                 $errors['driver_id'] = 'Select an eligible Driver.';
             }
         } else {
+            if (trim((string) $form['driver_id']) !== '') {
+                $errors['driver_id'] = 'Driver selection is not available for Self Drive.';
+            }
             $driverId = null;
         }
 
-        $deliveryAddress = preg_replace('/\s+/', ' ', trim((string) $form['delivery_address'])) ?? '';
-        if ($this->textLength($deliveryAddress) > 255) {
-            $errors['delivery_address'] = 'Delivery address must be 255 characters or fewer.';
+        $pickupLocation = preg_replace('/\s+/', ' ', trim((string) $form['pickup_location'])) ?? '';
+        if ($bookingType === 'with_driver') {
+            $pickupLength = $this->textLength($pickupLocation);
+            if ($pickupLength < 5 || $pickupLength > 255) {
+                $errors['pickup_location'] = 'Pickup Location must be between 5 and 255 characters.';
+            }
+        } elseif ($pickupLocation !== '') {
+            $errors['pickup_location'] = 'Custom pickup location is only available with With Driver.';
         }
 
+        $collectionLocation = preg_replace('/\s+/', ' ', trim((string) ($vehicle['location'] ?? ''))) ?? '';
+        if ($bookingType === 'self_drive' && $collectionLocation === '') {
+            $errors['form'] = 'This vehicle has no listed collection location.';
+        }
         if ($errors !== [] || $start === null || $end === null || $bookingType === '') {
             return null;
         }
@@ -381,7 +439,9 @@ class CustomerBookingController
             'end_date' => $end->format('Y-m-d 00:00:00'),
             'rental_days' => $rentalDays,
             'driver_id' => $driverId,
-            'delivery_address' => $deliveryAddress !== '' ? $deliveryAddress : null,
+            'delivery_address' => $bookingType === 'self_drive'
+                ? $collectionLocation
+                : $pickupLocation,
         ];
     }
 
@@ -392,8 +452,8 @@ class CustomerBookingController
             'start_date' => is_string($input['start_date'] ?? null) ? trim($input['start_date']) : '',
             'end_date' => is_string($input['end_date'] ?? null) ? trim($input['end_date']) : '',
             'driver_id' => is_string($input['driver_id'] ?? null) ? trim($input['driver_id']) : '',
-            'delivery_address' => is_string($input['delivery_address'] ?? null)
-                ? trim($input['delivery_address'])
+            'pickup_location' => is_string($input['pickup_location'] ?? null)
+                ? trim($input['pickup_location'])
                 : '',
         ];
     }
@@ -405,8 +465,60 @@ class CustomerBookingController
             'start_date' => '',
             'end_date' => '',
             'driver_id' => '',
-            'delivery_address' => '',
+            'pickup_location' => '',
         ];
+    }
+
+    private function agreementForm(array $input): array
+    {
+        return [
+            'accepted' => ($input['booking_terms_accepted'] ?? null) === '1',
+        ];
+    }
+
+    private function emptyAgreements(): array
+    {
+        return [
+            'accepted' => false,
+        ];
+    }
+
+    private function allAgreementsAccepted(array $agreements): bool
+    {
+        return (bool) ($agreements['accepted'] ?? false);
+    }
+
+    private function bookingReviewPath(int $vehicleId, array $validated): string
+    {
+        $parameters = [
+            'vehicle_id' => $vehicleId,
+            'booking_type' => $validated['booking_type'],
+            'start_date' => substr($validated['start_date'], 0, 10),
+            'end_date' => substr($validated['end_date'], 0, 10),
+        ];
+        if ($validated['driver_id'] !== null) {
+            $parameters['driver_id'] = $validated['driver_id'];
+        }
+        if ($validated['booking_type'] === 'with_driver' && $validated['delivery_address'] !== null) {
+            $parameters['pickup_location'] = $validated['delivery_address'];
+        }
+
+        return 'bookings/create.php?' . http_build_query($parameters, '', '&', PHP_QUERY_RFC3986);
+    }
+
+    private function selectedDriver(array $drivers, array $form): ?array
+    {
+        $driverId = $this->positiveInteger($form['driver_id'] ?? null);
+        if ($driverId === null || $form['booking_type'] !== 'with_driver') {
+            return null;
+        }
+        foreach ($drivers as $driver) {
+            if ((int) ($driver['id'] ?? 0) === $driverId) {
+                return $driver;
+            }
+        }
+
+        return null;
     }
 
     private function driverLookupDates(array $form): array
@@ -426,6 +538,9 @@ class CustomerBookingController
     private function eligibleDriversForForm(array $vehicle, array $form, int $excludeBookingId = 0): array
     {
         $lookupDates = $this->driverLookupDates($form);
+        if ($lookupDates['start'] === null || $lookupDates['end'] === null) {
+            return [];
+        }
 
         try {
             return $this->bookingModel->getEligibleDrivers(
@@ -473,6 +588,218 @@ class CustomerBookingController
         }
 
         return '';
+    }
+
+    /** Builds display-only readiness items; final enforcement remains in CustomerBooking. */
+    private function bookingRequirements(array $vehicle, array $form, ?array $context, array $drivers): array
+    {
+        $dates = $this->driverLookupDates($form);
+        $validDatesState = 'pending';
+        $validDatesDescription = 'Choose pickup and return dates.';
+        $rentalPeriodState = 'pending';
+        $rentalPeriodDescription = 'Choose dates to check the 28-day to 6-month rental period.';
+        $availabilityState = 'pending';
+        $availabilityDescription = 'Choose dates to check availability.';
+
+        if ($dates['start'] !== null && $dates['end'] !== null) {
+            $start = $this->formDate($form['start_date']);
+            $end = $this->formDate($form['end_date']);
+            $days = $start !== null && $end !== null ? (int) $start->diff($end)->days : 0;
+            if ($start !== null && $end !== null && $start >= $this->today()) {
+                $validDatesState = 'complete';
+                $validDatesDescription = 'Pickup and return dates are valid.';
+                if ($days >= 28 && $end <= $start->modify('+6 months')) {
+                    $rentalPeriodState = 'complete';
+                    $rentalPeriodDescription = $days . ' day rental period selected.';
+                } else {
+                    $rentalPeriodState = 'failed';
+                    $rentalPeriodDescription = 'Choose a rental period from 28 days up to 6 calendar months.';
+                }
+
+                if ($rentalPeriodState === 'complete') {
+                try {
+                    $available = !$this->bookingModel->hasVehicleOverlap((int) $vehicle['id'], $dates['start'], $dates['end']);
+                    $availabilityState = $available ? 'complete' : 'failed';
+                    $availabilityDescription = $available
+                        ? 'Vehicle is available for the selected dates.'
+                        : 'Vehicle is already booked for part of the selected period.';
+                } catch (Throwable) {
+                    $availabilityState = 'pending';
+                    $availabilityDescription = 'Availability will be rechecked when you send the request.';
+                }
+                } else {
+                    $availabilityDescription = 'Choose a valid rental period before availability can be checked.';
+                }
+            } else {
+                $validDatesState = 'failed';
+                $validDatesDescription = 'Choose future pickup and return dates.';
+            }
+        }
+
+        $customerStatus = (string) ($context['customer_verification_status'] ?? 'pending');
+        $guarantorStatus = (string) ($context['guarantor_verification_status'] ?? 'missing');
+        $overallVerificationStatus = (string) ($context['verification_status'] ?? 'pending');
+        $customerComplete = $overallVerificationStatus === 'approved';
+        $guarantorComplete = $guarantorStatus === 'approved';
+        $requirements = [
+            [
+                'state' => $customerComplete ? 'complete' : ($overallVerificationStatus === 'rejected' ? 'failed' : 'pending'),
+                'label' => 'Customer verification',
+                'description' => $customerComplete
+                    ? 'Customer verification is approved.'
+                    : ($overallVerificationStatus === 'rejected'
+                        ? 'A Customer verification requirement was rejected.'
+                        : 'Complete all Customer verification requirements.'),
+                'action' => 'verification/index.php',
+                'action_label' => 'Complete Verification',
+                'applies_to' => 'all',
+            ],
+            [
+                'state' => $customerStatus === 'approved' ? 'complete' : ($customerStatus === 'rejected' ? 'failed' : 'pending'),
+                'label' => 'NIC verification',
+                'description' => $customerStatus === 'approved' ? 'NIC verification is approved.' : 'NIC verification must be approved.',
+                'action' => 'verification/index.php',
+                'action_label' => 'Complete Verification',
+                'applies_to' => 'all',
+            ],
+            [
+                'state' => $customerStatus === 'approved' ? 'complete' : ($customerStatus === 'rejected' ? 'failed' : 'pending'),
+                'label' => 'Driving Licence verification',
+                'description' => $customerStatus === 'approved' ? 'Driving Licence verification is approved.' : 'Driving Licence verification must be approved.',
+                'action' => 'verification/index.php',
+                'action_label' => 'Complete Verification',
+                'applies_to' => 'all',
+            ],
+            [
+                'state' => $guarantorComplete ? 'complete' : ($guarantorStatus === 'rejected' ? 'failed' : 'pending'),
+                'label' => 'Guarantor verification',
+                'description' => $guarantorComplete ? 'Guarantor details are approved.' : 'An approved guarantor is required.',
+                'action' => 'profile/index.php#guarantor-details',
+                'action_label' => 'Add Guarantor',
+                'applies_to' => 'all',
+            ],
+            [
+                'state' => $validDatesState,
+                'label' => 'Valid rental dates',
+                'description' => $validDatesDescription,
+                'action' => '#booking-dates',
+                'action_label' => 'Change Dates',
+                'applies_to' => 'all',
+            ],
+            [
+                'state' => $rentalPeriodState,
+                'label' => 'Rental period is between 28 days and 6 months',
+                'description' => $rentalPeriodDescription,
+                'action' => '#booking-dates',
+                'action_label' => 'Change Dates',
+                'applies_to' => 'all',
+            ],
+            [
+                'state' => $availabilityState,
+                'label' => 'Vehicle is available for the selected dates',
+                'description' => $availabilityDescription,
+                'action' => '#booking-dates',
+                'action_label' => 'Change Dates',
+                'applies_to' => 'all',
+            ],
+        ];
+
+        $driverId = $this->positiveInteger($form['driver_id']);
+        $selected = $driverId !== null && in_array($driverId, array_map(static fn (array $driver): int => (int) $driver['id'], $drivers), true);
+        $driversAvailable = $dates['start'] !== null && $rentalPeriodState === 'complete' && $drivers !== [];
+        $pickupLocation = preg_replace('/\s+/', ' ', trim((string) $form['pickup_location'])) ?? '';
+        $pickupLength = $this->textLength($pickupLocation);
+        $pickupValid = $pickupLength >= 5 && $pickupLength <= 255;
+
+        array_unshift($requirements,
+            [
+                'state' => (float) ($vehicle['price_per_day'] ?? 0) > 0 ? 'complete' : 'failed',
+                'label' => 'Vehicle supports Self Drive',
+                'description' => (float) ($vehicle['price_per_day'] ?? 0) > 0 ? 'Self Drive is offered for this vehicle.' : 'Self Drive is not offered for this vehicle.',
+                'action' => '',
+                'applies_to' => 'self_drive',
+            ],
+            [
+                'state' => ($vehicle['price_with_driver_per_day'] ?? null) !== null && (float) $vehicle['price_with_driver_per_day'] > 0 ? 'complete' : 'failed',
+                'label' => 'Vehicle supports With Driver',
+                'description' => ($vehicle['price_with_driver_per_day'] ?? null) !== null && (float) $vehicle['price_with_driver_per_day'] > 0 ? 'With Driver is offered for this vehicle.' : 'With Driver is not offered for this vehicle.',
+                'action' => '',
+                'applies_to' => 'with_driver',
+            ]
+        );
+
+        $requirements[] = [
+            'state' => $dates['start'] === null || $rentalPeriodState !== 'complete'
+                ? 'pending'
+                : ($driversAvailable ? 'complete' : 'failed'),
+            'label' => 'Eligible drivers are available',
+            'description' => $dates['start'] === null || $rentalPeriodState !== 'complete'
+                ? 'Select valid rental dates before Driver availability can be checked.'
+                : ($driversAvailable ? 'Verified Drivers are available for the complete rental period.' : 'No verified drivers linked to this vehicle are available for your selected dates.'),
+            'action' => '#booking-dates',
+            'action_label' => 'Change Dates',
+            'applies_to' => 'with_driver',
+            'key' => 'driver-availability',
+        ];
+        $requirements[] = [
+            'state' => $dates['start'] === null || $rentalPeriodState !== 'complete'
+                ? 'pending'
+                : ($selected ? 'complete' : 'pending'),
+            'label' => 'An eligible driver has been selected',
+            'description' => $dates['start'] === null || $rentalPeriodState !== 'complete'
+                ? 'Select valid dates before Drivers can be checked.'
+                : ($selected ? 'Selected Driver is available for the complete rental period.' : 'Select an eligible Driver.'),
+            'action' => '#driver-selection',
+            'action_label' => 'Select Driver',
+            'applies_to' => 'with_driver',
+            'key' => 'driver-selection',
+        ];
+        $requirements[] = [
+            'state' => $pickupValid ? 'complete' : 'pending',
+            'label' => 'Pickup Location is provided',
+            'description' => $pickupValid ? 'A pickup address is ready for the selected Driver.' : 'Enter a clear pickup address for the selected Driver.',
+            'action' => '#pickup-location',
+            'action_label' => 'Enter Pickup Location',
+            'applies_to' => 'with_driver',
+            'key' => 'pickup-location',
+        ];
+
+        return $requirements;
+    }
+
+    private function canSendRequest(array $requirements, string $bookingType): bool
+    {
+        foreach ($requirements as $requirement) {
+            if (($requirement['applies_to'] ?? 'all') !== 'all' && ($requirement['applies_to'] ?? '') !== $bookingType) {
+                continue;
+            }
+            if (($requirement['state'] ?? '') !== 'complete') {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Lets the browser enable the final action after choosing a Driver from the
+     * server-filtered list. Final creation still repeats the database check.
+     */
+    private function canCompleteSelection(array $requirements, string $bookingType): bool
+    {
+        foreach ($requirements as $requirement) {
+            if (($requirement['applies_to'] ?? 'all') !== 'all' && ($requirement['applies_to'] ?? '') !== $bookingType) {
+                continue;
+            }
+            if (in_array(($requirement['action'] ?? ''), ['#driver-selection', '#pickup-location'], true)) {
+                continue;
+            }
+            if (($requirement['state'] ?? '') !== 'complete') {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private function canEdit(array $booking): bool

@@ -36,10 +36,11 @@ require dirname(__DIR__) . '/components/layout/header.php';
                     <a class="button button--secondary" href="<?= htmlspecialchars(customer_url('vehicles/index.php'), ENT_QUOTES, 'UTF-8') ?>">Search approved vehicles</a>
                 </section>
             <?php else: ?>
-                <p><a class="text-link" href="<?= htmlspecialchars(customer_url('vehicles/details.php?id=' . (int) $vehicle['id']), ENT_QUOTES, 'UTF-8') ?>">&larr; Back to vehicle details</a></p>
+                <p><a class="text-link" href="<?= htmlspecialchars(customer_url('vehicles/index.php'), ENT_QUOTES, 'UTF-8') ?>">&larr; Back to vehicle catalogue</a></p>
                 <div class="booking-form-layout">
                     <aside>
                         <?php require dirname(__DIR__) . '/components/booking/booking-summary.php'; ?>
+                        <?php require dirname(__DIR__) . '/components/booking/service-requirements.php'; ?>
                         <div class="alert alert--info booking-rule-note">
                             <?= customer_icon('info') ?>
                             <p>Bookings must be at least 28 days and no longer than six calendar months. Date ranges use an exclusive end date.</p>

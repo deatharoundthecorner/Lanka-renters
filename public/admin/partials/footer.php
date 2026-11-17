@@ -6,6 +6,10 @@
     <p>&copy; <?php echo date('Y'); ?> Lanka Renters Admin Panel. All Rights Reserved. Vehicle Rental Management System.</p>
 </footer>
 
+<link rel="stylesheet" href="assets/css/admin-canonical.css">
+<link rel="stylesheet" href="../assets/css/lr-notifications.css">
 <script src="assets/js/admin.js"></script>
+<script src="../assets/js/lr-sidebar-scroll.js"></script>
+<script src="../assets/js/lr-notifications.js"></script>
 </body>
 </html>

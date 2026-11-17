@@ -764,7 +764,7 @@ class DriverController {
                 ];
             }
 
-            $success = $linkModel->updateStatus($linkId, 'accepted');
+            $success = $linkModel->acceptPending($linkId, $driver['id']);
             if ($success) {
                 // Notify Owner
                 $notificationModel = new Notification();

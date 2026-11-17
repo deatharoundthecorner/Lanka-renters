@@ -21,7 +21,7 @@ if (!AuthHelper::validateCsrfToken($csrfToken)) {
 $paymentId = (int)($_POST['payment_id'] ?? 0);
 $status = $_POST['status'] ?? '';
 
-if ($paymentId <= 0 || !in_array($status, ['approved', 'rejected'], true)) {
+if ($paymentId <= 0 || !in_array($status, ['approved', 'rejected', 'refunded'], true)) {
     $_SESSION['admin_payment_flash'] = ['message' => 'Invalid parameters.'];
     header('Location: payments.php');
     exit;
@@ -32,6 +32,9 @@ try {
     if ($status === 'approved') {
         $model->approvePayment($paymentId);
         $msg = "Payment #$paymentId approved and booking confirmed.";
+    } elseif ($status === 'refunded') {
+        $res = $model->refundPayment($paymentId);
+        $msg = $res ? "Payment #$paymentId refunded successfully and booking concluded." : "Failed to refund Payment #$paymentId.";
     } else {
         $model->rejectPayment($paymentId);
         $msg = "Payment #$paymentId rejected.";

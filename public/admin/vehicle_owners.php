@@ -77,9 +77,15 @@ $escape = static fn(mixed $val): string => htmlspecialchars((string)$val, ENT_QU
                     </div>
 
                     <?php if (empty($pendingOwners)): ?>
-                        <p style="color: var(--text-secondary);">No vehicle owner registration requests are waiting for approval.</p>
+                        <div class="lr-empty-state">
+                            <div class="lr-empty-icon">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 11l-3-3m0 0l-3 3m3-3v12"/></svg>
+                            </div>
+                            <h3>No pending owner approvals</h3>
+                            <p>No vehicle owner registration requests are currently waiting for approval.</p>
+                        </div>
                     <?php else: ?>
-                        <div class="table-responsive">
+                        <div class="lr-table-wrap table-responsive">
                             <table class="custom-table">
                                 <thead>
                                     <tr>
@@ -94,34 +100,43 @@ $escape = static fn(mixed $val): string => htmlspecialchars((string)$val, ENT_QU
                                 <tbody>
                                     <?php foreach ($pendingOwners as $owner): ?>
                                         <tr>
-                                            <td><span class="cell-secondary-text">OWN-<?= (int)$owner['id'] ?></span></td>
-                                            <td><div class="cell-primary-text"><?= $escape($owner['name']) ?></div></td>
+                                            <td><span class="cell-secondary-text" style="font-family:monospace; font-weight:700;">OWN-<?= (int)$owner['id'] ?></span></td>
+                                            <td>
+                                                <div class="cell-primary-text" style="font-weight:600;"><?= $escape($owner['name']) ?></div>
+                                                <span class="badge badge-pending" style="font-size:10.5px; margin-top:3px;">Account: Pending Approval</span>
+                                            </td>
                                             <td>
                                                 <div class="cell-stacked">
-                                                    <span class="cell-secondary-text"><?= $escape($owner['email']) ?></span>
-                                                    <span class="cell-secondary-text"><?= $escape($owner['phone']) ?></span>
+                                                    <span class="cell-primary-text" style="font-size:12.5px;"><?= $escape($owner['email']) ?></span>
+                                                    <span class="cell-secondary-text" style="font-size:12px;"><?= $escape($owner['phone']) ?></span>
                                                 </div>
                                             </td>
                                             <td><span class="badge badge-blue"><?= $escape(ucfirst($owner['owner_type'])) ?></span></td>
                                             <td>
                                                 <div class="cell-stacked">
-                                                    <span class="cell-secondary-text"><?= $escape($owner['bank_name'] ?: 'Not configured') ?></span>
-                                                    <span class="cell-secondary-text"><?= $escape($owner['bank_account_no'] ?: '-') ?></span>
+                                                    <span class="cell-primary-text" style="font-size:12.5px;"><?= $escape($owner['bank_name'] ?: 'Not configured') ?></span>
+                                                    <span class="cell-secondary-text" style="font-family:monospace; font-size:12px;"><?= $escape($owner['bank_account_no'] ?: '-') ?></span>
                                                 </div>
                                             </td>
                                             <td>
-                                                <div class="btn-group">
-                                                    <form method="post" action="owner_verification.php">
+                                                <div class="btn-group" style="gap:6px; flex-wrap:nowrap;">
+                                                    <form method="post" action="owner_verification.php" style="display:inline;">
                                                         <input type="hidden" name="csrf_token" value="<?= $escape(AuthHelper::getCsrfToken()) ?>">
                                                         <input type="hidden" name="owner_id" value="<?= (int)$owner['id'] ?>">
                                                         <input type="hidden" name="status" value="approved">
-                                                        <button type="submit" class="btn btn-approve btn-sm">Approve</button>
+                                                        <button type="submit" class="btn btn-approve btn-sm">
+                                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                                                            Approve
+                                                        </button>
                                                     </form>
-                                                    <form method="post" action="owner_verification.php">
+                                                    <form method="post" action="owner_verification.php" style="display:inline;">
                                                         <input type="hidden" name="csrf_token" value="<?= $escape(AuthHelper::getCsrfToken()) ?>">
                                                         <input type="hidden" name="owner_id" value="<?= (int)$owner['id'] ?>">
                                                         <input type="hidden" name="status" value="rejected">
-                                                        <button type="submit" class="btn btn-reject btn-sm">Reject</button>
+                                                        <button type="submit" class="btn btn-reject btn-sm">
+                                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                                                            Reject
+                                                        </button>
                                                     </form>
                                                 </div>
                                             </td>
@@ -140,9 +155,15 @@ $escape = static fn(mixed $val): string => htmlspecialchars((string)$val, ENT_QU
                     </div>
 
                     <?php if (empty($reviewedOwners)): ?>
-                        <p style="color: var(--text-secondary);">No vehicle owner records found.</p>
+                        <div class="lr-empty-state">
+                            <div class="lr-empty-icon">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 11l-3-3m0 0l-3 3m3-3v12"/></svg>
+                            </div>
+                            <h3>No registered vehicle owners</h3>
+                            <p>No verified vehicle owner records were found in the database.</p>
+                        </div>
                     <?php else: ?>
-                        <div class="table-responsive">
+                        <div class="lr-table-wrap table-responsive">
                             <table class="custom-table">
                                 <thead>
                                     <tr>

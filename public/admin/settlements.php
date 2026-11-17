@@ -55,7 +55,7 @@ $escape = static fn(mixed $val): string => htmlspecialchars((string)$val, ENT_QU
                     <span class="badge badge-approved">10% Platform Commission</span>
                 </div>
 
-                <div class="table-responsive">
+                <div class="lr-table-wrap table-responsive">
                     <table class="custom-table">
                         <thead>
                             <tr>
@@ -72,7 +72,15 @@ $escape = static fn(mixed $val): string => htmlspecialchars((string)$val, ENT_QU
                         <tbody>
                             <?php if (empty($settlements)): ?>
                                 <tr>
-                                    <td colspan="8" style="text-align: center; color: var(--text-secondary); padding: 24px;">No completed booking settlements recorded yet.</td>
+                                    <td colspan="8">
+                                        <div class="lr-empty-state">
+                                            <div class="lr-empty-icon">
+                                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                                            </div>
+                                            <h3>No settlements recorded</h3>
+                                            <p>Completed booking settlements and commission ledger entries will be listed here.</p>
+                                        </div>
+                                    </td>
                                 </tr>
                             <?php else: ?>
                                 <?php foreach ($settlements as $set): ?>

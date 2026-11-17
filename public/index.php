@@ -37,19 +37,17 @@ $featuredVehicles = $vehicleController->getFeaturedVehicles('./');
     <title>Lanka Renters - Long-Term Vehicle Rentals in Sri Lanka</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="assets/css/reset.css">
-    <link rel="stylesheet" href="assets/css/variables.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="assets/css/style.css">
     <link rel="stylesheet" href="assets/css/guest.css">
+    <link rel="stylesheet" href="assets/css/lr-public.css">
 </head>
-<body>
+<body class="public-page public-page--home">
 
     <!-- Navbar -->
     <nav class="guest-navbar">
         <a href="index.php" class="navbar-logo">
-            <span class="logo-icon">L</span>
-            <span>Lanka<span style="color: #2563EB;">Renters</span></span>
+            <img class="brand-logo-image" src="assets/images/brand/lanka-renters-mark.png" alt="Lanka Renters">
         </a>
         <div class="navbar-menu">
             <a href="index.php" class="active">Home</a>
@@ -145,7 +143,7 @@ $featuredVehicles = $vehicleController->getFeaturedVehicles('./');
             <!-- Customer -->
             <div class="journey-card">
                 <div class="journey-card-header">
-                    <span class="journey-icon">👤</span>
+                    <span class="journey-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="3.5"/><path d="M5 21a7 7 0 0 1 14 0"/></svg></span>
                     <h3>Customer</h3>
                 </div>
                 <div class="journey-steps">
@@ -160,7 +158,7 @@ $featuredVehicles = $vehicleController->getFeaturedVehicles('./');
                         <span class="step-num">2</span>
                         <div class="step-content">
                             <h4>Request booking</h4>
-                            <p>Send a request — the owner responds within 12 hours.</p>
+                            <p>Send a request and continue through the booking workflow.</p>
                         </div>
                     </div>
                     <div class="journey-step">
@@ -176,7 +174,7 @@ $featuredVehicles = $vehicleController->getFeaturedVehicles('./');
             <!-- Vehicle Owner -->
             <div class="journey-card">
                 <div class="journey-card-header">
-                    <span class="journey-icon">🚗</span>
+                    <span class="journey-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m5 11 1.5-4h11l1.5 4"/><path d="M3 12h18v6H3z"/><path d="M6 18v2M18 18v2M7 15h.01M17 15h.01"/></svg></span>
                     <h3>Vehicle Owner</h3>
                 </div>
                 <div class="journey-steps">
@@ -207,7 +205,7 @@ $featuredVehicles = $vehicleController->getFeaturedVehicles('./');
             <!-- Driver -->
             <div class="journey-card">
                 <div class="journey-card-header">
-                    <span class="journey-icon">💼</span>
+                    <span class="journey-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="7" width="16" height="13" rx="2"/><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M4 12h16M10 12v2h4v-2"/></svg></span>
                     <h3>Driver</h3>
                 </div>
                 <div class="journey-steps">
@@ -242,31 +240,31 @@ $featuredVehicles = $vehicleController->getFeaturedVehicles('./');
         <div class="section-header">
             <span>Why Lanka Renters</span>
             <h2>Built on trust and safety</h2>
-            <p>Every listing, user, and transaction is verified to ensure a secure rental experience.</p>
+            <p>Review the available records, requirements, and account steps before you continue.</p>
         </div>
         <div class="trust-grid">
             <div class="trust-card">
-                <span class="journey-icon">🛡️</span>
+                <span class="journey-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3 5 6v5c0 4.6 2.9 8 7 10 4.1-2 7-5.4 7-10V6l-7-3Z"/><path d="m9 12 2 2 4-4"/></svg></span>
                 <h3>Verified Vehicles</h3>
                 <p>Registration and insurance checks</p>
             </div>
             <div class="trust-card">
-                <span class="journey-icon">📋</span>
+                <span class="journey-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V2h6v2M8 10h8M8 14h8M8 18h5"/></svg></span>
                 <h3>Verified Drivers</h3>
                 <p>License and police records checked</p>
             </div>
             <div class="trust-card">
-                <span class="journey-icon">🔒</span>
+                <span class="journey-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span>
                 <h3>Secure Booking</h3>
                 <p>Centralized deposit holding</p>
             </div>
             <div class="trust-card">
-                <span class="journey-icon">🔍</span>
+                <span class="journey-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="6"/><path d="m16 16 4 4M8 11h6M11 8v6"/></svg></span>
                 <h3>Inspection Tracking</h3>
                 <p>Condition verified before and after</p>
             </div>
             <div class="trust-card">
-                <span class="journey-icon">💵</span>
+                <span class="journey-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M15 9.5c-.7-.7-1.6-1-3-1-1.7 0-3 .8-3 2s1.3 2 3 2 3 .8 3 2-1.3 2-3 2c-1.4 0-2.3-.3-3-1"/></svg></span>
                 <h3>Transparent Earnings</h3>
                 <p>Detailed reports and statement logs</p>
             </div>
@@ -345,28 +343,28 @@ $featuredVehicles = $vehicleController->getFeaturedVehicles('./');
                 <span class="step-num" style="font-size: 32px; min-width: 60px; color: #2563EB;">01</span>
                 <div class="step-content">
                     <h3 style="font-size: 18px; font-weight: 700; color: #0B3A82;">Browse Vehicles</h3>
-                    <p style="font-size: 14px; color: #64748B; margin-top: 4px;">Explore our catalog of approved, verified passenger and commercial vehicles available in your target districts.</p>
+                    <p style="font-size: 14px; color: #64748B; margin-top: 4px;">Explore the current catalogue of approved vehicles available in selected districts.</p>
                 </div>
             </div>
             <div class="journey-step" style="background: white; padding: 24px; border-radius: 12px; border: 1px solid #E5E7EB; align-items: center;">
                 <span class="step-num" style="font-size: 32px; min-width: 60px; color: #2563EB;">02</span>
                 <div class="step-content">
                     <h3 style="font-size: 18px; font-weight: 700; color: #0B3A82;">Choose a Vehicle</h3>
-                    <p style="font-size: 14px; color: #64748B; margin-top: 4px;">Compare specifications, pricing, and driver options. View full vehicle history and verification documents.</p>
+                    <p style="font-size: 14px; color: #64748B; margin-top: 4px;">Compare the specifications, pricing, and service options shown for each listing.</p>
                 </div>
             </div>
             <div class="journey-step" style="background: white; padding: 24px; border-radius: 12px; border: 1px solid #E5E7EB; align-items: center;">
                 <span class="step-num" style="font-size: 32px; min-width: 60px; color: #2563EB;">03</span>
                 <div class="step-content">
                     <h3 style="font-size: 18px; font-weight: 700; color: #0B3A82;">Register / Login</h3>
-                    <p style="font-size: 14px; color: #64748B; margin-top: 4px;">Create a secure Customer account to finalize your booking details and make your deposit payments online.</p>
+                    <p style="font-size: 14px; color: #64748B; margin-top: 4px;">Create a Customer account to continue with booking details and available payment steps.</p>
                 </div>
             </div>
             <div class="journey-step" style="background: white; padding: 24px; border-radius: 12px; border: 1px solid #E5E7EB; align-items: center;">
                 <span class="step-num" style="font-size: 32px; min-width: 60px; color: #2563EB;">04</span>
                 <div class="step-content">
                     <h3 style="font-size: 18px; font-weight: 700; color: #0B3A82;">Continue with the rental process</h3>
-                    <p style="font-size: 14px; color: #64748B; margin-top: 4px;">Participate in pre-rental inspection tracking, receive key handovers, and track your ongoing rental plan.</p>
+                    <p style="font-size: 14px; color: #64748B; margin-top: 4px;">Continue through the rental records and account actions available for your booking.</p>
                 </div>
             </div>
         </div>
@@ -391,8 +389,7 @@ $featuredVehicles = $vehicleController->getFeaturedVehicles('./');
         <div class="footer-container">
             <div class="footer-brand">
                 <a href="index.php" class="footer-logo">
-                    <span class="logo-icon" style="background-color: #2563EB;">L</span>
-                    <span>LankaRenters</span>
+                    <img class="brand-logo-image" src="assets/images/brand/lanka-renters-mark.png" alt="Lanka Renters">
                 </a>
                 <p>Trusted long-term vehicle rentals connecting customers, owners and professional drivers across Sri Lanka.</p>
             </div>
@@ -401,23 +398,15 @@ $featuredVehicles = $vehicleController->getFeaturedVehicles('./');
                 <ul>
                     <li><a href="index.php">About</a></li>
                     <li><a href="#how-it-works">How It Works</a></li>
-                    <li><a href="#why-us">Support</a></li>
+                    <li><a href="vehicles.php">Vehicles</a></li>
                 </ul>
             </div>
             <div class="footer-column">
-                <h3>Help</h3>
+                <h3>Explore</h3>
                 <ul>
-                    <li><a href="#how-it-works">Help Center</a></li>
-                    <li><a href="#why-us">Contact</a></li>
-                    <li><a href="#how-it-works">FAQ</a></li>
-                </ul>
-            </div>
-            <div class="footer-column">
-                <h3>Legal</h3>
-                <ul>
-                    <li><a href="#why-us">Privacy Policy</a></li>
-                    <li><a href="#why-us">User Guidelines</a></li>
-                    <li><a href="#why-us">Rental Rules</a></li>
+                    <li><a href="vehicles.php">Browse Vehicles</a></li>
+                    <li><a href="login.php">Sign In</a></li>
+                    <li><a href="register.php">Create Account</a></li>
                 </ul>
             </div>
             <div class="footer-column">

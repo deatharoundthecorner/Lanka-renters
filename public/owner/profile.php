@@ -31,7 +31,10 @@ $csrfToken = AuthHelper::getCsrfToken();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Owner Profile - LankaRenters</title>
-    <link rel="stylesheet" href="includes/assets/css/owner-style.css">
+  <link rel="stylesheet" href="includes/assets/css/owner-style.css">
+  <link rel="stylesheet" href="../assets/css/lr-tokens.css">
+  <link rel="stylesheet" href="../assets/css/lr-shell.css">
+  <link rel="stylesheet" href="../assets/css/lr-components.css">
     <style>
         .alert-banner {
             padding: 16px 20px;
@@ -54,10 +57,11 @@ $csrfToken = AuthHelper::getCsrfToken();
             border: 1px solid #fecaca;
         }
     </style>
+    <link rel="stylesheet" href="includes/assets/css/owner-canonical.css">
 </head>
 <body>
 
-    <div class="dashboard-layout">
+<div class="dashboard-layout dashboard-wrapper">
         <?php include 'includes/sidebar.php'; ?>
 
         <div class="main-wrapper">

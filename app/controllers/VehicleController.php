@@ -376,6 +376,45 @@ class VehicleController {
     }
 
     /**
+     * Permanently deletes an owner-owned vehicle when no rental history
+     * depends on it. Database foreign keys remain the final safety boundary.
+     */
+    public function deleteVehicle($vehicleId, $csrfToken) {
+        try {
+            $auth = $this->getAuthenticatedOwner();
+            $ownerId = $auth['owner']['id'];
+            $vehicleId = (int)$vehicleId;
+
+            if (!AuthHelper::validateCsrfToken($csrfToken)) {
+                return ['success' => false, 'error' => 'Security verification failed (Invalid CSRF token).'];
+            }
+
+            $existing = $this->vehicleModel->getById($vehicleId, $ownerId);
+            if (!$existing) {
+                return ['success' => false, 'error' => 'Vehicle not found or you do not have permission to delete it.'];
+            }
+
+            if ($this->vehicleModel->hasBookings($vehicleId)) {
+                return ['success' => false, 'error' => 'This vehicle cannot be deleted because rental history depends on it. You can deactivate it instead.'];
+            }
+
+            if (!$this->vehicleModel->delete($vehicleId, $ownerId)) {
+                return ['success' => false, 'error' => 'Vehicle could not be deleted.'];
+            }
+
+            return ['success' => true, 'message' => 'Vehicle deleted successfully.'];
+        } catch (Throwable $exception) {
+            error_log(sprintf(
+                'Owner vehicle delete failed for vehicle %d [%s]: %s',
+                (int)$vehicleId,
+                get_class($exception),
+                $exception->getMessage()
+            ));
+            return ['success' => false, 'error' => 'This vehicle could not be deleted because related records may depend on it.'];
+        }
+    }
+
+    /**
      * Validates input values for vehicle creation and modification.
      *
      * @param array $data

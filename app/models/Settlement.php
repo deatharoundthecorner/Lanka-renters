@@ -63,7 +63,7 @@ class Settlement {
 
         $sql = "INSERT INTO `settlements` (`owner_id`, `booking_id`, `gross_amount`, `commission_amount`, `net_amount`, `settlement_date`, `status`)
                 VALUES (:oid, :bid, :gross, :comm, :net, CURDATE(), :status)
-                ON DUPLICATE KEY UPDATE `status` = :status, `settlement_date` = CURDATE()";
+                ON DUPLICATE KEY UPDATE `status` = VALUES(`status`), `settlement_date` = CURDATE()";
         $stmt = $this->db->prepare($sql);
         return $stmt->execute([
             'oid' => $ownerId,

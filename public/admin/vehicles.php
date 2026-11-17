@@ -75,15 +75,22 @@ $escape = static fn(mixed $val): string => htmlspecialchars((string)$val, ENT_QU
                     </div>
 
                     <?php if (empty($pendingVehicles)): ?>
-                        <p style="color: var(--text-secondary);">No vehicles currently pending verification.</p>
+                        <div class="lr-empty-state">
+                            <div class="lr-empty-icon">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="7" rx="2"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/><path d="M5 11l2-5h10l2 5"/></svg>
+                            </div>
+                            <h3>No pending vehicle verifications</h3>
+                            <p>All submitted owner vehicles have been reviewed or no pending submissions exist.</p>
+                        </div>
                     <?php else: ?>
-                        <div class="table-responsive">
+                        <div class="lr-table-wrap table-responsive">
                             <table class="custom-table">
                                 <thead>
                                     <tr>
                                         <th>Vehicle ID</th>
                                         <th>Model / Make</th>
                                         <th>License Plate</th>
+                                        <th>Documents (CR / Insurance / Emission / Fitness)</th>
                                         <th>Type</th>
                                         <th>Daily Rate</th>
                                         <th>Owner</th>
@@ -92,26 +99,89 @@ $escape = static fn(mixed $val): string => htmlspecialchars((string)$val, ENT_QU
                                 </thead>
                                 <tbody>
                                     <?php foreach ($pendingVehicles as $veh): ?>
+                                        <?php
+                                        $docMap = [];
+                                        $rawDocs = $model->getVehicleDocuments((int)$veh['id']);
+                                        foreach ($rawDocs as $d) {
+                                            if (!isset($docMap[$d['document_type']])) {
+                                                $docMap[$d['document_type']] = $d;
+                                            }
+                                        }
+                                        $vehDocConfig = [
+                                            'registration' => 'CR Book',
+                                            'insurance' => 'Insurance',
+                                            'emission_test' => 'Emission Certificate',
+                                            'fitness_certificate' => 'Fitness Certificate'
+                                        ];
+                                        ?>
                                         <tr>
-                                            <td><span class="cell-secondary-text">VEH-<?= (int)$veh['id'] ?></span></td>
-                                            <td><div class="cell-primary-text"><?= $escape($veh['make'] . ' ' . $veh['model'] . ' (' . $veh['year'] . ')') ?></div></td>
-                                            <td><span class="badge badge-blue"><?= $escape($veh['license_plate']) ?></span></td>
+                                            <td><span class="cell-secondary-text" style="font-family:monospace; font-weight:700;">VEH-<?= (int)$veh['id'] ?></span></td>
+                                            <td>
+                                                <div class="cell-primary-text" style="font-weight:600;"><?= $escape($veh['make'] . ' ' . $veh['model'] . ' (' . $veh['year'] . ')') ?></div>
+                                                <span class="badge badge-pending" style="font-size:10.5px; margin-top:4px;">
+                                                    Vehicle: Pending Review
+                                                </span>
+                                            </td>
+                                            <td><span class="badge badge-blue" style="font-family:monospace;"><?= $escape($veh['license_plate']) ?></span></td>
+                                            <td>
+                                                <div style="display:flex; flex-direction:column; gap:6px; min-width:270px;">
+                                                    <?php foreach ($vehDocConfig as $typeKey => $typeLabel): ?>
+                                                        <?php
+                                                        $doc = $docMap[$typeKey] ?? null;
+                                                        $physicalPath = !empty($doc['file_path']) ? dirname(__DIR__, 2) . '/public/' . ltrim($doc['file_path'], '/') : '';
+                                                        $fileExists = !empty($physicalPath) && file_exists($physicalPath) && is_file($physicalPath);
+                                                        $docStatus = $doc['verification_status'] ?? 'not_uploaded';
+                                                        $badgeClass = match($docStatus) {
+                                                            'approved' => 'badge-approved',
+                                                            'rejected' => 'badge-rejected',
+                                                            'pending' => 'badge-pending',
+                                                            default => 'badge-suspended'
+                                                        };
+                                                        ?>
+                                                        <div class="doc-card-mini">
+                                                            <div class="doc-meta">
+                                                                <span class="doc-name"><?= $escape($typeLabel) ?></span>
+                                                                <span class="badge <?= $badgeClass ?>" style="padding: 2px 7px; font-size: 10.5px;">
+                                                                    <?= $doc ? $escape(ucfirst($doc['verification_status'] ?? 'pending')) : 'Not uploaded' ?>
+                                                                </span>
+                                                            </div>
+                                                            <div class="doc-actions">
+                                                                <?php if ($doc && $fileExists): ?>
+                                                                    <a href="../<?= $escape($doc['file_path']) ?>" target="_blank" class="btn btn-secondary btn-sm" style="padding: 2px 8px; font-size: 11px; display:inline-flex; align-items:center; gap:3px;">
+                                                                        View Document ↗
+                                                                    </a>
+                                                                <?php elseif ($doc): ?>
+                                                                    <span class="cell-secondary-text" style="font-size: 11px; font-style: italic; color:var(--danger);">[File missing]</span>
+                                                                <?php else: ?>
+                                                                    <span class="cell-secondary-text" style="font-size: 11px; font-style: italic; color:var(--text-muted);">—</span>
+                                                                <?php endif; ?>
+                                                            </div>
+                                                        </div>
+                                                    <?php endforeach; ?>
+                                                </div>
+                                            </td>
                                             <td><?= $escape(ucfirst($veh['vehicle_type'])) ?></td>
                                             <td><span class="cell-primary-text">Rs. <?= number_format((float)$veh['price_per_day'], 2) ?></span></td>
-                                            <td><?= $escape($veh['owner_name']) ?></td>
+                                            <td><span class="cell-secondary-text"><?= $escape($veh['owner_name']) ?></span></td>
                                             <td>
-                                                <div class="btn-group">
-                                                    <form method="post" action="vehicle_verification.php">
+                                                <div class="btn-group" style="gap: 6px; flex-wrap: nowrap;">
+                                                    <form method="post" action="vehicle_verification.php" style="display:inline;">
                                                         <input type="hidden" name="csrf_token" value="<?= $escape(AuthHelper::getCsrfToken()) ?>">
                                                         <input type="hidden" name="vehicle_id" value="<?= (int)$veh['id'] ?>">
                                                         <input type="hidden" name="status" value="approved">
-                                                        <button type="submit" class="btn btn-approve btn-sm">Approve</button>
+                                                        <button type="submit" class="btn btn-approve btn-sm">
+                                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                                                            Approve
+                                                        </button>
                                                     </form>
-                                                    <form method="post" action="vehicle_verification.php">
+                                                    <form method="post" action="vehicle_verification.php" style="display:inline;">
                                                         <input type="hidden" name="csrf_token" value="<?= $escape(AuthHelper::getCsrfToken()) ?>">
                                                         <input type="hidden" name="vehicle_id" value="<?= (int)$veh['id'] ?>">
                                                         <input type="hidden" name="status" value="rejected">
-                                                        <button type="submit" class="btn btn-reject btn-sm">Reject</button>
+                                                        <button type="submit" class="btn btn-reject btn-sm">
+                                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                                                            Reject
+                                                        </button>
                                                     </form>
                                                 </div>
                                             </td>
@@ -130,15 +200,22 @@ $escape = static fn(mixed $val): string => htmlspecialchars((string)$val, ENT_QU
                     </div>
 
                     <?php if (empty($registeredVehicles)): ?>
-                        <p style="color: var(--text-secondary);">No registered fleet vehicles found.</p>
+                        <div class="lr-empty-state">
+                            <div class="lr-empty-icon">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="7" rx="2"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/><path d="M5 11l2-5h10l2 5"/></svg>
+                            </div>
+                            <h3>No registered fleet vehicles</h3>
+                            <p>No verified fleet vehicles were found in the database.</p>
+                        </div>
                     <?php else: ?>
-                        <div class="table-responsive">
+                        <div class="lr-table-wrap table-responsive">
                             <table class="custom-table">
                                 <thead>
                                     <tr>
                                         <th>Vehicle ID</th>
                                         <th>Model / Make</th>
                                         <th>License Plate</th>
+                                        <th>Documents</th>
                                         <th>Type</th>
                                         <th>Daily Rate</th>
                                         <th>Availability</th>
@@ -147,10 +224,67 @@ $escape = static fn(mixed $val): string => htmlspecialchars((string)$val, ENT_QU
                                 </thead>
                                 <tbody>
                                     <?php foreach ($registeredVehicles as $veh): ?>
+                                        <?php
+                                        $docMap = [];
+                                        $rawDocs = $model->getVehicleDocuments((int)$veh['id']);
+                                        foreach ($rawDocs as $d) {
+                                            if (!isset($docMap[$d['document_type']])) {
+                                                $docMap[$d['document_type']] = $d;
+                                            }
+                                        }
+                                        $vehDocConfig = [
+                                            'registration' => 'CR Book',
+                                            'insurance' => 'Insurance',
+                                            'emission_test' => 'Emission Certificate',
+                                            'fitness_certificate' => 'Fitness Certificate'
+                                        ];
+                                        ?>
                                         <tr>
-                                            <td><span class="cell-secondary-text">VEH-<?= (int)$veh['id'] ?></span></td>
-                                            <td><div class="cell-primary-text"><?= $escape($veh['make'] . ' ' . $veh['model'] . ' (' . $veh['year'] . ')') ?></div></td>
-                                            <td><span class="badge badge-blue"><?= $escape($veh['license_plate']) ?></span></td>
+                                            <td><span class="cell-secondary-text" style="font-family:monospace; font-weight:700;">VEH-<?= (int)$veh['id'] ?></span></td>
+                                            <td>
+                                                <div class="cell-primary-text" style="font-weight:600;"><?= $escape($veh['make'] . ' ' . $veh['model'] . ' (' . $veh['year'] . ')') ?></div>
+                                                <span class="badge badge-approved" style="font-size:10.5px; margin-top:4px;">
+                                                    Vehicle: Verified & Approved
+                                                </span>
+                                            </td>
+                                            <td><span class="badge badge-blue" style="font-family:monospace;"><?= $escape($veh['license_plate']) ?></span></td>
+                                            <td>
+                                                <div style="display:flex; flex-direction:column; gap:6px; min-width:270px;">
+                                                    <?php foreach ($vehDocConfig as $typeKey => $typeLabel): ?>
+                                                        <?php
+                                                        $doc = $docMap[$typeKey] ?? null;
+                                                        $physicalPath = !empty($doc['file_path']) ? dirname(__DIR__, 2) . '/public/' . ltrim($doc['file_path'], '/') : '';
+                                                        $fileExists = !empty($physicalPath) && file_exists($physicalPath) && is_file($physicalPath);
+                                                        $docStatus = $doc['verification_status'] ?? 'not_uploaded';
+                                                        $badgeClass = match($docStatus) {
+                                                            'approved' => 'badge-approved',
+                                                            'rejected' => 'badge-rejected',
+                                                            'pending' => 'badge-pending',
+                                                            default => 'badge-suspended'
+                                                        };
+                                                        ?>
+                                                        <div class="doc-card-mini">
+                                                            <div class="doc-meta">
+                                                                <span class="doc-name"><?= $escape($typeLabel) ?></span>
+                                                                <span class="badge <?= $badgeClass ?>" style="padding: 2px 7px; font-size: 10.5px;">
+                                                                    <?= $doc ? $escape(ucfirst($doc['verification_status'] ?? 'pending')) : 'Not uploaded' ?>
+                                                                </span>
+                                                            </div>
+                                                            <div class="doc-actions">
+                                                                <?php if ($doc && $fileExists): ?>
+                                                                    <a href="../<?= $escape($doc['file_path']) ?>" target="_blank" class="btn btn-secondary btn-sm" style="padding: 2px 8px; font-size: 11px; display:inline-flex; align-items:center; gap:3px;">
+                                                                        View Document ↗
+                                                                    </a>
+                                                                <?php elseif ($doc): ?>
+                                                                    <span class="cell-secondary-text" style="font-size: 11px; font-style: italic; color:var(--danger);">[File missing]</span>
+                                                                <?php else: ?>
+                                                                    <span class="cell-secondary-text" style="font-size: 11px; font-style: italic; color:var(--text-muted);">—</span>
+                                                                <?php endif; ?>
+                                                            </div>
+                                                        </div>
+                                                    <?php endforeach; ?>
+                                                </div>
+                                            </td>
                                             <td><?= $escape(ucfirst($veh['vehicle_type'])) ?></td>
                                             <td><span class="cell-primary-text">Rs. <?= number_format((float)$veh['price_per_day'], 2) ?></span></td>
                                             <td>

@@ -18,6 +18,7 @@ $activeNavRules = [
     '/verification/' => 'verification',
     '/vehicles/' => 'vehicles',
     '/bookings/' => 'bookings',
+    '/pickup-status/' => 'pickup-status',
     '/inspection/' => 'inspection',
     '/payments/' => 'payments',
     '/payment.php' => 'payments',

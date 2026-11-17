@@ -36,7 +36,7 @@ class OwnerChatController {
         try {
             $context = $this->getSessionContext();
 
-            // Auto-enroll owner into chat rooms for their vehicle bookings
+            // Make existing owner booking rooms visible without changing chat history.
             $this->chatModel->ensureOwnerRoomsEnrolled($context['owner_id'], $context['user_id']);
 
             $rooms = $this->chatModel->getUserRooms($context['user_id']);

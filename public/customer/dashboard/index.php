@@ -25,7 +25,7 @@ require dirname(__DIR__) . '/components/layout/header.php';
             <?php $verificationStatus = (string) ($dashboard['verification_status'] ?? 'pending'); ?>
             <section class="welcome-strip" aria-labelledby="welcome-heading">
                 <div>
-                    <p class="eyebrow">Good to see you</p>
+                    <p class="eyebrow">Customer Dashboard</p>
                     <h2 id="welcome-heading">Welcome back, <?= htmlspecialchars($firstName, ENT_QUOTES, 'UTF-8') ?></h2>
                     <p>Your summary below uses Customer-owned database records.</p>
                 </div>
@@ -36,7 +36,7 @@ require dirname(__DIR__) . '/components/layout/header.php';
             <section class="next-action-card" aria-labelledby="next-action-heading">
                 <span class="next-action-card__icon" aria-hidden="true"><?= customer_icon('shield') ?></span>
                 <div class="next-action-card__copy">
-                    <p class="eyebrow">Recommended next step</p>
+                    <p class="eyebrow">Verification Status</p>
                     <h2 id="next-action-heading"><?= htmlspecialchars((string) ($verification['title'] ?? ''), ENT_QUOTES, 'UTF-8') ?></h2>
                     <p><?= htmlspecialchars((string) ($verification['description'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
                 </div>
@@ -47,7 +47,7 @@ require dirname(__DIR__) . '/components/layout/header.php';
             </section>
 
             <section aria-labelledby="summary-heading">
-                <div class="section-heading"><div><p class="eyebrow">At a glance</p><h2 id="summary-heading">Rental summary</h2></div></div>
+                <div class="section-heading"><div><h2 id="summary-heading">Rental Summary</h2></div></div>
                 <div class="stats-grid">
                     <?php foreach (($dashboard['stats'] ?? []) as $stat): ?>
                         <?php require dirname(__DIR__) . '/components/dashboard/stat-card.php'; ?>
@@ -58,7 +58,7 @@ require dirname(__DIR__) . '/components/layout/header.php';
             <div class="dashboard-grid dashboard-grid--main">
                 <section class="card" aria-labelledby="progress-heading">
                     <div class="card__header">
-                        <div><p class="eyebrow">Your journey</p><h2 id="progress-heading">Rental progress</h2></div>
+                        <div><p class="eyebrow">Rental Progress</p><h2 id="progress-heading">Rental progress</h2></div>
                         <?php $completeProgress = count(array_filter($dashboard['progress'] ?? [], static fn (array $item): bool => ($item['state'] ?? '') === 'complete')); ?>
                         <span class="status-badge status-badge--info"><?= $completeProgress ?> of <?= count($dashboard['progress'] ?? []) ?> complete</span>
                     </div>
@@ -117,7 +117,7 @@ require dirname(__DIR__) . '/components/layout/header.php';
             </div>
 
             <section aria-labelledby="quick-links-heading">
-                <div class="section-heading"><div><p class="eyebrow">Shortcuts</p><h2 id="quick-links-heading">Quick links</h2></div></div>
+                <div class="section-heading"><div><h2 id="quick-links-heading">Quick Actions</h2></div></div>
                 <div class="quick-links-grid">
                     <?php foreach (($dashboard['quick_links'] ?? []) as $quickLink): ?>
                         <?php require dirname(__DIR__) . '/components/dashboard/quick-action-card.php'; ?>

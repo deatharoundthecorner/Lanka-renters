@@ -1,0 +1,129 @@
+@startuml User_Authentication_Activity_Diagram
+!theme C4_Standard
+skinparam DefaultFontName "Arial"
+skinparam DefaultFontSize 12
+skinparam ActivityFontSize 12
+skinparam ActivityFontColor #0F172A
+skinparam ActivityBackgroundColor #F8FAFC
+skinparam ActivityBorderColor #475569
+skinparam ActivityBorderThickness 1.5
+skinparam DiamondBackgroundColor #FEF3C7
+skinparam DiamondBorderColor #D97706
+skinparam DiamondFontColor #78350F
+skinparam ArrowColor #2563EB
+skinparam ArrowThickness 1.5
+skinparam SwimlaneTitleBackgroundColor #1E293B
+skinparam SwimlaneTitleFontColor #FFFFFF
+skinparam SwimlaneTitleFontSize 13
+skinparam SwimlaneBorderColor #94A3B8
+
+title **LANKA RENTERS - USER AUTHENTICATION & AUTHORIZATION (ACTIVITY DIAGRAM)**
+
+|#F1F5F9| User
+start
+:Navigate to Unified Login Page\n(/public/login.php);
+
+if (User Action?) then (Login)
+  :Enter Email Address & Password;
+  :Submit Login Form;
+
+  |#F0FDF4| System (AuthHelper & Controller)
+  :Validate Form Input & CSRF Token;
+  
+  if (Is CSRF Token Valid?) then (Yes)
+    :Query Database for User by Email;
+    
+    if (User Account Exists & Active?) then (Yes)
+      :Verify Password Hash\n(password_verify);
+      
+      if (Is Password Correct?) then (Yes)
+        :Reset Failed Attempt Counter;
+        :Generate Session Token & Set Role Session\n($_SESSION['user_id'], $_SESSION['role']);
+        #BBF7D0:Authentication Successful;
+
+        |#F1F5F9| User
+        if (User Role?) then (Customer)
+          |#F0FDF4| System (AuthHelper & Controller)
+          :Redirect to /customer/dashboard.php;
+        elseif (Vehicle Owner) then (Yes)
+          |#F0FDF4| System (AuthHelper & Controller)
+          :Redirect to /owner/dashboard.php;
+        elseif (Driver) then (Yes)
+          |#F0FDF4| System (AuthHelper & Controller)
+          :Redirect to /driver/dashboard.php;
+        else (Admin)
+          |#F0FDF4| System (AuthHelper & Controller)
+          :Redirect to /admin/dashboard.php;
+        endif
+
+        |#F1F5F9| User
+        :Access Role Dashboard & Features;
+        stop
+
+      else (No)
+        |#F0FDF4| System (AuthHelper & Controller)
+        :Increment Failed Attempt Count;
+        if (Failed Attempts >= 5?) then (Yes)
+          #FECACA:Lock Account Temporarily;
+          :Display Account Lockout Error;
+        else (No)
+          #FECACA:Display Error: Invalid Email or Password;
+        endif
+        |#F1F5F9| User
+        stop
+      endif
+
+    else (No / Suspended)
+      |#F0FDF4| System (AuthHelper & Controller)
+      #FECACA:Display Error: Account Inactive or Not Found;
+      |#F1F5F9| User
+      stop
+    endif
+
+  else (Invalid CSRF)
+    |#F0FDF4| System (AuthHelper & Controller)
+    #FECACA:Display Security Error: Invalid CSRF Token;
+    |#F1F5F9| User
+    stop
+  endif
+
+elseif (Forgot Password) then (Yes)
+  |#F1F5F9| User
+  :Click "Forgot Password" Link;
+  :Enter Registered Email Address;
+  
+  |#F0FDF4| System (AuthHelper & Controller)
+  if (Email Exists in Database?) then (Yes)
+    :Generate Secure Password Reset Token;
+    :Send Reset Link via MailHelper;
+    #BBF7D0:Display Confirmation Message;
+    
+    |#F1F5F9| User
+    :Open Reset Link from Email;
+    :Enter New Password & Confirm;
+    
+    |#F0FDF4| System (AuthHelper & Controller)
+    :Update password_hash in Database;
+    #BBF7D0:Display Password Reset Success;
+    |#F1F5F9| User
+    stop
+  else (No)
+    |#F0FDF4| System (AuthHelper & Controller)
+    #FECACA:Display Error: Email Address Not Found;
+    |#F1F5F9| User
+    stop
+  endif
+
+else (Logout)
+  |#F1F5F9| User
+  :Click "Logout" Button;
+  
+  |#F0FDF4| System (AuthHelper & Controller)
+  :Destroy Active User Session;
+  :Clear Authentication Cookies;
+  :Redirect to Guest Homepage (/);
+  |#F1F5F9| User
+  stop
+endif
+
+@enduml

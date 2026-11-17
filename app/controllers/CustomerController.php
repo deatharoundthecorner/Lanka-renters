@@ -150,6 +150,7 @@ class CustomerController
         $data['customer_verification_status'] = 'pending';
         $data['database_error'] = false;
         $data['invalid_id'] = false;
+        $data['catalogue_query'] = $this->catalogueQuery($query);
 
         $vehicleId = $this->positiveInteger($query['id'] ?? null);
         if ($vehicleId === null) {
@@ -259,6 +260,32 @@ class CustomerController
             'price_desc' => 'Price: high to low',
             'year_desc' => 'Year: newest first',
         ];
+    }
+
+    /** Retains only supported Customer catalogue filters for the back link. */
+    private function catalogueQuery(array $query): string
+    {
+        $errors = [];
+        $filters = $this->vehicleFilters($query, $errors);
+        $params = array_filter([
+            'keyword' => $filters['keyword'],
+            'vehicle_type' => $filters['vehicle_type'],
+            'fuel_type' => $filters['fuel_type'],
+            'transmission' => $filters['transmission'],
+            'service_type' => $filters['service_type'],
+            'availability' => $filters['availability'] !== 'available' ? $filters['availability'] : '',
+            'min_price' => $filters['min_price'],
+            'max_price' => $filters['max_price'],
+            'min_seats' => $filters['min_seats'],
+            'start_date' => $filters['start_date'],
+            'end_date' => $filters['end_date'],
+            'sort' => $this->allowedValue($query['sort'] ?? '', array_keys($this->vehicleSortOptions()), 'newest') !== 'newest'
+                ? $this->allowedValue($query['sort'] ?? '', array_keys($this->vehicleSortOptions()), 'newest')
+                : '',
+            'page' => $this->positiveInteger($query['page'] ?? null),
+        ], static fn (mixed $value): bool => $value !== '' && $value !== null);
+
+        return http_build_query($params);
     }
 
     private function queryText(mixed $value, int $maximumLength): string

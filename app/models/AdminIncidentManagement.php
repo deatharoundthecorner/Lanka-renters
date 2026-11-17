@@ -49,9 +49,34 @@ class AdminIncidentManagement {
 
     /**
      * Updates incident status ('reported', 'investigating', 'resolved').
+     * When resolved, atomically transitions the related active ongoing booking to 'disputed'.
      */
     public function updateStatus(int $incidentId, string $status): bool {
-        $stmt = $this->db->prepare("UPDATE `incidents` SET `status` = :status WHERE `id` = :id");
-        return $stmt->execute(['status' => $status, 'id' => $incidentId]);
+        $this->db->beginTransaction();
+        try {
+            $stmt = $this->db->prepare("UPDATE `incidents` SET `status` = :status WHERE `id` = :id");
+            $stmt->execute(['status' => $status, 'id' => $incidentId]);
+
+            // When incident is resolved, move the related ongoing booking to disputed
+            if ($status === 'resolved') {
+                $stmtBooking = $this->db->prepare("
+                    UPDATE `bookings` b
+                    JOIN `incidents` i ON i.booking_id = b.id
+                    SET b.status = 'disputed'
+                    WHERE i.id = :incident_id AND b.status = 'ongoing'
+                ");
+                $stmtBooking->execute(['incident_id' => $incidentId]);
+            }
+
+            $this->db->commit();
+            return true;
+        } catch (Throwable $e) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+            error_log("Incident updateStatus error: " . $e->getMessage());
+            return false;
+        }
     }
 }
+

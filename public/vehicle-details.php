@@ -67,19 +67,17 @@ if (!$isLoggedIn) {
     <title><?php echo htmlspecialchars($v['make'] . ' ' . $v['model']); ?> Details - Lanka Renters</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="assets/css/reset.css">
-    <link rel="stylesheet" href="assets/css/variables.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="assets/css/style.css">
     <link rel="stylesheet" href="assets/css/guest.css">
+    <link rel="stylesheet" href="assets/css/lr-public.css">
 </head>
-<body>
+<body class="public-page public-page--details">
 
     <!-- Navbar -->
     <nav class="guest-navbar">
         <a href="index.php" class="navbar-logo">
-            <span class="logo-icon">L</span>
-            <span>Lanka<span style="color: #2563EB;">Renters</span></span>
+            <img class="brand-logo-image" src="assets/images/brand/lanka-renters-logo.png" alt="Lanka Renters">
         </a>
         <div class="navbar-menu">
             <a href="index.php">Home</a>
@@ -155,7 +153,7 @@ if (!$isLoggedIn) {
 
                 <!-- Business Warning Message -->
                 <div class="details-warning-banner">
-                    💡 <strong>Driver Assignment Notice:</strong><br>
+                    <strong>Driver Assignment Notice:</strong><br>
                     Customer cannot directly choose a driver. If driver service is selected, the vehicle owner assigns a verified available driver.
                 </div>
             </div>
@@ -254,8 +252,7 @@ if (!$isLoggedIn) {
         <div class="footer-container">
             <div class="footer-brand">
                 <a href="index.php" class="footer-logo">
-                    <span class="logo-icon" style="background-color: #2563EB;">L</span>
-                    <span>LankaRenters</span>
+                    <img class="brand-logo-image" src="assets/images/brand/lanka-renters-logo.png" alt="Lanka Renters">
                 </a>
                 <p>Trusted long-term vehicle rentals connecting customers, owners and professional drivers across Sri Lanka.</p>
             </div>
@@ -264,23 +261,15 @@ if (!$isLoggedIn) {
                 <ul>
                     <li><a href="index.php">About</a></li>
                     <li><a href="index.php#how-it-works">How It Works</a></li>
-                    <li><a href="index.php#why-us">Support</a></li>
+                    <li><a href="vehicles.php">Vehicles</a></li>
                 </ul>
             </div>
             <div class="footer-column">
-                <h3>Help</h3>
+                <h3>Explore</h3>
                 <ul>
-                    <li><a href="index.php#how-it-works">Help Center</a></li>
-                    <li><a href="index.php#why-us">Contact</a></li>
-                    <li><a href="index.php#how-it-works">FAQ</a></li>
-                </ul>
-            </div>
-            <div class="footer-column">
-                <h3>Legal</h3>
-                <ul>
-                    <li><a href="index.php#why-us">Privacy Policy</a></li>
-                    <li><a href="index.php#why-us">User Guidelines</a></li>
-                    <li><a href="index.php#why-us">Rental Rules</a></li>
+                    <li><a href="vehicles.php">Browse Vehicles</a></li>
+                    <li><a href="login.php">Sign In</a></li>
+                    <li><a href="register.php">Create Account</a></li>
                 </ul>
             </div>
             <div class="footer-column">

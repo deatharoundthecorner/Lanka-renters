@@ -49,6 +49,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             $errorMessage = $result['error'];
         }
+    } elseif ($action === 'delete_vehicle') {
+        $vehicleId = (int)($_POST['vehicle_id'] ?? 0);
+        $csrfToken = $_POST['csrf_token'] ?? '';
+        $result = $vehicleController->deleteVehicle($vehicleId, $csrfToken);
+        if ($result['success']) {
+            $successMessage = $result['message'];
+        } else {
+            $errorMessage = $result['error'];
+        }
     }
 }
 
@@ -82,7 +91,10 @@ $csrfToken = AuthHelper::getCsrfToken();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Vehicles - LankaRenters Owner</title>
     <!-- Link Owner Design CSS -->
-    <link rel="stylesheet" href="includes/assets/css/owner-style.css">
+  <link rel="stylesheet" href="includes/assets/css/owner-style.css">
+  <link rel="stylesheet" href="../assets/css/lr-tokens.css">
+  <link rel="stylesheet" href="../assets/css/lr-shell.css">
+  <link rel="stylesheet" href="../assets/css/lr-components.css">
     <style>
         /* Supplementary Component Styles */
         .alert-banner {
@@ -211,10 +223,11 @@ $csrfToken = AuthHelper::getCsrfToken();
             box-shadow: 0 20px 40px rgba(0,0,0,0.15);
         }
     </style>
+    <link rel="stylesheet" href="includes/assets/css/owner-canonical.css">
 </head>
 <body>
 
-    <div class="dashboard-layout">
+<div class="dashboard-layout dashboard-wrapper">
         <!-- Include Sidebar -->
         <?php include 'includes/sidebar.php'; ?>
 
@@ -224,27 +237,27 @@ $csrfToken = AuthHelper::getCsrfToken();
 
             <!-- Main Content Area -->
             <main class="main-content">
-            <section class="vehicles-header">
+      <section class="vehicles-header welcome-container">
                 <div class="vehicles-title">
                     <h1>My Vehicles</h1>
                     <p>Manage your fleet, update daily rates, and track verification status.</p>
                 </div>
                 <div class="vehicles-action">
-                    <a href="#add-vehicle-form" class="button button-primary">+ Add Vehicle</a>
+                    <a href="vehicle-add.php" class="button button-primary">+ Add Vehicle</a>
                 </div>
             </section>
 
             <!-- Success / Error Alert Banners -->
             <?php if (!empty($successMessage)): ?>
                 <div class="alert-banner alert-success" role="alert">
-                    <span>✅ <?php echo htmlspecialchars($successMessage); ?></span>
+                    <span><?php echo htmlspecialchars($successMessage); ?></span>
                     <button type="button" onclick="this.parentElement.remove()" style="background:none; border:none; cursor:pointer; font-size:1.1rem; color:inherit;">✕</button>
                 </div>
             <?php endif; ?>
 
             <?php if (!empty($errorMessage)): ?>
                 <div class="alert-banner alert-error" role="alert">
-                    <span>⚠️ <?php echo htmlspecialchars($errorMessage); ?></span>
+                    <span><?php echo htmlspecialchars($errorMessage); ?></span>
                     <button type="button" onclick="this.parentElement.remove()" style="background:none; border:none; cursor:pointer; font-size:1.1rem; color:inherit;">✕</button>
                 </div>
             <?php endif; ?>
@@ -266,17 +279,12 @@ $csrfToken = AuthHelper::getCsrfToken();
                                              alt="<?php echo htmlspecialchars($v['make'] . ' ' . $v['model']); ?>" 
                                              style="object-fit: cover; height: 150px; width: 100%; border-radius: 8px 8px 0 0;" />
                                     <?php else: ?>
-                                        <div style="display: flex; align-items: center; justify-content: center; height: 150px; background-color: #eef2ff;">
-                                            <span style="font-size: 3.5rem;" aria-hidden="true">
-                                                <?php 
-                                                    switch($v['vehicle_type']) {
-                                                        case 'van': echo '🚐'; break;
-                                                        case 'suv': echo '🚙'; break;
-                                                        case 'lorry': echo '🚛'; break;
-                                                        case 'motorbike': echo '🏍️'; break;
-                                                        default: echo '🚗'; break;
-                                                    }
-                                                ?>
+                                        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 150px; background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); color: #64748b; gap: 8px;">
+                                            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.7;">
+                                                <rect x="3" y="11" width="18" height="7" rx="2"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/><path d="M5 11l2-5h10l2 5"/>
+                                            </svg>
+                                            <span style="font-size: 0.8rem; font-weight: 600; color: #475569; text-transform: uppercase; letter-spacing: 0.05em;">
+                                                <?php echo htmlspecialchars($v['make'] . ' ' . $v['model']); ?>
                                             </span>
                                         </div>
                                     <?php endif; ?>
@@ -300,10 +308,18 @@ $csrfToken = AuthHelper::getCsrfToken();
                                     </div>
 
                                     <ul class="vehicle-specs-list">
-                                        <li>Type: <strong><?php echo ucfirst(htmlspecialchars($v['vehicle_type'])); ?></strong></li>
-                                        <li>Gear: <strong><?php echo ucfirst(htmlspecialchars($v['transmission'])); ?></strong></li>
-                                        <li>Fuel: <strong><?php echo ucfirst(htmlspecialchars($v['fuel_type'])); ?></strong></li>
-                                        <li>Seats: <strong><?php echo (int)$v['seating_capacity']; ?> Seats</strong></li>
+                                        <?php if (!empty($v['vehicle_type'])): ?>
+                                            <li>Type: <strong><?php echo ucfirst(htmlspecialchars($v['vehicle_type'])); ?></strong></li>
+                                        <?php endif; ?>
+                                        <?php if (!empty($v['transmission'])): ?>
+                                            <li>Gear: <strong><?php echo ucfirst(htmlspecialchars($v['transmission'])); ?></strong></li>
+                                        <?php endif; ?>
+                                        <?php if (!empty($v['fuel_type'])): ?>
+                                            <li>Fuel: <strong><?php echo ucfirst(htmlspecialchars($v['fuel_type'])); ?></strong></li>
+                                        <?php endif; ?>
+                                        <?php if (!empty($v['seating_capacity'])): ?>
+                                            <li>Seats: <strong><?php echo (int)$v['seating_capacity']; ?> Seats</strong></li>
+                                        <?php endif; ?>
                                     </ul>
 
                                     <div class="vehicle-price-tag">
@@ -322,38 +338,49 @@ $csrfToken = AuthHelper::getCsrfToken();
                                             <div class="docs-list-title">Attached Documents:</div>
                                             <?php foreach ($v['documents'] as $doc): ?>
                                                 <a href="/<?php echo htmlspecialchars($doc['file_path']); ?>" target="_blank" class="doc-item" title="View Document">
-                                                    📄 <?php echo ucfirst(str_replace('_', ' ', $doc['document_type'])); ?>
+                                                    <?php echo ucfirst(str_replace('_', ' ', $doc['document_type'])); ?>
                                                 </a>
                                             <?php endforeach; ?>
                                         </div>
                                     <?php endif; ?>
 
                                     <!-- Actions Section -->
-                                    <div class="vehicle-card-actions" style="margin-top: 12px; align-items: center; justify-content: space-between;">
-                                        <a href="vehicles.php?edit_id=<?php echo (int)$v['id']; ?>" class="button button-secondary" style="text-decoration: none; padding: 6px 14px; font-size: 0.88rem;">Edit</a>
+                                    <div class="vehicle-card-actions" style="margin-top: 14px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between;">
+                                        <a href="vehicles.php?edit_id=<?php echo (int)$v['id']; ?>" class="button button-secondary" style="text-decoration: none; padding: 6px 14px; font-size: 0.85rem;">Edit</a>
 
                                         <!-- Status Change Form -->
-                                        <form method="POST" action="vehicles.php" class="status-select-form">
+                                        <form method="POST" action="vehicles.php" class="status-select-form" style="margin: 0;">
                                             <input type="hidden" name="action" value="update_status">
                                             <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken); ?>">
                                             <input type="hidden" name="vehicle_id" value="<?php echo (int)$v['id']; ?>">
                                             
-                                            <select name="status" onchange="this.form.submit()" <?php echo $v['status'] === 'rented' ? 'disabled' : ''; ?>>
+                                            <select name="status" onchange="this.form.submit()" <?php echo in_array($v['status'], ['rented', 'booked']) ? 'disabled' : ''; ?> style="padding: 5px 8px; font-size: 0.85rem;">
+                                                <?php if ($v['status'] === 'rented'): ?>
+                                                    <option value="rented" selected disabled>Rented</option>
+                                                <?php endif; ?>
                                                 <option value="available" <?php echo $v['status'] === 'available' ? 'selected' : ''; ?>>Available</option>
-                                                <option value="maintenance" <?php echo $v['status'] === 'maintenance' ? 'selected' : ''; ?>>Maintenance</option>
+                                                <option value="maintenance" <?php echo in_array($v['status'], ['maintenance', 'under_maintenance']) ? 'selected' : ''; ?>>Maintenance</option>
                                                 <option value="unavailable" <?php echo $v['status'] === 'unavailable' ? 'selected' : ''; ?>>Unavailable</option>
                                             </select>
                                         </form>
 
-                                        <!-- Safe Deactivate Form -->
+                                        <!-- Safe Deactivate Form (Warning / Amber) -->
                                         <?php if ($v['status'] !== 'unavailable'): ?>
-                                            <form method="POST" action="vehicles.php" onsubmit="return confirm('Are you sure you want to deactivate this vehicle? It will be set to Unavailable.');" style="display:inline;">
+                                            <form method="POST" action="vehicles.php" onsubmit="return confirm('Are you sure you want to deactivate this vehicle? It will be set to Unavailable.');" style="display:inline; margin:0;">
                                                 <input type="hidden" name="action" value="deactivate_vehicle">
                                                 <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken); ?>">
                                                 <input type="hidden" name="vehicle_id" value="<?php echo (int)$v['id']; ?>">
-                                                <button type="submit" class="button button-outline" style="color: #991b1b; border-color: #fecaca; padding: 6px 10px; font-size: 0.85rem;">Deactivate</button>
+                                                <button type="submit" class="button button-outline" style="color: #b45309; border-color: #fcd34d; background: #fffbeb; padding: 6px 10px; font-size: 0.85rem; font-weight: 600;">Deactivate</button>
                                             </form>
                                         <?php endif; ?>
+
+                                        <!-- Permanent Delete Form (Danger / Red) -->
+                                        <form method="POST" action="vehicles.php" onsubmit="return confirm('Delete this vehicle permanently? This is only allowed when no rental records depend on it.');" style="display:inline; margin:0;">
+                                            <input type="hidden" name="action" value="delete_vehicle">
+                                            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken); ?>">
+                                            <input type="hidden" name="vehicle_id" value="<?php echo (int)$v['id']; ?>">
+                                            <button type="submit" class="button button-outline" style="color: #dc2626; border-color: #fecaca; background: #fef2f2; padding: 6px 10px; font-size: 0.85rem; font-weight: 600;">Delete</button>
+                                        </form>
                                     </div>
                                 </div>
                             </article>

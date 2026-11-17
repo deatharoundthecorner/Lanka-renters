@@ -7,6 +7,9 @@ $controller = new CustomerBookingController();
 $viewData = $controller->detailsPage($_GET);
 $pageTitle = $viewData['page_title'];
 $booking = $viewData['booking'];
+$displayBookingLocation = is_array($booking) && ($booking['booking_type'] ?? '') === 'self_drive'
+    ? (string) ($booking['location'] ?? 'Not specified')
+    : (string) ($booking['delivery_address'] ?? 'Not provided');
 
 require dirname(__DIR__) . '/components/layout/header.php';
 ?>
@@ -52,7 +55,7 @@ require dirname(__DIR__) . '/components/layout/header.php';
                                 <div><dt>Licence plate</dt><dd><?= htmlspecialchars((string) $booking['license_plate'], ENT_QUOTES, 'UTF-8') ?></dd></div>
                                 <div><dt>Driver</dt><dd><?= htmlspecialchars($booking['driver_name'] !== null ? (string) $booking['driver_name'] : 'Not required', ENT_QUOTES, 'UTF-8') ?></dd></div>
                                 <div><dt>Vehicle owner</dt><dd><?= htmlspecialchars((string) $booking['owner_name'], ENT_QUOTES, 'UTF-8') ?></dd></div>
-                                <div class="booking-detail-list__wide"><dt>Delivery address</dt><dd><?= htmlspecialchars(($booking['delivery_address'] ?? '') !== '' ? (string) $booking['delivery_address'] : 'Not provided', ENT_QUOTES, 'UTF-8') ?></dd></div>
+                                <div class="booking-detail-list__wide"><dt><?= $booking['booking_type'] === 'self_drive' ? 'Collection location' : 'Pickup Location' ?></dt><dd><?= htmlspecialchars($displayBookingLocation !== '' ? $displayBookingLocation : 'Not provided', ENT_QUOTES, 'UTF-8') ?></dd></div>
                             </dl>
                         </section>
                         <section class="card" aria-labelledby="booking-record-title">
@@ -63,6 +66,7 @@ require dirname(__DIR__) . '/components/layout/header.php';
                             </dl>
                             <p>No status-history table exists, so this page does not invent a booking timeline.</p>
                         </section>
+                        <?php require dirname(__DIR__) . '/components/booking/accepted-booking-agreement.php'; ?>
                     </div>
                     <aside><?php require dirname(__DIR__) . '/components/booking/booking-actions.php'; ?></aside>
                 </div>

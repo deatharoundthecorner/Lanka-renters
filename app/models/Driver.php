@@ -165,11 +165,11 @@ class Driver {
                             -- If no documents uploaded at all, it is pending
                             WHEN COUNT(`id`) = 0 THEN 'pending'
                             -- If any document is rejected, the overall verification is rejected
-                            WHEN SUM(CASE WHEN `verification_status` = 'rejected' THEN 1 ELSE 0 END) > 0 THEN 'rejected'
+                            WHEN SUM(CASE WHEN `status` = 'rejected' THEN 1 ELSE 0 END) > 0 THEN 'rejected'
                             -- If they do not have all 3 distinct required documents uploaded, status is pending
                             WHEN COUNT(DISTINCT `document_type`) < 3 THEN 'pending'
                             -- If any document is still pending review, status is pending
-                            WHEN SUM(CASE WHEN `verification_status` = 'pending' THEN 1 ELSE 0 END) > 0 THEN 'pending'
+                            WHEN SUM(CASE WHEN `status` = 'pending' THEN 1 ELSE 0 END) > 0 THEN 'pending'
                             -- Otherwise, all 3 are uploaded and approved
                             ELSE 'approved'
                         END as `verification_status`
@@ -207,22 +207,103 @@ class Driver {
                 $startedTransaction = true;
             }
 
-            // 1. Verify the booking is assigned to this driver (checking by user_id linked to driver)
-            $sqlCheck = "SELECT b.id FROM `bookings` b 
-                          JOIN `drivers` d ON b.driver_id = d.id 
-                          WHERE b.id = :booking_id AND d.user_id = :user_id";
+                 // 1. Lock and verify the assigned with-driver booking before changing lifecycle state.
+                 $sqlCheck = "SELECT b.id, b.vehicle_id, b.customer_id, b.booking_type,
+                             b.status, b.pickup_status,
+                             v.status AS vehicle_status,
+                             v.verification_status AS vehicle_verification_status
+                         FROM `bookings` b
+                         JOIN `drivers` d ON b.driver_id = d.id
+                         JOIN `vehicles` v ON b.vehicle_id = v.id
+                         WHERE b.id = :booking_id AND d.user_id = :user_id
+                         FOR UPDATE";
             $stmtCheck = $this->db->prepare($sqlCheck);
             $stmtCheck->execute([
                 'booking_id' => $bookingId,
                 'user_id'    => $userId
             ]);
-            if (!$stmtCheck->fetch()) {
+            $bookingRow = $stmtCheck->fetch(PDO::FETCH_ASSOC);
+            if (!$bookingRow) {
                 throw new Exception("Unauthorized: This booking is not assigned to you.");
             }
+            if (($bookingRow['status'] ?? '') === 'disputed') {
+                throw new Exception("This booking is currently disputed and on hold. Drivers cannot progress or complete a disputed booking.");
+            }
+            if (($bookingRow['booking_type'] ?? '') !== 'with_driver') {
+                throw new Exception("Pickup tracking is only available for with-driver bookings.");
+            }
 
-            // 2. Update the booking's current pickup status (and mark completed if dropped off)
+            $currentBookingStatus = (string)$bookingRow['status'];
+            $currentPickupStatus = (string)$bookingRow['pickup_status'];
+            $validTransition = false;
+
+            if ($status === 'pending_pickup') {
+                $validTransition = $currentPickupStatus === 'pending_pickup';
+            } elseif ($status === 'dispatched') {
+                $validTransition = $currentBookingStatus === 'confirmed'
+                    && $currentPickupStatus === 'pending_pickup';
+            } elseif ($status === 'arrived') {
+                $validTransition = $currentBookingStatus === 'confirmed'
+                    && $currentPickupStatus === 'dispatched';
+            } elseif ($status === 'picked_up') {
+                $validTransition = $currentBookingStatus === 'confirmed'
+                    && $currentPickupStatus === 'arrived';
+            } elseif ($status === 'dropped_off') {
+                $validTransition = $currentBookingStatus === 'ongoing'
+                    && in_array($currentPickupStatus, ['picked_up', 'customer_confirmed_pickup', 'rental_started'], true);
+            }
+
+            if (!$validTransition) {
+                throw new Exception("Invalid booking lifecycle transition.");
+            }
+
+            $vehicleId = (int)($bookingRow['vehicle_id'] ?? 0);
+
+            if ($status === 'picked_up') {
+                if (($bookingRow['vehicle_status'] ?? '') !== 'available'
+                    || ($bookingRow['vehicle_verification_status'] ?? '') !== 'approved') {
+                    throw new Exception("Vehicle is not available and approved for handover.");
+                }
+
+                $inspectionStmt = $this->db->prepare("SELECT id FROM vehicle_inspections
+                    WHERE booking_id = :booking_id
+                      AND inspection_type = 'pre_rental'
+                      AND status = 'pass'
+                    LIMIT 1");
+                $inspectionStmt->execute(['booking_id' => $bookingId]);
+                if (!$inspectionStmt->fetchColumn()) {
+                    throw new Exception("A passing pre-rental inspection is required before pickup.");
+                }
+
+                $guarantorStmt = $this->db->prepare("SELECT verification_status
+                    FROM customer_guarantors
+                    WHERE customer_id = :customer_id
+                    ORDER BY id DESC
+                    LIMIT 1");
+                $guarantorStmt->execute(['customer_id' => (int)$bookingRow['customer_id']]);
+                if ($guarantorStmt->fetchColumn() !== 'approved') {
+                    throw new Exception("An approved guarantor is required before pickup.");
+                }
+            } elseif ($status === 'dropped_off') {
+                if (($bookingRow['vehicle_status'] ?? '') !== 'rented') {
+                    throw new Exception("Vehicle is not in the rented state for return.");
+                }
+
+                $inspectionStmt = $this->db->prepare("SELECT id FROM vehicle_inspections
+                    WHERE booking_id = :booking_id
+                      AND inspection_type = 'post_rental'
+                    LIMIT 1");
+                $inspectionStmt->execute(['booking_id' => $bookingId]);
+                if (!$inspectionStmt->fetchColumn()) {
+                    throw new Exception("A post-rental inspection is required before completion.");
+                }
+            }
+
+            // 2. Update the booking's current pickup status and lifecycle status atomically.
             if ($status === 'dropped_off') {
                 $sqlBooking = "UPDATE `bookings` SET `pickup_status` = :status, `status` = 'completed' WHERE `id` = :booking_id";
+            } elseif ($status === 'picked_up') {
+                $sqlBooking = "UPDATE `bookings` SET `pickup_status` = :status, `status` = 'ongoing' WHERE `id` = :booking_id";
             } else {
                 $sqlBooking = "UPDATE `bookings` SET `pickup_status` = :status WHERE `id` = :booking_id";
             }
@@ -232,7 +313,18 @@ class Driver {
                 'booking_id' => $bookingId
             ]);
 
-            // 2. Insert record into pickup_tracking history
+            // 3. Synchronize vehicle availability status with booking lifecycle
+            if ($status === 'picked_up' && $vehicleId > 0) {
+                $sqlVehicle = "UPDATE `vehicles` SET `status` = 'rented' WHERE `id` = :vehicle_id";
+                $stmtVehicle = $this->db->prepare($sqlVehicle);
+                $stmtVehicle->execute(['vehicle_id' => $vehicleId]);
+            } elseif ($status === 'dropped_off' && $vehicleId > 0) {
+                $sqlVehicle = "UPDATE `vehicles` SET `status` = 'available' WHERE `id` = :vehicle_id";
+                $stmtVehicle = $this->db->prepare($sqlVehicle);
+                $stmtVehicle->execute(['vehicle_id' => $vehicleId]);
+            }
+
+            // 4. Insert record into pickup_tracking history
             $sqlTracking = "INSERT INTO `pickup_tracking` (`booking_id`, `status`, `updated_by`, `driver_note`) 
                             VALUES (:booking_id, :status, :updated_by, :driver_note)";
             $stmtTracking = $this->db->prepare($sqlTracking);
@@ -291,9 +383,9 @@ class Driver {
                     SELECT 
                       CASE 
                         WHEN COUNT(dd.id) = 0 THEN 'pending'
-                        WHEN SUM(CASE WHEN dd.verification_status = 'rejected' THEN 1 ELSE 0 END) > 0 THEN 'rejected'
+                        WHEN SUM(CASE WHEN dd.status = 'rejected' THEN 1 ELSE 0 END) > 0 THEN 'rejected'
                         WHEN COUNT(DISTINCT dd.document_type) < 3 THEN 'pending'
-                        WHEN SUM(CASE WHEN dd.verification_status = 'pending' THEN 1 ELSE 0 END) > 0 THEN 'pending'
+                        WHEN SUM(CASE WHEN dd.status = 'pending' THEN 1 ELSE 0 END) > 0 THEN 'pending'
                         ELSE 'approved'
                       END
                     FROM `driver_documents` dd

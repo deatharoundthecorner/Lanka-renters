@@ -38,7 +38,7 @@ if ($owner) {
     $stmt3 = $db->prepare("
         SELECT COUNT(*) as cnt FROM bookings b
         JOIN vehicles v ON b.vehicle_id = v.id
-        WHERE v.owner_id = :oid AND b.status IN ('pending_payment', 'confirmed')
+        WHERE v.owner_id = :oid AND b.status IN ('pending_approval', 'pending_payment', 'confirmed')
     ");
     $stmt3->execute(['oid' => $owner['id']]);
     $pendingBookings = (int)$stmt3->fetchColumn();
@@ -78,11 +78,15 @@ $csrfToken = AuthHelper::getCsrfToken();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Owner Dashboard - LankaRenters</title>
     <meta name="description" content="Manage your vehicle fleet, track bookings and earnings on LankaRenters owner dashboard.">
-    <link rel="stylesheet" href="includes/assets/css/owner-style.css">
+  <link rel="stylesheet" href="includes/assets/css/owner-style.css">
+  <link rel="stylesheet" href="../assets/css/lr-tokens.css">
+  <link rel="stylesheet" href="../assets/css/lr-shell.css">
+  <link rel="stylesheet" href="../assets/css/lr-components.css">
+  <link rel="stylesheet" href="includes/assets/css/owner-canonical.css">
 </head>
 <body>
 
-    <div class="dashboard-layout">
+<div class="dashboard-layout dashboard-wrapper">
         <?php include 'includes/sidebar.php'; ?>
 
         <div class="main-wrapper">
@@ -90,15 +94,21 @@ $csrfToken = AuthHelper::getCsrfToken();
 
             <main class="main-content">
             <!-- Page Header -->
-            <section class="vehicles-header" style="margin-bottom: 24px;">
+      <section class="vehicles-header welcome-container" style="margin-bottom: 24px;">
                 <div class="vehicles-title">
-                    <h1>Dashboard</h1>
-                    <p>Welcome back, <?php echo htmlspecialchars($currentUser['name']); ?>. Here's your fleet overview.</p>
+                    <h1>Vehicle Owner Dashboard</h1>
+                    <p>Manage your fleet, bookings and connected drivers.</p>
                 </div>
             </section>
 
             <!-- Statistics Cards -->
-            <section class="overview-stats" aria-label="Summary statistics">
+            <section class="overview-stats owner-operations-snapshot" aria-labelledby="operations-snapshot-title">
+                <div class="owner-section-heading">
+                    <div>
+                        <p class="owner-section-kicker">Operations Snapshot</p>
+                        <h2 id="operations-snapshot-title">Fleet and rental activity</h2>
+                    </div>
+                </div>
                 <div class="stats-grid">
                     <article class="stat-card">
                         <div class="stat-card-header">
@@ -120,7 +130,7 @@ $csrfToken = AuthHelper::getCsrfToken();
                     <article class="stat-card">
                         <div class="stat-card-header">
                             <div>
-                                <p class="stat-label">Active Vehicles</p>
+                                <p class="stat-label">Total Vehicles</p>
                                 <p class="stat-value"><?php echo $totalVehicles; ?></p>
                             </div>
                             <div class="stat-icon-bubble bubble-blue">
@@ -131,7 +141,7 @@ $csrfToken = AuthHelper::getCsrfToken();
                                 </svg>
                             </div>
                         </div>
-                        <p class="stat-meta"><?php echo $verifiedVehicles; ?> verified</p>
+                            <p class="stat-meta"><?php echo $verifiedVehicles; ?> verified</p>
                     </article>
 
                     <article class="stat-card">
@@ -170,6 +180,23 @@ $csrfToken = AuthHelper::getCsrfToken();
                 </div>
             </section>
 
+            <section class="owner-quick-actions" aria-labelledby="owner-quick-actions-title">
+                <div class="owner-section-heading">
+                    <div>
+                        <p class="owner-section-kicker">Quick Actions</p>
+                        <h2 id="owner-quick-actions-title">Keep fleet operations moving</h2>
+                    </div>
+                </div>
+                <div class="owner-quick-actions-grid">
+                    <a class="owner-quick-action" href="vehicles.php#add-vehicle-form"><strong>Add Vehicle</strong><span>List a vehicle for review</span></a>
+                    <a class="owner-quick-action" href="vehicles.php"><strong>Manage Vehicles</strong><span>Review fleet status</span></a>
+                    <a class="owner-quick-action" href="drivers.php"><strong>Find Drivers</strong><span>Connect an eligible driver</span></a>
+                    <a class="owner-quick-action" href="bookings.php"><strong>View Bookings</strong><span>Review rental activity</span></a>
+                    <a class="owner-quick-action" href="inspection.php"><strong>Inspections</strong><span>Open vehicle records</span></a>
+                    <a class="owner-quick-action" href="replacement-requests.php"><strong>Replacement Requests</strong><span>Review fleet requests</span></a>
+                </div>
+            </section>
+
             <!-- Recent Bookings -->
             <section class="booking-requests">
                 <div class="section-heading">
@@ -177,20 +204,21 @@ $csrfToken = AuthHelper::getCsrfToken();
                 </div>
 
                 <?php if (empty($recentBookings)): ?>
-                    <div style="text-align: center; padding: 32px 0; color: #64748b;">
-                        <p style="font-size: 1.1rem; margin: 0 0 8px;">No bookings yet</p>
-                        <p style="margin: 0; font-size: 0.95rem;">Once customers book your vehicles, they'll appear here.</p>
+                    <div class="empty-state-card">
+                        <h3>No Bookings Yet</h3>
+                        <p>Once customers book your vehicles, their reservations will appear here.</p>
                     </div>
                 <?php else: ?>
                     <div class="request-list">
                         <?php foreach ($recentBookings as $bk): ?>
                             <?php
                                 $statusColors = [
-                                    'pending_payment' => ['bg' => '#fef3c7', 'color' => '#92400e', 'label' => 'Pending Payment'],
-                                    'confirmed'       => ['bg' => '#dbeafe', 'color' => '#1e40af', 'label' => 'Confirmed'],
-                                    'ongoing'         => ['bg' => '#d1fae5', 'color' => '#065f46', 'label' => 'Ongoing'],
-                                    'completed'       => ['bg' => '#f0fdf4', 'color' => '#166534', 'label' => 'Completed'],
-                                    'cancelled'       => ['bg' => '#fee2e2', 'color' => '#991b1b', 'label' => 'Cancelled'],
+                                    'pending_approval' => ['bg' => '#fef3c7', 'color' => '#92400e', 'label' => 'Pending Approval'],
+                                    'pending_payment'  => ['bg' => '#e0e7ff', 'color' => '#3730a3', 'label' => 'Pending Payment'],
+                                    'confirmed'        => ['bg' => '#dbeafe', 'color' => '#1e40af', 'label' => 'Confirmed'],
+                                    'ongoing'          => ['bg' => '#d1fae5', 'color' => '#065f46', 'label' => 'Ongoing'],
+                                    'completed'        => ['bg' => '#f0fdf4', 'color' => '#166534', 'label' => 'Completed'],
+                                    'cancelled'        => ['bg' => '#fee2e2', 'color' => '#991b1b', 'label' => 'Cancelled'],
                                 ];
                                 $sc = $statusColors[$bk['status']] ?? ['bg' => '#f1f5f9', 'color' => '#475569', 'label' => ucfirst($bk['status'])];
                             ?>

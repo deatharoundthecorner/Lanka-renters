@@ -123,9 +123,10 @@ class AuthController {
             if ($db->inTransaction()) {
                 $db->rollBack();
             }
+            error_log(sprintf('Registration failed [%s]: %s', get_class($e), $e->getMessage()));
             return [
                 'success' => false,
-                'error' => "Registration failed: " . $e->getMessage()
+                'error' => 'Registration failed. Please try again later.'
             ];
         }
     }

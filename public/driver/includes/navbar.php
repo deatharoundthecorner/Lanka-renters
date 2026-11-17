@@ -1,37 +1,57 @@
 <?php
-require_once dirname(dirname(dirname(__DIR__))) . '/app/models/Notification.php';
 require_once dirname(dirname(dirname(__DIR__))) . '/app/helpers/AuthHelper.php';
 
 $user = AuthHelper::getCurrentUser();
-$unreadCount = 0;
-if ($user && isset($user['id'])) {
-    $notificationModel = new Notification();
-    $unreadCount = $notificationModel->getUnreadCount($user['id']);
+$driverPageLabels = [
+    'dashboard' => 'Dashboard',
+    'profile' => 'My Profile',
+    'security' => 'Account & Security',
+    'documents' => 'Documents',
+    'owners' => 'Connected Owners',
+    'availability' => 'Availability',
+    'leave' => 'Leave Requests',
+    'safety_check' => 'Safety Checklist',
+    'trips' => 'Trips & Tracking',
+    'vehicles' => 'Assigned Vehicles',
+    'report_incident' => 'Report Incident',
+    'messages' => 'Messages',
+    'notifications' => 'Notifications',
+    'performance' => 'Performance',
+    'earnings' => 'Earnings'
+];
+$driverPageLabel = $driverPageLabels[$activePage ?? 'dashboard'] ?? 'Driver workspace';
+$headerName = trim((string)(($user && isset($user['name'])) ? $user['name'] : 'Driver'));
+$headerNameParts = preg_split('/\s+/', $headerName) ?: [];
+$headerInitials = '';
+foreach (array_slice($headerNameParts, 0, 2) as $headerNamePart) {
+    $headerInitials .= strtoupper(substr($headerNamePart, 0, 1));
 }
+$headerInitials = $headerInitials !== '' ? $headerInitials : 'D';
 ?>
 <header class="top-navbar">
     <div class="navbar-left">
-        <button class="menu-toggle" id="menuToggle">
+        <button type="button" class="menu-toggle" id="menuToggle" aria-controls="sidebar" aria-expanded="false" aria-label="Open navigation">
             <!-- Hamburger menu SVG -->
             <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
             </svg>
         </button>
+        <div class="lr-breadcrumb" aria-label="Page context">
+            <span class="lr-breadcrumb-home">Driver</span>
+            <span class="lr-breadcrumb-separator" aria-hidden="true">/</span>
+            <span class="lr-breadcrumb-current"><?php echo htmlspecialchars($driverPageLabel); ?></span>
+        </div>
     </div>
     
     <div class="navbar-right">
-        <!-- Notification bell -->
-        <a href="notifications.php" class="notification-icon-btn">
-            <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
-            </svg>
-            <?php if ($unreadCount > 0): ?>
-                <span class="notification-badge"><?php echo $unreadCount; ?></span>
-            <?php endif; ?>
-        </a>
+        <?php
+        $notificationViewAllUrl = 'notifications.php';
+        include dirname(__DIR__, 2) . '/includes/notification-dropdown.php';
+        ?>
 
         <!-- User profile details -->
         <div class="profile-menu">
+            <span class="lr-header-avatar" aria-hidden="true"><?php echo htmlspecialchars($headerInitials); ?></span>
             <div class="profile-info">
                 <span class="profile-name"><?php echo htmlspecialchars(($user && isset($user['name'])) ? $user['name'] : 'Driver'); ?></span>
                 <span class="profile-role">Driver</span>

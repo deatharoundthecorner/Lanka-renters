@@ -12,7 +12,7 @@ Lanka Renters - Guest Module Stylesheet
 body {
     background-color: var(--bg-body, #F8FAFC);
     color: var(--text-primary, #111827);
-    font-family: 'Outfit', 'Inter', sans-serif;
+    font-family: 'Montserrat', 'Segoe UI', sans-serif;
     line-height: 1.5;
 }
 
@@ -999,6 +999,15 @@ body {
 
 /* Tablet landscape: 901px–1024px */
 @media (max-width: 1024px) {
+    .footer-container {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 24px;
+    }
+
+    .footer-container > * {
+        min-width: 0;
+    }
+
     .journeys-grid {
         grid-template-columns: 1fr 1fr;
         gap: 20px;
@@ -1053,7 +1062,7 @@ body {
     .details-layout {
         grid-template-columns: 1fr;
     }
-    
+
     .booking-sidebar-card {
         position: static;
         width: 100%;
@@ -1303,5 +1312,3 @@ body {
     color: var(--text-secondary, #6B7280);
     line-height: 1.6;
 }
-
-

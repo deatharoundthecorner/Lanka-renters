@@ -31,6 +31,11 @@ $catalogueUrl = static function (int $page) use ($catalogueParams): string {
     $query = http_build_query($params);
     return customer_url('vehicles/index.php' . ($query !== '' ? '?' . $query : ''));
 };
+$catalogueDetailParams = $catalogueParams;
+if ((int) $viewData['current_page'] > 1) {
+    $catalogueDetailParams['page'] = (int) $viewData['current_page'];
+}
+$catalogueDetailQuery = http_build_query($catalogueDetailParams);
 
 $activeFilterLabels = [];
 if ($filters['keyword'] !== '') {

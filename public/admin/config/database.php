@@ -2,7 +2,7 @@
 // config/database.php
 // Lanka Renters Admin Dashboard - Database Connection & Data Provider Helper
 
-require_once dirname(__DIR__, 2) . '/app/helpers/AuthHelper.php';
+require_once dirname(__DIR__, 3) . '/app/helpers/AuthHelper.php';
 
 if (!defined('DB_HOST')) define('DB_HOST', '127.0.0.1');
 if (!defined('DB_PORT')) define('DB_PORT', '3306');
@@ -14,7 +14,7 @@ function getDBConnection() {
     static $pdo = null;
     if ($pdo === null) {
         // Try utilizing the central Database helper if available
-        $centralDbFile = dirname(__DIR__, 2) . '/app/helpers/Database.php';
+        $centralDbFile = dirname(__DIR__, 3) . '/app/helpers/Database.php';
         if (file_exists($centralDbFile)) {
             require_once $centralDbFile;
             try {

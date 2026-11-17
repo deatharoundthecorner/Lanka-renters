@@ -73,9 +73,15 @@ $escape = static fn(mixed $val): string => htmlspecialchars((string)$val, ENT_QU
                     </div>
 
                     <?php if (empty($pendingPayments)): ?>
-                        <p style="color: var(--text-secondary);">No pending payment slips awaiting review.</p>
+                        <div class="lr-empty-state">
+                            <div class="lr-empty-icon">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+                            </div>
+                            <h3>No pending payment slips</h3>
+                            <p>There are currently no customer payment slips awaiting admin review.</p>
+                        </div>
                     <?php else: ?>
-                        <div class="table-responsive">
+                        <div class="lr-table-wrap table-responsive">
                             <table class="custom-table">
                                 <thead>
                                     <tr>
@@ -83,7 +89,8 @@ $escape = static fn(mixed $val): string => htmlspecialchars((string)$val, ENT_QU
                                         <th>Booking ID</th>
                                         <th>Customer</th>
                                         <th>Amount</th>
-                                        <th>Method / Ref</th>
+                                        <th>Method</th>
+                                        <th>Slip Evidence</th>
                                         <th>Decision</th>
                                     </tr>
                                 </thead>
@@ -91,7 +98,12 @@ $escape = static fn(mixed $val): string => htmlspecialchars((string)$val, ENT_QU
                                     <?php foreach ($pendingPayments as $pay): ?>
                                         <tr>
                                             <td><span class="cell-secondary-text">PAY-<?= (int)$pay['id'] ?></span></td>
-                                            <td><span class="cell-secondary-text">BKG-<?= (int)$pay['booking_id'] ?></span></td>
+                                            <td>
+                                                <span class="cell-secondary-text">BKG-<?= (int)$pay['booking_id'] ?></span>
+                                                <?php if (!empty($pay['invoice_number'])): ?>
+                                                    <br><span class="cell-secondary-text" style="font-size: 11px;"><?= $escape($pay['invoice_number']) ?></span>
+                                                <?php endif; ?>
+                                            </td>
                                             <td>
                                                 <div class="cell-stacked">
                                                     <span class="cell-primary-text"><?= $escape($pay['customer_name']) ?></span>
@@ -102,8 +114,17 @@ $escape = static fn(mixed $val): string => htmlspecialchars((string)$val, ENT_QU
                                             <td>
                                                 <div class="cell-stacked">
                                                     <span class="badge badge-blue"><?= $escape(ucfirst($pay['payment_method'])) ?></span>
-                                                    <span class="cell-secondary-text"><?= $escape($pay['transaction_reference'] ?: 'N/A') ?></span>
+                                                    <span class="cell-secondary-text"><?= $escape($pay['payment_type'] ?? 'full') ?></span>
                                                 </div>
+                                            </td>
+                                            <td>
+                                                <?php if (!empty($pay['payment_slip_path'])): ?>
+                                                    <a href="payment_document.php?id=<?= (int)$pay['id'] ?>" target="_blank" class="btn btn-secondary btn-sm">
+                                                        View Slip ↗
+                                                    </a>
+                                                <?php else: ?>
+                                                    <span class="cell-secondary-text" style="font-size: 11px; font-style: italic; color: var(--text-muted);">Not uploaded</span>
+                                                <?php endif; ?>
                                             </td>
                                             <td>
                                                 <div class="btn-group">
@@ -136,9 +157,15 @@ $escape = static fn(mixed $val): string => htmlspecialchars((string)$val, ENT_QU
                     </div>
 
                     <?php if (empty($reviewedPayments)): ?>
-                        <p style="color: var(--text-secondary);">No payment history records found.</p>
+                        <div class="lr-empty-state">
+                            <div class="lr-empty-icon">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                            </div>
+                            <h3>No payment history records</h3>
+                            <p>Processed payment transactions and verification decisions will appear here.</p>
+                        </div>
                     <?php else: ?>
-                        <div class="table-responsive">
+                        <div class="lr-table-wrap table-responsive">
                             <table class="custom-table">
                                 <thead>
                                     <tr>
@@ -147,21 +174,67 @@ $escape = static fn(mixed $val): string => htmlspecialchars((string)$val, ENT_QU
                                         <th>Customer</th>
                                         <th>Amount</th>
                                         <th>Method</th>
+                                        <th>Evidence</th>
                                         <th>Status</th>
+                                        <th>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <?php foreach ($reviewedPayments as $pay): ?>
+                                        <?php
+                                        $payStatusBadge = match($pay['payment_status']) {
+                                            'completed', 'approved' => 'badge-approved',
+                                            'refunded' => 'badge-rejected',
+                                            'rejected', 'failed' => 'badge-rejected',
+                                            default => 'badge-pending'
+                                        };
+                                        ?>
                                         <tr>
                                             <td><span class="cell-secondary-text">PAY-<?= (int)$pay['id'] ?></span></td>
-                                            <td><span class="cell-secondary-text">BKG-<?= (int)$pay['booking_id'] ?></span></td>
-                                            <td><span class="cell-primary-text"><?= $escape($pay['customer_name']) ?></span></td>
+                                            <td>
+                                                <span class="cell-secondary-text">BKG-<?= (int)$pay['booking_id'] ?></span>
+                                                <?php if (!empty($pay['booking_status'])): ?>
+                                                    <span class="badge <?= $pay['booking_status'] === 'disputed' ? 'badge-rejected' : 'badge-pending' ?>" style="font-size: 10px; margin-left: 4px;">
+                                                        <?= $escape(ucfirst($pay['booking_status'])) ?>
+                                                    </span>
+                                                <?php endif; ?>
+                                                <?php if (!empty($pay['invoice_number'])): ?>
+                                                    <br><span class="cell-secondary-text" style="font-size: 11px;"><?= $escape($pay['invoice_number']) ?></span>
+                                                <?php endif; ?>
+                                            </td>
+                                            <td>
+                                                <div class="cell-stacked">
+                                                    <span class="cell-primary-text"><?= $escape($pay['customer_name']) ?></span>
+                                                    <span class="cell-secondary-text"><?= $escape($pay['customer_email']) ?></span>
+                                                </div>
+                                            </td>
                                             <td><span class="cell-primary-text">Rs. <?= number_format((float)$pay['amount'], 2) ?></span></td>
                                             <td><span class="badge badge-blue"><?= $escape(ucfirst($pay['payment_method'])) ?></span></td>
                                             <td>
-                                                <span class="badge <?= $pay['payment_status'] === 'completed' ? 'badge-approved' : 'badge-pending' ?>">
+                                                <?php if (!empty($pay['payment_slip_path'])): ?>
+                                                    <a href="payment_document.php?id=<?= (int)$pay['id'] ?>" target="_blank" class="btn btn-secondary btn-sm">
+                                                        View Slip ↗
+                                                    </a>
+                                                <?php else: ?>
+                                                    <span class="cell-secondary-text" style="font-size: 11px; font-style: italic; color: var(--text-muted);">Not uploaded</span>
+                                                <?php endif; ?>
+                                            </td>
+                                            <td>
+                                                <span class="badge <?= $payStatusBadge ?>">
                                                     <?= $escape(ucfirst($pay['payment_status'])) ?>
                                                 </span>
+                                            </td>
+                                            <td>
+                                                <?php if ($pay['payment_status'] === 'completed' && in_array($pay['booking_status'] ?? '', ['disputed', 'ongoing'])): ?>
+                                                    <form method="post" action="payment_verification.php" onsubmit="return confirm('Process full refund for Payment #<?= (int)$pay['id'] ?> and complete Booking #<?= (int)$pay['booking_id'] ?>?');">
+                                                        <input type="hidden" name="csrf_token" value="<?= $escape(AuthHelper::getCsrfToken()) ?>">
+                                                        <input type="hidden" name="payment_id" value="<?= (int)$pay['id'] ?>">
+                                                        <input type="hidden" name="status" value="refunded">
+                                                        <button type="submit" class="btn btn-reject btn-sm" title="Refund disputed/ongoing booking">Refund</button>
+                                                    </form>
+                                                <?php else: ?>
+                                                    <span class="cell-secondary-text" style="font-size: 11px;">—</span>
+                                                <?php endif; ?>
                                             </td>
                                         </tr>
                                     <?php endforeach; ?>

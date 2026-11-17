@@ -45,7 +45,10 @@ class OwnerEarningsController {
             // Overall earnings from completed bookings
             $stmtTotal = $this->db->prepare("
                 SELECT
-                    COALESCE(SUM(CASE WHEN b.status = 'completed' THEN b.total_price ELSE 0 END), 0) AS total_completed,
+                    COALESCE(SUM(CASE WHEN b.status = 'completed'
+                                      AND EXISTS (SELECT 1 FROM payments p WHERE p.booking_id = b.id AND p.payment_status = 'completed')
+                                      AND NOT EXISTS (SELECT 1 FROM payments p WHERE p.booking_id = b.id AND p.payment_status = 'refunded')
+                                      THEN b.total_price ELSE 0 END), 0) AS total_completed,
                     COALESCE(SUM(CASE WHEN b.status IN ('confirmed','ongoing') THEN b.total_price ELSE 0 END), 0) AS total_pending
                 FROM bookings b
                 JOIN vehicles v ON b.vehicle_id = v.id
@@ -61,8 +64,14 @@ class OwnerEarningsController {
                     v.make,
                     v.model,
                     v.license_plate,
-                    COALESCE(SUM(CASE WHEN b.status = 'completed' THEN b.total_price ELSE 0 END), 0) AS earned,
-                    COUNT(CASE WHEN b.status = 'completed' THEN 1 END) AS trips
+                    COALESCE(SUM(CASE WHEN b.status = 'completed'
+                                   AND EXISTS (SELECT 1 FROM payments p WHERE p.booking_id = b.id AND p.payment_status = 'completed')
+                                   AND NOT EXISTS (SELECT 1 FROM payments p WHERE p.booking_id = b.id AND p.payment_status = 'refunded')
+                                   THEN b.total_price ELSE 0 END), 0) AS earned,
+                    COUNT(CASE WHEN b.status = 'completed'
+                                 AND EXISTS (SELECT 1 FROM payments p WHERE p.booking_id = b.id AND p.payment_status = 'completed')
+                                 AND NOT EXISTS (SELECT 1 FROM payments p WHERE p.booking_id = b.id AND p.payment_status = 'refunded')
+                             THEN 1 END) AS trips
                 FROM vehicles v
                 LEFT JOIN bookings b ON b.vehicle_id = v.id
                 WHERE v.owner_id = :owner_id

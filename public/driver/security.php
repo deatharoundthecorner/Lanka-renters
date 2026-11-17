@@ -40,7 +40,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 // Fetch current driver details for display
 $dashboardResult = $driverController->dashboard();
 if (!$dashboardResult['success']) {
-    die("Error loading driver account details: " . htmlspecialchars($dashboardResult['error']));
+    error_log('Driver security load failed: ' . ($dashboardResult['error'] ?? 'Unknown error'));
+    die('The page could not be loaded. Please try again later.');
 }
 $profile = $dashboardResult['profile'];
 $stats = $dashboardResult['dashboard_stats'];
@@ -88,26 +89,26 @@ include 'includes/navbar.php';
                 $userStatus = strtoupper($profile['user_status'] ?? 'ACTIVE');
                 $statusConfigs = [
                     'ACTIVE' => [
-                        'color' => '#065F46', 'bg' => '#ECFDF5', 'border' => '#A7F3D0', 'dot' => '🟢',
+                        'color' => '#065F46', 'bg' => '#ECFDF5', 'border' => '#A7F3D0',
                         'title' => 'Active', 'desc' => 'Your driver account is active and available for operations.'
                     ],
                     'INACTIVE' => [
-                        'color' => '#334155', 'bg' => '#F1F5F9', 'border' => '#CBD5E1', 'dot' => '⚪',
+                        'color' => '#334155', 'bg' => '#F1F5F9', 'border' => '#CBD5E1',
                         'title' => 'Inactive', 'desc' => 'Your account is currently inactive. You will not receive trip bookings.'
                     ],
                     'PENDING' => [
-                        'color' => '#92400E', 'bg' => '#FEF3C7', 'border' => '#FCD34D', 'dot' => '🟡',
+                        'color' => '#92400E', 'bg' => '#FEF3C7', 'border' => '#FCD34D',
                         'title' => 'Pending Approval', 'desc' => 'Your driver profile is awaiting administrative verification.'
                     ],
                     'SUSPENDED' => [
-                        'color' => '#991B1B', 'bg' => '#FEF2F2', 'border' => '#FCA5A5', 'dot' => '🔴',
+                        'color' => '#991B1B', 'bg' => '#FEF2F2', 'border' => '#FCA5A5',
                         'title' => 'Suspended', 'desc' => 'Your account is suspended. Please contact support.'
                     ]
                 ];
                 $statusConf = $statusConfigs[$userStatus] ?? $statusConfigs['ACTIVE'];
                 ?>
                 <div style="background-color: <?php echo $statusConf['bg']; ?>; border: 1px solid <?php echo $statusConf['border']; ?>; border-radius: 8px; padding: 15px; display: flex; align-items: flex-start; gap: 12px;">
-                    <div style="font-size: 18px; line-height: 1;"><?php echo $statusConf['dot']; ?></div>
+                    <span class="lr-status-dot <?php echo strtolower($userStatus); ?>" aria-hidden="true"></span>
                     <div>
                         <div style="font-weight: 700; color: <?php echo $statusConf['color']; ?>; font-size: 13.5px; text-transform: uppercase;"><?php echo htmlspecialchars($statusConf['title']); ?></div>
                         <div style="font-size: 12px; color: <?php echo $statusConf['color']; ?>; margin-top: 4px; line-height: 1.4; opacity: 0.9;"><?php echo htmlspecialchars($statusConf['desc']); ?></div>

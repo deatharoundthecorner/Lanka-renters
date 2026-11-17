@@ -1,9 +1,23 @@
 <?php
 $activePage = $activePage ?? 'dashboard';
+$sidebarUser = AuthHelper::getCurrentUser();
+$sidebarName = trim((string)($sidebarUser['name'] ?? 'Driver'));
+$sidebarNameParts = preg_split('/\s+/', $sidebarName) ?: [];
+$sidebarInitials = '';
+foreach (array_slice($sidebarNameParts, 0, 2) as $sidebarNamePart) {
+    $sidebarInitials .= strtoupper(substr($sidebarNamePart, 0, 1));
+}
+$sidebarInitials = $sidebarInitials !== '' ? $sidebarInitials : 'D';
 ?>
 <aside class="sidebar" id="sidebar">
     <div class="sidebar-brand">
-        Lanka Renters
+        <a href="dashboard.php" class="lr-driver-brand-link" style="display: flex; align-items: center; gap: 12px; text-decoration: none; color: inherit; width: 100%;">
+            <span class="lr-brand-mark lr-brand-mark--image" aria-hidden="true"><img src="../assets/images/brand/lanka-renters-mark.png" alt=""></span>
+            <span class="lr-brand-copy">
+                <span class="lr-brand-name">Lanka<span>Renters</span></span>
+                <span class="lr-workspace-name">Driver workspace</span>
+            </span>
+        </a>
     </div>
     <nav class="sidebar-nav">
         <a href="dashboard.php" class="nav-link <?php echo $activePage === 'dashboard' ? 'active' : ''; ?>">
@@ -75,7 +89,7 @@ $activePage = $activePage ?? 'dashboard';
 
         <a href="vehicles.php" class="nav-link <?php echo $activePage === 'vehicles' ? 'active' : ''; ?>">
             <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 17h14M6 17v2m12-2v2M4 14l2-6h12l2 6v3H4v-3z"/><circle cx="7" cy="14" r="1"/><circle cx="17" cy="14" r="1"/>
             </svg>
             Assigned Vehicles
         </a>
@@ -91,7 +105,7 @@ $activePage = $activePage ?? 'dashboard';
 
         <a href="messages.php" class="nav-link <?php echo $activePage === 'messages' ? 'active' : ''; ?>">
             <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
             </svg>
             Messages
         </a>
@@ -120,12 +134,19 @@ $activePage = $activePage ?? 'dashboard';
         </a>
     </nav>
     <div class="sidebar-footer">
+        <div class="lr-sidebar-account">
+            <span class="lr-account-avatar" aria-hidden="true"><?php echo htmlspecialchars($sidebarInitials); ?></span>
+            <span class="lr-sidebar-account-copy">
+                <span class="lr-sidebar-account-name"><?php echo htmlspecialchars($sidebarName); ?></span>
+                <span class="lr-sidebar-account-role">Driver account</span>
+            </span>
+        </div>
         <form action="dashboard.php" method="POST" style="margin: 0;">
             <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(AuthHelper::getCsrfToken()); ?>">
             <input type="hidden" name="action" value="logout">
             <button type="submit" class="btn-sidebar-logout">
-                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="transform: rotate(180deg);">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
                 </svg>
                 Logout
             </button>

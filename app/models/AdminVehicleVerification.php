@@ -60,4 +60,14 @@ class AdminVehicleVerification {
         $stmt = $this->db->prepare($sql);
         return $stmt->execute(['id' => $vehicleId]);
     }
+
+    /**
+     * Gets documents for a vehicle.
+     */
+    public function getVehicleDocuments(int $vehicleId): array {
+        $sql = "SELECT * FROM `vehicle_documents` WHERE `vehicle_id` = :vehicle_id ORDER BY `uploaded_at` DESC";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute(['vehicle_id' => $vehicleId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 }
