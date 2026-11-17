@@ -129,7 +129,7 @@ class AuthHelper {
                     self::redirect('driver/dashboard.php');
                     break;
                 case 'customer':
-                    self::redirect('customer/dashboard.php');
+                    self::redirect('customer/dashboard/index.php');
                     break;
                 default:
                     // If the role is invalid/unregistered, force a logout and redirect

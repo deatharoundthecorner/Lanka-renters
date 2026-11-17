@@ -25,7 +25,7 @@ class Database {
         
         $config = require $configPath;
         
-        $host = $config['host'] ?? 'localhost';
+        $host = $config['host'] ?? '127.0.0.1';
         $db   = $config['db'] ?? 'lanka_renters';
         $user = $config['user'] ?? 'root';
         $pass = $config['pass'] ?? '';
@@ -43,14 +43,35 @@ class Database {
             // Disable emulated prepared statements for security and native data types
             PDO::ATTR_EMULATE_PREPARES   => false,
         ];
-
+         
         try {
             $this->connection = new PDO($dsn, $user, $pass, $options);
         } catch (PDOException $e) {
-            throw new PDOException("Database connection failed: " . $e->getMessage(), (int)$e->getCode());
+            error_log(sprintf(
+                'Database connection failure [%s]: %s',
+                get_class($e),
+                $e->getMessage()
+            ));
+
+            if (PHP_SAPI !== 'cli') {
+                if (!headers_sent()) {
+                    http_response_code(503);
+                    header('Content-Type: text/html; charset=UTF-8');
+                }
+
+                echo '<!doctype html><html lang="en"><head><meta charset="utf-8">';
+                echo '<meta name="viewport" content="width=device-width, initial-scale=1">';
+                echo '<title>Service temporarily unavailable</title></head><body>';
+                echo '<main><h1>Service temporarily unavailable</h1>';
+                echo '<p>We could not connect to the service. Please try again shortly.</p></main>';
+                echo '</body></html>';
+                exit;
+            }
+
+            throw new RuntimeException('Database service is temporarily unavailable.');
         }
     }
-
+       
     /**
      * Returns the single instance of this class.
      * 
